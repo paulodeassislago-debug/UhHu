@@ -17,3 +17,6 @@ dist/
 coverage/
 *.tsbuildinfo
 pnpm-lock.yaml
+
+# Artefatos gerados pelo drizzle-kit — formato da ferramenta, nao editar a mao
+packages/db/drizzle/meta/

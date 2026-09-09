@@ -1,5 +1,6 @@
-// packages/db — futuro dono total do Drizzle (schema, client,
-// drizzle.config e pasta de migrations). Plano 01-02 (D-10).
-// Esqueleto da Fase 1: nenhuma tabela, nenhum client ainda.
+// packages/db — dono total do Drizzle (D-10): schema, client e migrate.
+// core-api importa daqui; NENHUMA conexao SQL fora deste pacote.
 
-export const DB_PLACEHOLDER = 'fase-1-esqueleto';
+export * from './schema.js';
+export { checkDatabase, createDb, type Db, type DatabaseCheck } from './client.js';
+export { migrateDatabase, redactConnectionString } from './migrate.js';
