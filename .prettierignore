@@ -1,0 +1,19 @@
+# Legado / pesquisa — fora do monorepo, nao formatar nem lintar via gates
+planner-docente/
+supabase-legacy-export/
+docs/
+dev-docs/
+
+# Documentacao operacional do GSD — formato proprio, fora do gate de produto
+.planning/
+
+# Arquivos de onboarding intencionalmente untracked — fora do gate
+AGENTS.md
+init-prompt.md
+
+# Gerados / dependencias
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+pnpm-lock.yaml
