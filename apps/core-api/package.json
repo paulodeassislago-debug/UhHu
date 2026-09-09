@@ -5,11 +5,16 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "start": "tsx src/index.ts"
   },
   "dependencies": {
     "@uhhu/config": "workspace:*",
     "@uhhu/contracts": "workspace:*",
-    "@uhhu/db": "workspace:*"
+    "@uhhu/db": "workspace:*",
+    "fastify": "^5.12.3"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.13"
   }
 }
