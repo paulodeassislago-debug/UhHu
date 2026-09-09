@@ -26,13 +26,33 @@ export async function migrateDatabase(url: string): Promise<void> {
   }
 }
 
+// Achata a cadeia de causas do driver: o Drizzle embrulha o erro real
+// ("Failed query: ..." por fora, ECONNREFUSED no `cause`); sem isso o motivo
+// da falha se perde no log e o operador nao sabe se e rede ou SQL.
+function messageChain(err: unknown): string {
+  const parts: string[] = [];
+  const seen = new Set<unknown>();
+  let current: unknown = err;
+  while (current !== null && current !== undefined && !seen.has(current)) {
+    seen.add(current);
+    if (current instanceof Error) {
+      parts.push(current.message);
+      current = current.cause;
+    } else {
+      parts.push(String(current));
+      break;
+    }
+  }
+  return parts.join(' <- ');
+}
+
 async function main(): Promise<void> {
   const url = env.MIGRATION_DATABASE_URL;
   try {
     await migrateDatabase(url);
     console.log('[db:migrate] migrations aplicadas com sucesso.');
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+    const message = messageChain(err);
     // Redige a mensagem inteira: o driver pode ecoar a connection string no erro.
     console.error(redactConnectionString(`[db:migrate] falha contra ${url}: ${message}`));
     process.exitCode = 1;

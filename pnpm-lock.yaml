@@ -14,15 +14,24 @@ importers:
       '@types/node':
         specifier: ^22.10.2
         version: 22.20.1
+      '@uhhu/db':
+        specifier: workspace:^
+        version: link:packages/db
       eslint:
         specifier: ^9.17.0
         version: 9.39.5
       eslint-config-prettier:
         specifier: ^9.1.0
         version: 9.1.2(eslint@9.39.5)
+      fastify:
+        specifier: ^5.12.3
+        version: 5.12.3
       prettier:
         specifier: ^3.4.2
         version: 3.9.6
+      tsx:
+        specifier: ^4.23.13
+        version: 4.23.13
       typescript:
         specifier: ^5.7.2
         version: 5.9.3
