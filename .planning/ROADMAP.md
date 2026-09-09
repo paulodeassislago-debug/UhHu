@@ -23,10 +23,14 @@ Da fundação executável (monorepo + PG + gates) ao primeiro vertical slice do 
   2. Typecheck, lint, testes vazios, Gitleaks (tree+histórico), SAST e `pnpm audit` passam no CI
   3. PG dev e prod são separados (bancos, credenciais, `.env`); nenhum segredo no repo ou logs
   4. Contrato inicial validado por seções com Paulo antes de congelar o schema
-**Plans**: TBD (previstos: toolchain+monorepo; PG+migrations; CI/gates; validação do contrato)
+**Plans**: 3 plans in 3 waves (01 monorepo → 02 PG+migrations+health → 03 CI/gates+validacao do contrato)
 
 Plans:
-- [ ] 01-01: TBD na discussão da fase
+- [ ] 01-01-PLAN.md — Wave 1: esqueleto monorepo pnpm + TS strict + fronteiras (FOUND-02; D-01--D-04)
+- [ ] 01-02-PLAN.md — Wave 2 *(blocked on Wave 1)*: PG DEV + envs + Drizzle prova de infra + GET /health (FOUND-01, FOUND-04; D-05--D-10)
+- [ ] 01-03-PLAN.md — Wave 3 *(blocked on Wave 2)*: CI fail-closed + suite smoke/integracao + checkpoint de validacao do contrato com Paulo (FOUND-03; D-11--D-14)
+
+Cross-cutting constraints: nenhum segredo em codigo/Git/logs/respostas; nenhuma tabela de dominio ate o contrato congelar; `any` proibido ate em testes.
 
 ### Phase 2: Plataforma e isolamento
 **Goal**: Contas, sessões e isolamento ownerId funcionando e testados adversarialmente em toda rota com ID

@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-09-09)
 
 **Core value:** Um pesquisador consegue executar uma busca real (BDTD/CAPES) pelo CORE, com isolamento por usuário, proveniência e histórico.
-**Current focus:** Phase 1: Fundação executável (pronta p/ discutir)
+**Current focus:** Phase 1: Fundação executável (planned — 3 plans, ready to execute)
 
 ## Current Position
 
-Phase: 0 of 5 (Phase 1 ready to plan)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-09-09 — Project initialized (ancorado a dev-docs; sem código)
+Phase: 1 of 5 (Phase 1 planned, not yet executed)
+Plan: 0 of 3 in current phase
+Status: Ready to execute
+Last activity: 2026-09-09 — Phase 1 planned (01-01 monorepo, 01-02 PG+health, 01-03 CI+contrato); research skipped per config (dev-docs vigentes como insumo)
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -65,5 +65,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-09-09
-Stopped at: Project initialized — PROJECT/CONFIG/REQUIREMENTS/ROADMAP/STATE criados, não commitados ainda
-Resume file: None
+Stopped at: Phase 1 context gathered
+Resume file: .planning/phases/01-fundacao-executavel/01-CONTEXT.md
