@@ -1,0 +1,9 @@
+title = "UhHu! gitleaks config — D-13 fail-closed"
+
+[extend]
+useDefault = true
+
+# Stage: sem allowlists de segredo real. Qualquer supressao futura EXIGE
+# entrada datada com prazo + responsavel em .planning/aceites-seguranca.md,
+# nunca edicao silenciosa deste arquivo (D-13).
+[stage]
