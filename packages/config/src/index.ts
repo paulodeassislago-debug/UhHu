@@ -1,5 +1,5 @@
-// packages/config — futuro dono da configuração e resolução de segredos
-// (env validado com Zod por NODE_ENV). Plano 01-02.
-// Esqueleto da Fase 1: nenhuma chave, nenhum segredo, nenhum .env aqui.
+// packages/config — dono da configuracao e resolucao de segredos.
+// Re-exporta o env validado; consumidores importam daqui, nunca de './env.js'
+// direto, e nunca recriam validacao de ambiente nos pacotes.
 
-export const CONFIG_PLACEHOLDER = 'fase-1-esqueleto';
+export { env, type AppEnv } from './env.js';

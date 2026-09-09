@@ -1,0 +1,16 @@
+name: uhhu-dev
+
+services:
+  postgres-dev:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: uhhu_dev
+      POSTGRES_PASSWORD: ${PG_DEV_PASSWORD:?required}
+    ports:
+      - '127.0.0.1:55432:5432'
+    volumes:
+      - uhhu-pgdata-dev:/var/lib/postgresql/data
+
+volumes:
+  uhhu-pgdata-dev:
