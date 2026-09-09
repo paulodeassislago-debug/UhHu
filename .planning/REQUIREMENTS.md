@@ -11,7 +11,7 @@ Fontes: `dev-docs/07-core-contract.md` §10–13/21, `dev-docs/03-lab-spec-v1.md
 
 - [ ] **FOUND-01**: Dev consegue subir o CORE contra PostgreSQL DEV e aplicar migrations versionadas do monorepo (01-02: código+gates prontos — compose, migrate, /health; prova viva contra PG pendente de `user_setup` tailnet)
 - [x] **FOUND-02**: Monorepo pnpm/TS `strict` com fronteiras `apps/core-api` + `packages/{core,contracts,db,modules,integrations,config}` e `packages/contracts` como única definição de tipos/DTOs/erros
-- [ ] **FOUND-03**: CI mínimo barra segredo (Gitleaks tree+histórico), SAST, `pnpm audit`, typecheck, lint e testes — falha em crítico/alto sem aceite formal
+- [ ] **FOUND-03**: CI mínimo barra segredo (Gitleaks tree+histórico), SAST, `pnpm audit`, typecheck, lint e testes — falha em crítico/alto sem aceite formal (01-03 tasks 1-2: código+gates verdes local; CI verde no push + aprovação humana pendentes)
 - [ ] **FOUND-04**: PG dev e prod são instâncias/bancos/credenciais/`.env` distintos; nenhum segredo em código, bundle, Git, logs ou respostas (01-02: separação implementada e verificada por grep — roles, envs, compose, /health sem segredo)
 
 ### Plataforma, identidade e isolamento
@@ -94,7 +94,7 @@ Deferred — fora do CORE v1 / Lab v1.
 |-------------|-------|--------|
 | FOUND-01 | Phase 1 | In progress (01-02 code+gates done; live PG proof pending user_setup) |
 | FOUND-02 | Phase 1 | Complete (01-01) |
-| FOUND-03 | Phase 1 | Pending |
+| FOUND-03 | Phase 1 | In progress (01-03 tasks 1-2 done; CI green on push + human approval pending) |
 | FOUND-04 | Phase 1 | In progress (01-02 separation implemented+grep-verified; live proof pending user_setup) |
 | PLAT-01 | Phase 2 | Pending |
 | PLAT-02 | Phase 2 | Pending |
