@@ -33,7 +33,8 @@ async function main(): Promise<void> {
     console.log('[db:migrate] migrations aplicadas com sucesso.');
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error(`[db:migrate] falha contra ${redactConnectionString(url)}: ${message}`);
+    // Redige a mensagem inteira: o driver pode ecoar a connection string no erro.
+    console.error(redactConnectionString(`[db:migrate] falha contra ${url}: ${message}`));
     process.exitCode = 1;
   }
 }

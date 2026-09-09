@@ -23,15 +23,13 @@ export interface HealthRouteOptions {
   db: Db;
 }
 
-// Aceita o X-Request-Id recebido (limitado a 128 chars) ou gera um novo com
-// crypto.randomUUID (fonte criptograficamente segura). Sempre devolvido no
-// header da resposta.
+// IDs recebidos fora do alfabeto seguro sao descartados e substituidos:
+// header HTTP nao pode conter CRLF/espacos de controle, e um valor malicioso
+// nao pode derrubar o /health (health nunca 500 por design).
+const REQUEST_ID_PATTERN = /^[A-Za-z0-9_.:~-]{1,128}$/;
 function resolveRequestId(header: string | string[] | undefined): string {
-  if (typeof header === 'string') {
-    const value = header.trim();
-    if (value !== '' && value.length <= 128) {
-      return value;
-    }
+  if (typeof header === 'string' && REQUEST_ID_PATTERN.test(header.trim())) {
+    return header.trim();
   }
   return randomUUID();
 }
