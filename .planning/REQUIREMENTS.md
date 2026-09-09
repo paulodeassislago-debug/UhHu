@@ -10,7 +10,7 @@ Fontes: `dev-docs/07-core-contract.md` §10–13/21, `dev-docs/03-lab-spec-v1.md
 ### Fundação e persistência
 
 - [ ] **FOUND-01**: Dev consegue subir o CORE contra PostgreSQL DEV e aplicar migrations versionadas do monorepo
-- [ ] **FOUND-02**: Monorepo pnpm/TS `strict` com fronteiras `apps/core-api` + `packages/{core,contracts,db,modules,integrations,config}` e `packages/contracts` como única definição de tipos/DTOs/erros
+- [x] **FOUND-02**: Monorepo pnpm/TS `strict` com fronteiras `apps/core-api` + `packages/{core,contracts,db,modules,integrations,config}` e `packages/contracts` como única definição de tipos/DTOs/erros
 - [ ] **FOUND-03**: CI mínimo barra segredo (Gitleaks tree+histórico), SAST, `pnpm audit`, typecheck, lint e testes — falha em crítico/alto sem aceite formal
 - [ ] **FOUND-04**: PG dev e prod são instâncias/bancos/credenciais/`.env` distintos; nenhum segredo em código, bundle, Git, logs ou respostas
 
@@ -93,7 +93,7 @@ Deferred — fora do CORE v1 / Lab v1.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | FOUND-01 | Phase 1 | Pending |
-| FOUND-02 | Phase 1 | Pending |
+| FOUND-02 | Phase 1 | Complete (01-01) |
 | FOUND-03 | Phase 1 | Pending |
 | FOUND-04 | Phase 1 | Pending |
 | PLAT-01 | Phase 2 | Pending |

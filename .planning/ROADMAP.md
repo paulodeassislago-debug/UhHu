@@ -26,7 +26,7 @@ Da fundação executável (monorepo + PG + gates) ao primeiro vertical slice do 
 **Plans**: 3 plans in 3 waves (01 monorepo → 02 PG+migrations+health → 03 CI/gates+validacao do contrato)
 
 Plans:
-- [ ] 01-01-PLAN.md — Wave 1: esqueleto monorepo pnpm + TS strict + fronteiras (FOUND-02; D-01--D-04)
+- [x] 01-01-PLAN.md — Wave 1: esqueleto monorepo pnpm + TS strict + fronteiras (FOUND-02; D-01--D-04) — done 2026-09-09
 - [ ] 01-02-PLAN.md — Wave 2 *(blocked on Wave 1)*: PG DEV + envs + Drizzle prova de infra + GET /health (FOUND-01, FOUND-04; D-05--D-10)
 - [ ] 01-03-PLAN.md — Wave 3 *(blocked on Wave 2)*: CI fail-closed + suite smoke/integracao + checkpoint de validacao do contrato com Paulo (FOUND-03; D-11--D-14)
 
@@ -94,7 +94,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Fundação executável | 0/TBD | Not started | - |
+| 1. Fundação executável | 1/3 | In progress | - |
 | 2. Plataforma e isolamento | 0/TBD | Not started | - |
 | 3. Buscas e adapters | 0/TBD | Not started | - |
 | 4. Corpus e exportação | 0/TBD | Not started | - |
