@@ -11,7 +11,7 @@ Fontes: `dev-docs/07-core-contract.md` §10–13/21, `dev-docs/03-lab-spec-v1.md
 
 - [x] **FOUND-01**: Dev consegue subir o CORE contra PostgreSQL DEV e aplicar migrations versionadas do monorepo (provado 2026-09-10: PG DEV postgres 16.14 via compose na VPS, `db:migrate` exit 0 host+container, `/health` `{"status":"ok","db":"ok","migrationsApplied":1}`)
 - [x] **FOUND-02**: Monorepo pnpm/TS `strict` com fronteiras `apps/core-api` + `packages/{core,contracts,db,modules,integrations,config}` e `packages/contracts` como única definição de tipos/DTOs/erros
-- [ ] **FOUND-03**: CI mínimo barra segredo (Gitleaks tree+histórico), SAST, `pnpm audit`, typecheck, lint e testes — falha em crítico/alto sem aceite formal (código+gates+integração real verdes 2026-09-10; contrato aprovado 1–24; CI verde no push pendente — estreia no 1º push)
+- [x] **FOUND-03**: CI mínimo barra segredo (Gitleaks tree+histórico), SAST, `pnpm audit`, typecheck, lint e testes — falha em crítico/alto sem aceite formal (verde 2026-09-10, run 2: 6/6 jobs; contrato aprovado 1–24)
 - [x] **FOUND-04**: PG dev e prod são instâncias/bancos/credenciais/`.env` distintos; nenhum segredo em código, bundle, Git, logs ou respostas (provado 2026-09-10: roles uhhu_migrate/uhhu_app + grants revisados, `.env.dev(.cs)` 600 ignorados, histórico só com placeholders, migrate/health com redação verificada)
 
 ### Plataforma, identidade e isolamento
@@ -94,7 +94,7 @@ Deferred — fora do CORE v1 / Lab v1.
 |-------------|-------|--------|
 | FOUND-01 | Phase 1 | Complete (checkpoint 2026-09-10: migrate + /health `db: ok` vs PG real) |
 | FOUND-02 | Phase 1 | Complete (01-01) |
-| FOUND-03 | Phase 1 | In progress (gates+integration green vs real PG; contract approved 1–24; CI green pending first push) |
+| FOUND-03 | Phase 1 | Complete (CI green 2026-09-10 run 2, 6/6 jobs; contract approved 1–24) |
 | FOUND-04 | Phase 1 | Complete (checkpoint 2026-09-10: roles+grants, envs 600 ignored, history clean) |
 | PLAT-01 | Phase 2 | Pending |
 | PLAT-02 | Phase 2 | Pending |

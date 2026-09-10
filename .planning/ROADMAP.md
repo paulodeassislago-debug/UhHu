@@ -6,7 +6,7 @@ Da fundação executável (monorepo + PG + gates) ao primeiro vertical slice do 
 
 ## Phases
 
-- [ ] **Phase 1: Fundação executável** - Monorepo, PG DEV, migrations e gates verdes
+- [x] **Phase 1: Fundação executável** - Monorepo, PG DEV, migrations e gates verdes
 - [ ] **Phase 2: Plataforma e isolamento** - Auth, sessão, convite, ownerId server-side, convenções REST
 - [ ] **Phase 3: Buscas e adapters** - Searches, runs temporais, BDTD/CAPES, jobs, health
 - [ ] **Phase 4: Corpus e exportação** - Dedup, elegibilidade, tags, comparação, CSV/BibTeX/JSON
@@ -94,7 +94,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Fundação executável | 3/3 | In progress (fecha no 1º push com CI verde) | - |
+| 1. Fundação executável | 3/3 | Complete | 2026-09-10 |
 | 2. Plataforma e isolamento | 0/TBD | Not started | - |
 | 3. Buscas e adapters | 0/TBD | Not started | - |
 | 4. Corpus e exportação | 0/TBD | Not started | - |
