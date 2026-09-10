@@ -56,12 +56,18 @@ importers:
       '@uhhu/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@uhhu/core':
+        specifier: workspace:^
+        version: link:../../packages/core
       '@uhhu/db':
         specifier: workspace:*
         version: link:../../packages/db
       argon2:
         specifier: ^0.41.1
         version: 0.41.1
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(postgres@3.4.9)
       fastify:
         specifier: ^5.12.3
         version: 5.12.3

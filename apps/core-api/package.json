@@ -13,8 +13,10 @@
     "@fastify/rate-limit": "^10.3.0",
     "@uhhu/config": "workspace:*",
     "@uhhu/contracts": "workspace:*",
+    "@uhhu/core": "workspace:^",
     "@uhhu/db": "workspace:*",
     "argon2": "^0.41.1",
+    "drizzle-orm": "^0.45.2",
     "fastify": "^5.12.3",
     "zod": "^4.5.4"
   },
