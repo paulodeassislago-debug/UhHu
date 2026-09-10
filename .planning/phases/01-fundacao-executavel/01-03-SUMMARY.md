@@ -220,6 +220,27 @@ Arquivo a arquivo sobre tudo que o plano criou/alterou: sem autorização/IDOR a
 - Commits `4e1b9a8` e `7d68fd2` presentes no histórico (`git log`)
 - Gates re-executados após o último ajuste: `typecheck`/`lint`/`format`/`test` exit 0
 
+## Adendo 2 — fix do workflow após estreia vermelha do CI (2026-09-10, run 1)
+
+Run 1 (`f1663c6`): `gates` ✅ + `audit` ✅; 4 falhas, todas de infra do workflow
+(zero achado real — inclusive 1 prova de fail-closed funcionando):
+
+1. `secrets-tree`/`secrets-history`: `gitleaks/gitleaks-action@v2` IGNORA o input
+   `args` (warning no log) e roda scan git próprio com range `--first-parent`
+   inexistente no clone → exit 1. Fix: binário gitleaks pinado v8.24.3 via
+   release tarball + comandos exatos do plano (`.gitleaks.toml` aplicado de verdade).
+2. `sast`: `returntocorp/opengrep:latest` não existe (pull denied). Fix: `install.sh`
+   oficial (`opengrep/opengrep`, binário em `~/.opencode/cli/latest`) +
+   `scan --config auto --error --severity ERROR apps packages` — validado local:
+   79 rules, 0 findings, exit 0 no tree limpo; controle negativo com `eval()`
+   prova exit 1 com finding (flag `--error` + pipe: checar PIPESTATUS, não `$?`).
+   Cuidado `.opencode` (opencode) vs `.opengrep` (SAST) — dirs distintos.
+3. `integration-pg`: URLs APP+MIGRATION apontavam ao superuser `uhhu_test` →
+   teste de menor privilégio falhou COM RAZÃO. Fix: CI cria `uhhu_migrate`/
+   `uhhu_app` (bloco FOUND-02 adaptado p/ `uhhu_test` via `postgresql-client` +
+   grants pós-migrate no schema `drizzle`) e usa as duas URLs separadas.
+4. Cosmético: `actions/checkout@v5` + `actions/setup-node@v5` (fim do Node 20).
+
 ## Adendo — execução do checkpoint em 2026-09-10 (automatizável: COMPLETO)
 
 Executado por Hermes (assistente do Paulo, lado VPS/host) + verificado pelo opencode

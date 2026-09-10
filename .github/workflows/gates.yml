@@ -5,6 +5,16 @@
 # Branch protection em `main` deve exigir este workflow verde (passo manual no
 # checkpoint 01-03: Settings > Branches). Nenhum gate pode ser silenciosamente
 # afrouxado: supressao sem aceite e tratada como sabotagem (T-03-04/T-03-06).
+#
+# Revisao 2026-09-10 (estreia do CI, run 1 vermelho por infra — zero achado real):
+# - gitleaks/gitleaks-action@v2 IGNORA o input `args` e roda scan git proprio
+#   (range --first-parent inexistente no clone) => binario direto pinado v8.24.3
+#   com os comandos exatos do plano + .gitleaks.toml aplicado de verdade.
+# - returntocorp/opengrep:latest NAO EXISTE (pull denied) => install.sh oficial
+#   (opengrep/opengrep) + `scan --config auto --error --severity ERROR`.
+# - integration-pg usava superuser nas duas URLs => teste de menor privilegio
+#   falhava COM RAZAO (fail-closed funcionando). CI agora cria as roles
+#   uhhu_migrate/uhhu_app com os grants do FOUND-02 (dev-docs/05-infra.md §3).
 
 name: gates
 
@@ -17,11 +27,11 @@ jobs:
   gates:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
         with:
           version: 9.15.0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
           cache: pnpm
@@ -35,41 +45,42 @@ jobs:
   secrets-tree:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9.15.0
-      - uses: gitleaks/gitleaks-action@v2
-        with:
-          args: detect --source . --no-git -v --config .gitleaks.toml
+      - uses: actions/checkout@v5
+      - run: |
+          curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_x64.tar.gz -o /tmp/gitleaks.tgz
+          tar -xzf /tmp/gitleaks.tgz -C /tmp && sudo install -m 0755 /tmp/gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+      - run: gitleaks detect --source . --no-git -v --config .gitleaks.toml --exit-code=1
 
   secrets-history:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9.15.0
-      - uses: gitleaks/gitleaks-action@v2
-        with:
-          args: detect --source . -v --config .gitleaks.toml
+      - run: |
+          curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_x64.tar.gz -o /tmp/gitleaks.tgz
+          tar -xzf /tmp/gitleaks.tgz -C /tmp && sudo install -m 0755 /tmp/gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+      - run: gitleaks detect --source . -v --config .gitleaks.toml --exit-code=1
 
   sast:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - run: docker run --rm -v ${{ github.workspace }}:/src:ro returntocorp/opengrep:latest opengrep scan --config auto /src/apps /src/packages
+      - uses: actions/checkout@v5
+      - run: |
+          curl -fsSL https://raw.githubusercontent.com/opengrep/opengrep/main/install.sh | bash
+          echo "$HOME/.opengrep/cli/latest" >> "$GITHUB_PATH"
+      - run: opengrep scan --config auto --error --severity ERROR apps packages
 
   audit:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
         with:
           version: 9.15.0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
           cache: pnpm
@@ -94,22 +105,46 @@ jobs:
           --health-timeout=5s
           --health-retries=10
     env:
-      APP_DATABASE_URL: postgresql://uhhu_test:uhhu_test_password@127.0.0.1:5432/uhhu_test
-      MIGRATION_DATABASE_URL: postgresql://uhhu_test:uhhu_test_password@127.0.0.1:5432/uhhu_test
+      APP_DATABASE_URL: postgresql://uhhu_app:uhhu_app_password@127.0.0.1:5432/uhhu_test
+      MIGRATION_DATABASE_URL: postgresql://uhhu_migrate:uhhu_migrate_password@127.0.0.1:5432/uhhu_test
       PORT: '3000'
       LOG_LEVEL: info
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
         with:
           version: 9.15.0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
           cache: pnpm
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
+      # Replica o FOUND-02 (dev-docs/05-infra.md §3) no service container:
+      # roles de menor privilegio em vez do superuser nas duas URLs.
+      - run: sudo apt-get install -y -q postgresql-client
+      - run: |
+          PGPASSWORD=uhhu_test_password psql -h 127.0.0.1 -U uhhu_test -d uhhu_test <<'SQL'
+          CREATE ROLE uhhu_migrate LOGIN PASSWORD 'uhhu_migrate_password';
+          CREATE ROLE uhhu_app LOGIN PASSWORD 'uhhu_app_password';
+          GRANT CONNECT ON DATABASE uhhu_test TO uhhu_migrate, uhhu_app;
+          GRANT CREATE ON DATABASE uhhu_test TO uhhu_migrate;
+          GRANT USAGE, CREATE ON SCHEMA public TO uhhu_migrate;
+          GRANT USAGE ON SCHEMA public TO uhhu_app;
+          ALTER DEFAULT PRIVILEGES FOR ROLE uhhu_migrate IN SCHEMA public
+            GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO uhhu_app;
+          ALTER DEFAULT PRIVILEGES FOR ROLE uhhu_migrate IN SCHEMA public
+            GRANT USAGE, SELECT ON SEQUENCES TO uhhu_app;
+          SQL
       - run: pnpm --filter @uhhu/db db:migrate
+      # Grants pos-migrate: schema drizzle nasce no migrate (owner uhhu_migrate).
+      - run: |
+          PGPASSWORD=uhhu_migrate_password psql -h 127.0.0.1 -U uhhu_migrate -d uhhu_test <<'SQL'
+          GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO uhhu_app;
+          GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO uhhu_app;
+          GRANT USAGE ON SCHEMA drizzle TO uhhu_app;
+          GRANT SELECT ON drizzle.__drizzle_migrations TO uhhu_app;
+          SQL
       - run: |
           pnpm --filter @uhhu/core-api start > /tmp/core-api.log 2>&1 &
           echo $! > /tmp/core-api.pid
