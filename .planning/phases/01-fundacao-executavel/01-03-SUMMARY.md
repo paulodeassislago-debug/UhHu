@@ -37,7 +37,7 @@ patterns-established:
   - 'Testes de integracao leem process.env cru (nunca @uhhu/config, que lanca no import) e pulam sem falhar offline'
   - 'Erros Drizzle: percorrer a cadeia `cause` (ECONNREFUSED vive la, nao na mensagem externa)'
 
-requirements-completed: []
+requirements-completed: [FOUND-01, FOUND-04]  # atualizado no checkpoint 2026-09-10 (FOUND-03: só CI verde no push)
 
 # Metrics
 duration: ~10min
@@ -219,3 +219,29 @@ Arquivo a arquivo sobre tudo que o plano criou/alterou: sem autorização/IDOR a
 - `.github/workflows/gates.yml`, `.gitleaks.toml`, `.planning/aceites-seguranca.md`, `vitest.workspace.ts`, `tsconfig.json`, `tests/smoke/boot.test.ts`, `tests/integration/health-pg.test.ts`, `tests/integration/least-privilege.test.ts` existem
 - Commits `4e1b9a8` e `7d68fd2` presentes no histórico (`git log`)
 - Gates re-executados após o último ajuste: `typecheck`/`lint`/`format`/`test` exit 0
+
+## Adendo — execução do checkpoint em 2026-09-10 (automatizável: COMPLETO)
+
+Executado por Hermes (assistente do Paulo, lado VPS/host) + verificado pelo opencode
+(code-server, agora na rede docker `uhhu-dev_default`, PG em `uhhu-dev-postgres-dev-1:5432`
+via `.env.dev.cs`). Repasse original em `founds-01-03-opencode.md` (não commitável).
+
+- PG DEV no ar (postgres 16.14): `db:migrate` exit 0 no host E dentro do container
+- `/health` com PG real: `{"status":"ok","db":"ok","version":"0.1.0-fase1","migrationsApplied":1}`
+- Gates contra PG real (zero skip offline): typecheck/lint exit 0; `pnpm test` 5/5;
+  `test:integration` 3/3; `pnpm audit --audit-level high` exit 0 (3 moderate)
+- `pnpm format`: único `[warn]` é o próprio `founds-01-03-opencode.md` (temporário,
+  fora do commit); `apps packages tests vitest.workspace.ts` 100% limpos
+- Histórico: só placeholders `<senha-forte-do-postgres>`, sem segredo real
+- FOUND-01 (bug real, patch no working tree `packages/db/src/client.ts:31`):
+  `checkDatabase` consultava `__drizzle_migrations` sem schema; o migrator cria em
+  `drizzle.__drizzle_migrations` → /health degradava com PG real. SQL estático,
+  sem interpolação; grants `USAGE/SELECT` no schema `drizzle` para `uhhu_app` aplicados.
+  PROVADO vivo pelo teste de integração (role APP conta migrations) + curl acima.
+- FOUND-02 (setup SQL do checkpoint insuficiente): faltavam `GRANT CREATE ON DATABASE`,
+  `ALTER DEFAULT PRIVILEGES FOR ROLE uhhu_migrate` (+ sequences) e grants retroativos.
+  Proposta: documentar o bloco revisado em `dev-docs/05-infra.md` (pós-OK do Paulo).
+- FOUND-03 (vitest workspace deprecated na v3.2.7): não bloqueante, decisão pendente.
+- Contrato CORE v0.1 APROVADO 1–24 pelo Paulo em 2026-09-10 (critério 4 da fase;
+  schema da Phase 2 liberado). Resta SÓ o humano: branch protection + 1º push
+  (estreia do CI de 6 jobs; Phase 1 fecha no CI verde).

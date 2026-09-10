@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-09-09)
 
 **Core value:** Um pesquisador consegue executar uma busca real (BDTD/CAPES) pelo CORE, com isolamento por usuário, proveniência e histórico.
-**Current focus:** Phase 1: Fundação executável (01-03 tasks 1-2 done — CI+gates+suite; CHECKPOINT humano pendente)
+**Current focus:** Phase 1: Fundação executável (3/3 plans done; contrato aprovado 1–24 em 2026-09-10; commit do checkpoint pronto — fecha no 1º push com CI verde)
 
 ## Current Position
 
 Phase: 1 of 5 (Phase 1 executing — 01-03 checkpoint-pending)
 Plan: 3 of 3 in current phase
-Status: 01-03 tasks 1-2 complete (commits 4e1b9a8, 7d68fd2) — BLOCKED on human checkpoint (task 3: validacao do contrato com Paulo)
-Last activity: 2026-09-09 — 01-03 tasks 1-2 executed (gates.yml 6 jobs fail-closed + suite smoke/integracao + menor privilegio)
+Status: 01-03 COMPLETO 2026-09-10 — contrato aprovado 1–24 pelo Paulo; commit do checkpoint pronto (aguardando push + branch protection + CI verde para fechar a Phase 1)
+Last activity: 2026-09-10 — aprovações do Paulo registradas (contrato 1–24 + composição do push); commit do checkpoint em preparação
 
 Progress: [██░░░░░░░░] 2 plans complete (Phase 1: 2/3)
 
@@ -53,13 +53,10 @@ None yet.
 
 ### Blockers/Concerns
 
-- CHECKPOINT BLOQUEANTE 01-03/task 3: validação do contrato por seções com Paulo pendente (`approved: <seções>`); sem isso Phase 1 não fecha (critério 4) e FOUND-03 segue aberto
-- Branch protection de `main` exigindo `gates` ainda não ativada (item do checkpoint — Settings > Branches, manual)
-- Primeiro push vai estrear `gates.yml` no GitHub Actions (6 jobs nunca executados em CI ainda)
-- Toolchain resolvida neste container (node v22.17.0 + pnpm 9.15.0); sem PostgreSQL/Docker aqui — PG DEV vive na VPS via tailnet (D-06)
-- `db:migrate` aplicado + `/health` com `db: ok` pendentes de `user_setup` na máquina tailnet (comandos em 01-02-SUMMARY.md)
+- CHECKPOINT 01-03/task 3 CONCLUÍDO 2026-09-10 (contrato APROVADO 1–24 pelo Paulo; evidências no adendo do 01-03-SUMMARY; repasse `founds-01-03-opencode.md` incorporado e apagado): PG DEV postgres 16.14 no ar; migrate exit 0 host+container; /health `{"status":"ok","db":"ok","version":"0.1.0-fase1","migrationsApplied":1}`; gates verdes com integração REAL (5/5 + 3/3, zero skip); audit high exit 0; FOUND-01 (schema `drizzle.__drizzle_migrations`) patchado em `packages/db/src/client.ts:31` e provado vivo; FOUND-02 documentado em `dev-docs/05-infra.md` §3; FOUND-01/FOUND-04 complete; code-server na rede `uhhu-dev_default` via `.env.dev.cs` (600, gitignored)
+- RESTAM humano: branch protection exigindo `gates` (Settings > Branches) + 1º push (estreia do CI de 6 jobs; Phase 1 fecha no CI verde)
+- Toolchain reinstalada nesta sessão em `~/toolchains/node-v22.17.0-linux-arm64` (symlinks de `/tmp/opencode` haviam evaporado; `~/.local/share` é root-owned) + `xz-utils` via apt; `corepack prepare pnpm@9.15.0`; PG DEV via rede docker `uhhu-dev_default` (`.env.dev.cs`), sem túnel SSH
 - Vault symlink quebrado aqui — usar `docs/` + `dev-docs/`; sincronizar com vault via bridge
-- Contrato CORE v0.1 ainda rascunho — validar por seções com Paulo antes de congelar schema
 
 ## Deferred Items
 
@@ -71,6 +68,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-09
-Stopped at: 01-03 checkpoint-pending (tasks 1-2 done) — awaiting human: validacao do contrato por secoes + branch protection + VPS migrate/curl
+Last session: 2026-09-10
+Stopped at: Session resumed via /gsd-resume-project — 01-03 checkpoint-pending (tasks 1-2 done) — awaiting human: validacao do contrato por secoes + branch protection + VPS migrate/curl
 Resume file: .planning/phases/01-fundacao-executavel/01-03-PLAN.md (task 3 checkpoint)

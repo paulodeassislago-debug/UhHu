@@ -27,7 +27,9 @@ export interface DatabaseCheck {
 export async function checkDatabase(db: Db): Promise<DatabaseCheck> {
   try {
     await db.execute(sql`select 1`);
-    const rows: unknown = await db.execute(sql`select count(*) as count from __drizzle_migrations`);
+    const rows: unknown = await db.execute(
+      sql`select count(*) as count from drizzle.__drizzle_migrations`,
+    );
     return { ok: true, migrationsApplied: parseCount(rows) };
   } catch {
     return { ok: false, migrationsApplied: 0 };
