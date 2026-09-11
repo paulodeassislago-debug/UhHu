@@ -10,7 +10,7 @@ Da fundação executável (monorepo + PG + gates) ao primeiro vertical slice do 
 - [x] **Phase 2: Plataforma e isolamento** - Auth, sessão, convite, ownerId server-side, convenções REST (COMPLETA 2026-09-11 — 4/4 plans, 18/18 integração, curl ALL PASS, 02-VERIFICATION human_needed→approved via HUMAN-UAT 4/4)
 - [x] **Phase 3: Buscas e adapters** - Searches, runs temporais, BDTD/CAPES, jobs, health (COMPLETA 2026-09-11 — 6/6 plans, 9/9 integração lab + 42/42 suite + curl ALL PASS, checkpoint "approved with capes blocked")
 - [x] **Phase 4: Corpus e exportação** - Dedup, elegibilidade, tags, comparação, CSV/BibTeX/JSON (COMPLETA 2026-09-11 — 5/5 plans, suite 90/90 + curl ALL PASS vivo + checkpoint approved)
-- [ ] **Phase 5: Prova headless** - CLI/MCP mínimos nos mesmos casos de uso + gate de suite
+- [x] **Phase 5: Prova headless** - CLI/MCP mínimos nos mesmos casos de uso + gate de suite (COMPLETA 2026-09-11 — 5/5 plans, mesma capability nos 3 canais sem duplicar regra, prova ALL PASS + IDOR 10/10 + auditoria 0 crit/0 high, verificação 20/20)
 
 ## Phase Details
 

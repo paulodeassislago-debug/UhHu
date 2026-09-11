@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: "Phase 5 COMPLETE 2026-09-11 (5/5 plans: 05-05 approved gate Etapa 2). Awaiting phase close/transition"
-stopped_at: Phase 5 complete — 05-05 done (approved), ready for phase close
-last_updated: "2026-09-11T15:00:00Z"
-last_activity: "2026-09-11 — 05-05 done (prova 3 canais ALL PASS + IDOR 10/10 + auditoria/scanners zerados + checkpoint APPROVED; suite smoke 81/81 revalidado pos-approval)"
+status: "Milestone v1.0 COMPLETE 2026-09-11 (5/5 phases, 23/23 plans, verificação 20/20). Próximo: /gsd-complete-milestone"
+stopped_at: Phase 5 verified and closed — milestone ready to complete
+last_updated: "2026-09-11T16:00:00Z"
+last_activity: "2026-09-11 — Phase 5 CLOSED (review advisory 0 crit, regressão 180/180, sem drift, verificação passed 20/20; CORE-02/CORE-05 complete)"
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 23
   completed_plans: 23
   percent: 100
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-09)
 
 **Core value:** Um pesquisador consegue executar uma busca real (BDTD/CAPES) pelo CORE, com isolamento por usuário, proveniência e histórico.
-**Current focus:** Phase 5: Prova headless (COMPLETE 5/5 — 05-05 approved 2026-09-11; awaiting phase close)
+**Current focus:** Milestone v1.0 COMPLETE — todas as 5 fases fechadas (próximo: /gsd-complete-milestone)
 
 ## Current Position
 
-Phase: 5 of 5 (COMPLETE — 5/5 plans)
+Phase: 5 of 5 (CLOSED — verificação passed 20/20)
 Plan: 5 of 5 in Phase 5 — 05-05 done (checkpoint APPROVED 2026-09-11)
-Status: Phase 5 complete (no flags; sequential mode — no worktree isolation in this runtime). Próximo: phase close/transition (orquestrador)
-Last activity: 2026-09-11 — 05-05 done; gate Etapa 2 aprovado; REQUIREMENTS CORE-02/CORE-05 reconciliação no phase close
+Status: Milestone v1.0 pronto para fechamento. Próximo: /gsd-complete-milestone
+Last activity: 2026-09-11 — Phase 5 fechada (review + regressão + verificação); CORE-02/CORE-05 complete
 
 Progress: [██████████] 23 plans complete (Phase 1: 3/3 + Phase 2: 4/4 + Phase 3: 6/6 + Phase 4: 5/5 + Phase 5: 5/5)
 

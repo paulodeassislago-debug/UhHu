@@ -12,17 +12,17 @@ Um pesquisador consegue executar uma busca real (BDTD/CAPES) pelo CORE, com isol
 
 ### Validated
 
-(None yet — ship to validate. Pesquisa validada em dev-docs/03 + 04 + docs/ existe como insumo, não como entrega.)
+Validated in Phase 5 (2026-09-11): CORE v1 + Lab v1 — fundação, plataforma/isolamento, buscas BDTD/CAPES, corpus/exportação e prova headless REST→CLI→MCP sem duplicar regra (verificação 20/20, suite 180/180, gate Etapa 2 approved).
 
 ### Active
 
-- [ ] Fundação executável: monorepo pnpm/TS strict + PostgreSQL DEV + migrations versionadas
-- [ ] `platform`: contas e-mail+senha (argon2id), sessão segura, convite beta, isolamento `ownerId`/`workspaceId` server-side
-- [ ] Convenções CORE: `/api/v1`, erros, paginação, idempotência, `X-Request-Id`, capabilities versionadas
-- [ ] Lab v1: projetos, buscas declarativas, `SearchRun` temporal, resultados com proveniência, dedup transparente, decisões de elegibilidade, tags, corpus derivado, comparação, exportação CSV/BibTeX/JSON
-- [ ] Adapters BDTD (VuFind) + CAPES (rest/busca) com SourceClient compartilhado, rate limit, circuit breaker, `partial` sem perda
-- [ ] Superfície CLI/MCP mínima chamando os mesmos casos de uso (sem duplicar regra)
-- [ ] Gates desde o primeiro commit: typecheck, lint, testes (incl. IDOR dono/estranho/ID adulterado via curl), Gitleaks (tree+histórico), SAST, `pnpm audit`, integração PG
+- [x] Fundação executável: monorepo pnpm/TS strict + PostgreSQL DEV + migrations versionadas
+- [x] `platform`: contas e-mail+senha (argon2id), sessão segura, convite beta, isolamento `ownerId`/`workspaceId` server-side
+- [x] Convenções CORE: `/api/v1`, erros, paginação, idempotência, `X-Request-Id`, capabilities versionadas
+- [x] Lab v1: projetos, buscas declarativas, `SearchRun` temporal, resultados com proveniência, dedup transparente, decisões de elegibilidade, tags, corpus derivado, comparação, exportação CSV/BibTeX/JSON
+- [x] Adapters BDTD (VuFind) + CAPES (rest/busca) com SourceClient compartilhado, rate limit, circuit breaker, `partial` sem perda
+- [x] Superfície CLI/MCP mínima chamando os mesmos casos de uso (sem duplicar regra)
+- [x] Gates desde o primeiro commit: typecheck, lint, testes (incl. IDOR dono/estranho/ID adulterado via curl), Gitleaks (tree+histórico), SAST, `pnpm audit`, integração PG
 
 ### Out of Scope
 
@@ -83,4 +83,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-09-09 after initialization (ancorado a dev-docs/01–09 + docs/; sem Node/PG no container — toolchain a resolver na Fase 1)*
+*Last updated: 2026-09-11 after Phase 5 close (milestone v1.0: CORE v1 + Lab v1 validados; pendências conhecidas: adendo §10 das 14 extensões transicionais, wiring do nome nu `uhhu`, review advisories H/M — ver 05-REVIEW.md)*

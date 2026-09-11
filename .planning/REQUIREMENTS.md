@@ -25,10 +25,10 @@ Fontes: `dev-docs/07-core-contract.md` §10–13/21, `dev-docs/03-lab-spec-v1.md
 ### Convenções e capabilities headless
 
 - [x] **CORE-01**: REST sob `/api/v1`, JSON UTF-8, datas ISO 8601 UTC, IDs opacos, camelCase público / snake_case banco, paginação `limit`+cursor com `nextCursor`/`hasMore` (validado 2026-09-11 Fase 2)
-- [ ] **CORE-02**: Capabilities executáveis por `execute(name, input, ActorContext)`; HTTP/CLI/MCP adaptam E/S sem duplicar regra de negócio
+- [x] **CORE-02**: Capabilities executáveis por `execute(name, input, ActorContext)`; HTTP/CLI/MCP adaptam E/S sem duplicar regra de negócio (validado 2026-09-11 Fase 5: registry 20 nomes + 14 extensões transicionais fail-closed, 37/6 call-sites execute zero-lib, mesma capability REST→CLI→MCP provada ALL PASS, verificação 20/20)
 - [ ] **CORE-03**: Operações com efeitos externos/jobs aceitam `Idempotency-Key` sem criar duplicatas na janela
 - [ ] **CORE-04**: Jobs longos são observáveis (`queued|running|succeeded|partial|failed|cancelled`), com timeout de fila, retry idempotente e cancelamento; logs sem credenciais
-- [ ] **CORE-05**: CLI opera o CORE por API (nunca PG direto) e MCP expõe só tools semânticas autorizadas, sem SQL genérico nem acesso a tokens/tabelas
+- [x] **CORE-05**: CLI opera o CORE por API (nunca PG direto) e MCP expõe só tools semânticas autorizadas, sem SQL genérico nem acesso a tokens/tabelas (validado 2026-09-11 Fase 5: guard D-55 verde, CLI 22 comandos + MCP 11 tools via PAT, IDOR 10/10, auditoria 0 crit/0 high)
 
 ### Lab — projetos, buscas e execuções
 
@@ -40,12 +40,12 @@ Fontes: `dev-docs/07-core-contract.md` §10–13/21, `dev-docs/03-lab-spec-v1.md
 
 ### Lab — resultados, dedup, corpus e exportação
 
-- [ ] **LAB-06**: Usuário lista resultados por run com paginação/ordenação estável e consulta ficha individual
-- [ ] **LAB-07**: Dedup automático agrupa mesma obra entre fontes (chave canônica título+ano+autores SHA-256; `exact|fuzzy`, fuzzy ≥0.9 com confirmação); card transparente com N origens sem apagar proveniência
-- [ ] **LAB-08**: Usuário registra/edita decisão de elegibilidade por resultado (`eligible|ineligible|undecided` + motivo/tag); corpus é view derivada dos `eligible` e reflete na hora
-- [ ] **LAB-09**: Usuário gerencia tags do projeto (defaults: incluir, excluir, duplicado, indisponível, revisar) e opera decisão no grupo com `duplicate-divergence` por fonte
-- [ ] **LAB-10**: Usuário compara 2+ buscas (totais, anos, fontes, sobreposição) para escolher a estratégia do corpus
-- [ ] **LAB-11**: Usuário exporta seleção ou corpus em CSV (completo+tags+decisão), BibTeX (`@phdthesis`/`@mastersthesis`, `school`=instituição, key slug autor+ano+fonte) e JSON (bruto+proveniência+grupos)
+- [x] **LAB-06**: Usuário lista resultados por run com paginação/ordenação estável e consulta ficha individual (validado 2026-09-11 Fase 4: results cursor + ficha com rawMetadata, regressão no curl-corpus.sh ALL PASS)
+- [x] **LAB-07**: Dedup automático agrupa mesma obra entre fontes (chave canônica título+ano+autores SHA-256; `exact|fuzzy`, fuzzy ≥0.9 com confirmação); card transparente com N origens sem apagar proveniência (validado 2026-09-11: engine + confirm/reject/pin, mapper BDTD real VuFind `bdtd/1.1-fase4`)
+- [x] **LAB-08**: Usuário registra/edita decisão de elegibilidade por resultado (`eligible|ineligible|undecided` + motivo/tag); corpus é view derivada dos `eligible` e reflete na hora (validado 2026-09-11: decisão por grupo + corpus ALL PASS)
+- [x] **LAB-09**: Usuário gerencia tags do projeto (defaults: incluir, excluir, duplicado, indisponível, revisar) e opera decisão no grupo com `duplicate-divergence` por fonte (validado 2026-09-11: 20 its lab-corpus)
+- [x] **LAB-10**: Usuário compara 2+ buscas (totais, anos, fontes, sobreposição) para escolher a estratégia do corpus (validado 2026-09-11: compare 4 blocos sem items, bucket 'desconhecido' p/ ano BDTD null)
+- [x] **LAB-11**: Usuário exporta seleção ou corpus em CSV (completo+tags+decisão), BibTeX (`@phdthesis`/`@mastersthesis`, `school`=instituição, key slug autor+ano+fonte) e JSON (bruto+proveniência+grupos) (validado 2026-09-11: 3 attachments + selection, guards CSV-injection/filename)
 - [ ] **LAB-12**: `GET /lab/sources` e `/lab/sources/:name/health` reportam `ok|degraded|offline`, falhas recentes e challenges
 
 ### Adapters BDTD/CAPES
@@ -102,21 +102,21 @@ Deferred — fora do CORE v1 / Lab v1.
 | PLAT-04 | Phase 2 | Pending |
 | PLAT-05 | Phase 2 | Pending |
 | CORE-01 | Phase 2 | Pending |
-| CORE-02 | Phase 5 | Pending |
+| CORE-02 | Phase 5 | Complete (2026-09-11: registry+execute, 37/6 call-sites, ALL PASS 3 canais, verificação 20/20) |
 | CORE-03 | Phase 3 | Pending |
 | CORE-04 | Phase 3 | Pending |
-| CORE-05 | Phase 5 | Pending |
+| CORE-05 | Phase 5 | Complete (2026-09-11: CLI+MCP via PAT, guard D-55, IDOR 10/10) |
 | LAB-01 | Phase 2 | Pending |
 | LAB-02 | Phase 3 | Pending |
 | LAB-03 | Phase 3 | Pending |
 | LAB-04 | Phase 3 | Pending |
 | LAB-05 | Phase 3 | Pending |
-| LAB-06 | Phase 4 | Pending |
-| LAB-07 | Phase 4 | Pending |
-| LAB-08 | Phase 4 | Pending |
-| LAB-09 | Phase 4 | Pending |
-| LAB-10 | Phase 4 | Pending |
-| LAB-11 | Phase 4 | Pending |
+| LAB-06 | Phase 4 | Complete (2026-09-11: results cursor + ficha rawMetadata, regressão curl ALL PASS) |
+| LAB-07 | Phase 4 | Complete (2026-09-11: engine exact/fuzzy + mapper BDTD real bdtd/1.1-fase4) |
+| LAB-08 | Phase 4 | Complete (2026-09-11: decisão por grupo + corpus reflete na hora) |
+| LAB-09 | Phase 4 | Complete (2026-09-11: tags + divergence, 20 its) |
+| LAB-10 | Phase 4 | Complete (2026-09-11: compare 4 blocos, bucket desconhecido) |
+| LAB-11 | Phase 4 | Complete (2026-09-11: csv/bibtex/json attachment + guards) |
 | LAB-12 | Phase 3 | Pending |
 | SRC-01 | Phase 3 | Pending |
 | SRC-02 | Phase 3 | Pending |
