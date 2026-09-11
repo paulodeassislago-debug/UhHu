@@ -14,8 +14,8 @@ import type { JSX } from 'react';
 import { Button, Text, TextInput, View } from 'react-native';
 import { ZodError } from 'zod';
 import { registerSchema } from '@uhhu/contracts';
-import { ApiError } from '../src/api/client.js';
-import { authApi } from '../src/api/auth.js';
+import { ApiError } from '../src/api/client';
+import { authApi } from '../src/api/auth';
 
 function toSingleParam(value: string | string[] | undefined): string | undefined {
   if (typeof value === 'string') {

@@ -14,8 +14,8 @@ import type {
   ProjectDTO,
   UpdateProjectInput,
 } from '@uhhu/contracts';
-import { apiFetch } from './client.js';
-import type { TokenProvider } from './client.js';
+import { apiFetch } from './client';
+import type { TokenProvider } from './client';
 
 export interface ProjectsRequestOptions {
   getToken?: TokenProvider;

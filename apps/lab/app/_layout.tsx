@@ -1,17 +1,36 @@
-// apps/lab — layout raiz com sessão (06-03 task 1: web cookie; task 2 pluga PAT).
+// apps/lab — layout raiz com sessão + expiração (06-03 UI-08).
 //
-// AuthProvider montado aqui (cookie httpOnly no web; Bearer injetado no nativo
-// via getToken da sessão). Gate de rota é UX (autorização real no CORE):
-// não-autenticado fora de /login|/register → /login; sessão expirada prévia
-// (expired) → /login?expired=1 com aviso, sem decidir privilégio.
-import { Stack, useRouter, useSegments } from 'expo-router';
+// AuthProvider montado aqui (web cookie httpOnly; nativo PAT via getToken da
+// sessão em SecureStore). Gate de rota é UX (autorização real sempre no CORE
+// por request — 401 global nunca decide privilégio):
+// - Não-autenticado fora de /login|/register → /login com `next` interno.
+// - Sessão expirada prévia (expired, 401 com user anterior) →
+//   /login?expired=1&next=<rota atual> com aviso "Sua sessão expirou. Entre
+//   novamente."; após login volta para `next` (projeto atual preservado via
+//   param — nunca perdido; `next` carrega /project/<id> completo).
+// - `next` restrito a rotas internas `/...` via isSafeNext (rejeita `http`,
+//   `//`, `\` — T-06-03-05); fallback /projects.
+import { Stack, usePathname, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
 import type { JSX, ReactNode } from 'react';
-import { AuthProvider, useAuth } from '../src/auth/session.js';
+import { AuthProvider, isSafeNext, useAuth } from '../src/auth/session';
+
+function nextForPathname(pathname: string): string {
+  // Preserva o projeto atual (/project/<id>...) completo; demais rotas caem
+  // para /projects (evita next=/ que voltaria ao index placeholder).
+  if (pathname.startsWith('/project/') && isSafeNext(pathname)) {
+    return pathname;
+  }
+  if (pathname === '/projects' && isSafeNext(pathname)) {
+    return pathname;
+  }
+  return '/projects';
+}
 
 function AuthGate({ children }: { children: ReactNode }): JSX.Element {
   const { user, loading, expired } = useAuth();
   const segments = useSegments();
+  const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
@@ -21,13 +40,14 @@ function AuthGate({ children }: { children: ReactNode }): JSX.Element {
     const first: string | undefined = segments[0];
     const inAuthRoute = first === 'login' || first === 'register';
     if (user === null && !inAuthRoute) {
+      const next = nextForPathname(pathname);
       if (expired) {
-        router.replace({ pathname: '/login', params: { expired: '1' } });
+        router.replace({ pathname: '/login', params: { expired: '1', next } });
       } else {
-        router.replace('/login');
+        router.replace({ pathname: '/login', params: { next } });
       }
     }
-  }, [user, loading, expired, segments, router]);
+  }, [user, loading, expired, segments, pathname, router]);
 
   return <>{children}</>;
 }

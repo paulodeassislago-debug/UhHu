@@ -17,8 +17,8 @@ import type {
   PublicUser,
   RegisterInput,
 } from '@uhhu/contracts';
-import { ApiError, apiFetch } from './client.js';
-import type { TokenProvider } from './client.js';
+import { ApiError, apiFetch } from './client';
+import type { TokenProvider } from './client';
 
 export interface AuthRequestOptions {
   getToken?: TokenProvider;

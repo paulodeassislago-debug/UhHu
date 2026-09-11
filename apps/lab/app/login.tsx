@@ -1,20 +1,25 @@
-// apps/lab — Login web por cookie httpOnly (UI-05 + UI-08, parte web de 06-03).
+// apps/lab — Login nos dois canais (UI-05 + UI-07 + UI-08, 06-03).
 //
-// Delega a useAuth().login → authApi.login (sem fetch direto; web NUNCA chama
-// /api/v1/auth/token — PAT é só nativo em src/auth/pat.ts). Blocos §2: email +
-// senha + entrar + link "tenho convite" → /register. Erro de credencial mostra
-// error.message PT-BR verbatim do envelope + requestId pequeno. Sucesso navega
-// para /projects (ou `next` interno preservado, nunca perdido).
-// Avisos: ?expired=1 → "Sua sessão expirou. Entre novamente."; ?registered=1 →
-// "Conta criada, entre com suas credenciais." (registro por convite).
+// MESMA tela web+nativo (sem telas separadas por plataforma):
+// - Web: useAuth().login → authApi.login (cookie httpOnly; NUNCA chama
+//   /api/v1/auth/token no web).
+// - Nativo: pat.nativeLogin → POST /api/v1/auth/token (PAT por device em
+//   SecureStore) + refresh() para hidratar o user no contexto.
+// Detecção: Platform.OS === 'web' ? session.login (cookie) : pat.nativeLogin.
+// Blocos §2: email + senha + entrar + link "tenho convite" → /register. Erros
+// 401/429 verbatim (credencial genérica; lockout sem retry — T-06-03-01) +
+// requestId pequeno. Sucesso → `next` interno preservado (projeto nunca
+// perdido) ou /projects. Avisos: ?expired=1 → "Sua sessão expirou. Entre
+// novamente."; ?registered=1 → "Conta criada, entre com suas credenciais.".
 
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import type { JSX } from 'react';
-import { Button, Text, TextInput, View } from 'react-native';
+import { Button, Platform, Text, TextInput, View } from 'react-native';
 import { ZodError } from 'zod';
-import { ApiError } from '../src/api/client.js';
-import { isSafeNext, useAuth } from '../src/auth/session.js';
+import { ApiError } from '../src/api/client';
+import { nativeLogin } from '../src/auth/pat';
+import { isSafeNext, useAuth } from '../src/auth/session';
 
 function toSingleParam(value: string | string[] | undefined): string | undefined {
   if (typeof value === 'string') {
@@ -29,7 +34,7 @@ function toSingleParam(value: string | string[] | undefined): string | undefined
 
 export default function LoginScreen(): JSX.Element {
   const router = useRouter();
-  const { login, expired } = useAuth();
+  const { login, refresh, expired } = useAuth();
   const params = useLocalSearchParams<{ expired?: string; next?: string; registered?: string }>();
   const expiredParam = toSingleParam(params.expired);
   const nextParam = toSingleParam(params.next);
@@ -53,7 +58,12 @@ export default function LoginScreen(): JSX.Element {
     setErrorMessage(null);
     setErrorRequestId(null);
     try {
-      await login(email.trim(), password);
+      if (Platform.OS === 'web') {
+        await login(email.trim(), password);
+      } else {
+        await nativeLogin(email.trim(), password);
+        await refresh();
+      }
       router.replace(safeNext);
     } catch (error: unknown) {
       if (error instanceof ApiError) {

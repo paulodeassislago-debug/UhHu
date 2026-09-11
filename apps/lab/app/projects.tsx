@@ -15,9 +15,9 @@ import { useCallback, useEffect, useState } from 'react';
 import type { JSX } from 'react';
 import { Button, Text, View } from 'react-native';
 import type { ProjectDTO } from '@uhhu/contracts';
-import { ApiError } from '../src/api/client.js';
-import { projectsApi } from '../src/api/projects.js';
-import { useAuth } from '../src/auth/session.js';
+import { ApiError } from '../src/api/client';
+import { projectsApi } from '../src/api/projects';
+import { useAuth } from '../src/auth/session';
 
 type LoadState = 'loading' | 'ready' | 'error';
 

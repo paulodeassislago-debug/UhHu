@@ -1,26 +1,31 @@
-// apps/lab — sessão web por cookie httpOnly (UI-05/UI-06, parte web de 06-03).
+// apps/lab — sessão nos dois canais (06-03: web cookie + nativo PAT por device).
 //
 // AuthProvider com estado `{ user, loading, expired }` sobre o client tipado:
-// - `authApi.me()` no mount (credentials:include no web; 401 vira null sem lançar).
-// - `login(email,password)` valida com loginSchema do contracts antes do fetch,
-//   chama authApi.login e em sucesso set user + limpa expired.
-// - `logout()` chama authApi.logout + limpa user; o redirect para /login acontece
-//   via gate de rota em app/_layout.tsx (guards são UX; autorização real no CORE).
+// - `authApi.me()` no mount com getToken da plataforma (web: cookie via
+//   credentials:include; nativo: Bearer via SecureStore; 401 vira null).
+// - `login(email,password)` web valida com loginSchema e chama authApi.login;
+//   no nativo o app/login.tsx chama pat.nativeLogin (POST /api/v1/auth/token)
+//   e depois refresh() — mesmo contexto, sem telas separadas por plataforma.
+// - `logout()` web chama authApi.logout; no nativo chama pat.nativeLogout que
+//   revoga o PAT no servidor E apaga o SecureStore mesmo sem rede. Redirect
+//   para /login via gate em app/_layout.tsx (guards são UX; authZ no CORE).
 // - `expired` indica sessão expirada prévia (401 com user anterior → aviso no
-//   login sem perder o projeto via param `next`; detalhe UI-08 em pat.ts/_layout).
+//   login com `next` preservando o projeto; UI-08).
 // - NUNCA persiste user/privilégio em storage do navegador (só memória React;
 //   o cookie httpOnly fica no navegador gerenciado pelo servidor). Zero
 //   armazenamento web/móvel para role/owner (T-06-03-04); guards são UX.
-// - Web usa SOMENTE cookie: getToken retorna null (sem Bearer). O nativo injeta
-//   PAT via SecureStore em src/auth/secureToken.ts (task 2); este provider expõe
-//   getToken para as telas repassarem a projectsApi/labApi sem fetch direto.
+// - Web usa SOMENTE cookie (getToken null); nativo injeta PAT via SecureStore
+//   em src/auth/secureToken.ts. Telas repassam getToken a projectsApi/labApi.
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { JSX, ReactNode } from 'react';
+import { Platform } from 'react-native';
 import { loginSchema } from '@uhhu/contracts';
 import type { PublicUser } from '@uhhu/contracts';
-import { authApi } from '../api/auth.js';
-import type { TokenProvider } from '../api/client.js';
+import { authApi } from '../api/auth';
+import type { TokenProvider } from '../api/client';
+import { nativeLogout } from './pat';
+import { clearToken, getToken as getStoredPat } from './secureToken';
 
 // next restrito a rotas internas `/...` (T-06-03-05): rejeita `http`, `//`, `\`.
 // Fallback do chamador: /projects.
@@ -57,8 +62,16 @@ export interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-// Web: SOMENTE cookie httpOnly — nenhum Bearer injetado.
+// Web: SOMENTE cookie httpOnly — nenhum Bearer injetado. Nativo: PAT do
+// SecureStore via getter assíncrono injetado no apiFetch.
 const webGetToken: TokenProvider = async () => null;
+
+function getPlatformToken(): TokenProvider {
+  if (Platform.OS === 'web') {
+    return webGetToken;
+  }
+  return getStoredPat;
+}
 
 export function AuthProvider({ children }: { children: ReactNode }): JSX.Element {
   const [user, setUser] = useState<PublicUser | null>(null);
@@ -69,7 +82,8 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     setLoading(true);
     try {
       // authApi.me mapeia 401 → null sem lançar (sessão ausente/expirada).
-      const me: PublicUser | null = await authApi.me();
+      // Web: cookie; nativo: Bearer do SecureStore via getToken.
+      const me: PublicUser | null = await authApi.me({ getToken: getPlatformToken() });
       setUser(me);
       if (me !== null) {
         setExpired(false);
@@ -81,6 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
   }, []);
 
   const login = useCallback(async (email: string, password: string): Promise<PublicUser> => {
+    // Web (cookie). Nativo usa pat.nativeLogin direto no login.tsx + refresh().
     // Validação client-side com as MESMAS regras do servidor (contracts).
     const parsed = loginSchema.parse({ email, password });
     const authed: PublicUser = await authApi.login(parsed);
@@ -91,7 +106,12 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
 
   const logout = useCallback(async (): Promise<void> => {
     try {
-      await authApi.logout();
+      if (Platform.OS === 'web') {
+        await authApi.logout();
+      } else {
+        // Revoga o PAT atual no servidor E apaga o SecureStore local.
+        await nativeLogout();
+      }
     } finally {
       setUser(null);
       setExpired(false);
@@ -99,6 +119,11 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
   }, []);
 
   const markExpired = useCallback((): void => {
+    // 401 global com user prévio → expired + clear user/token, redirect com
+    // aviso via _layout (UI-08). No nativo o token inválido é descartado.
+    if (Platform.OS !== 'web') {
+      void clearToken().catch(() => undefined);
+    }
     setUser(null);
     setExpired(true);
   }, []);
@@ -113,6 +138,8 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     });
   }, [refresh]);
 
+  const platformGetToken = useMemo<TokenProvider>(() => getPlatformToken(), []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
@@ -123,9 +150,9 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
       refresh,
       markExpired,
       clearExpired,
-      getToken: webGetToken,
+      getToken: platformGetToken,
     }),
-    [user, loading, expired, login, logout, refresh, markExpired, clearExpired],
+    [user, loading, expired, login, logout, refresh, markExpired, clearExpired, platformGetToken],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

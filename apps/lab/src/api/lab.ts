@@ -19,8 +19,8 @@ import type {
   SourceHealthDTO,
   UpdateSearchInput,
 } from '@uhhu/contracts';
-import { apiFetch } from './client.js';
-import type { TokenProvider } from './client.js';
+import { apiFetch } from './client';
+import type { TokenProvider } from './client';
 
 export interface LabRequestOptions {
   getToken?: TokenProvider;
