@@ -6,8 +6,9 @@
 
 import Fastify from 'fastify';
 import cookie from '@fastify/cookie';
+import cors from '@fastify/cors';
 import { randomUUID } from 'node:crypto';
-import { env } from '@uhhu/config';
+import { corsAllowedOrigins, env } from '@uhhu/config';
 import { createDb } from '@uhhu/db';
 import { buildEnvelope } from '@uhhu/contracts';
 import { healthRoute } from './health.js';
@@ -38,6 +39,31 @@ const app = Fastify({
 const db = createDb(env.APP_DATABASE_URL);
 
 await app.register(cookie);
+// UI-32 (D-03/D-04, T-06-01-01/T-06-01-04): CORS allowlist EXATA do env,
+// registrada ANTES das rotas. Sem modo espelhado, sem curinga, sem regex
+// espelhada. Sem Origin (curl/server-to-server) → sem ACAO. Origem exata na
+// allowlist → reflete + credentials. Qualquer outra → sem ACAO.
+// CORS NÃO é autenticação: requireAuth continua exigido (cookie httpOnly +
+// Bearer PAT); Vary: Origin via fastify-cors. Env ausente → lista vazia →
+// fail-closed (reflete nenhuma origem).
+await app.register(cors, {
+  origin: (origin, cb) => {
+    if (origin === undefined) {
+      cb(null, false);
+      return;
+    }
+    const allowlist = corsAllowedOrigins();
+    if (allowlist.includes(origin)) {
+      cb(null, true);
+      return;
+    }
+    cb(null, false);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id', 'Idempotency-Key'],
+  maxAge: 600,
+});
 // Plugins chamados direto no root (global): via `app.register` ficariam
 // encapsulados e nao valeriam para as rotas irmas; direto no root o
 // onRequest/setErrorHandler/preHandler valem para tudo (ver SUMMARY 02-04).

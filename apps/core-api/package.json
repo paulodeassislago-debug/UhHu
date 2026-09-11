@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",
+    "@fastify/cors": "^11.3.0",
     "@fastify/rate-limit": "^10.3.0",
     "@uhhu/config": "workspace:*",
     "@uhhu/contracts": "workspace:*",
