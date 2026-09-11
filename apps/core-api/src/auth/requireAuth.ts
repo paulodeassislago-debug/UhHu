@@ -65,6 +65,10 @@ function toActorRole(role: string): ActorContext['role'] {
 
 // Raw do PAT: hex de 32 bytes (mesmo formato de newOpaqueToken). Formato
 // invalido cai no mesmo 401 generico, sem mensagem distinta (D-63/T-05-02-ENUM).
+// M-03: qualquer Authorization que nomeie o esquema Bearer (case-insensitive,
+// RFC 9110 — inclui `Bearer` sem token) e tentativa Bearer: malformado vira
+// 401 uniforme sem fallback para cookie. Outro esquema (Basic, etc.) retorna
+// null e segue para o cookie.
 const BEARER_PATTERN = /^Bearer ([a-f0-9]{64})$/;
 
 function readBearerAttempt(request: FastifyRequest): string | null | 'invalid' {
@@ -72,12 +76,15 @@ function readBearerAttempt(request: FastifyRequest): string | null | 'invalid' {
   if (header === undefined) {
     return null;
   }
-  if (typeof header !== 'string' || !header.startsWith('Bearer ')) {
+  if (typeof header !== 'string') {
     return null;
   }
-  const match = BEARER_PATTERN.exec(header);
-  const token = match?.[1];
-  return token === undefined ? 'invalid' : token;
+  if (/^bearer/i.test(header)) {
+    const match = BEARER_PATTERN.exec(header);
+    const token = match?.[1];
+    return token === undefined ? 'invalid' : token;
+  }
+  return null;
 }
 
 export function requireAuth(db: Db) {

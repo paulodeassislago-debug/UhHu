@@ -452,6 +452,39 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
       expect(errorOf(unknown.json()).message).toBe(errorOf(none.json()).message);
     });
 
+    it('M-03: Bearer malformado nao cai para cookie (401 uniforme); Basic cai', async () => {
+      if (!pgAvailable || app === undefined || db === undefined) {
+        console.warn('[pat-auth] PG inalcançavel — teste pulado (offline).');
+        return;
+      }
+      const { cookieA } = await bootstrapTwoUsers(app);
+      const cookieHeader = `${COOKIE_NAME}=${cookieA}`;
+      // Variantes malformadas do esquema Bearer + cookie valido: 401, sem
+      // fallback para o cookie (antes `Bearer` sem token caia no cookie).
+      for (const authorization of [
+        'Bearer',
+        'Bearer ',
+        'Bearer xyz-curto',
+        'bearer xyz-curto',
+        'BEARER',
+      ]) {
+        const res = await app.inject({
+          method: 'GET',
+          url: '/api/v1/auth/me',
+          headers: { authorization, cookie: cookieHeader },
+        });
+        expect(res.statusCode).toBe(401);
+        expect(errorOf(res.json() as unknown).code).toBe('UNAUTHENTICATED');
+      }
+      // Esquema nao-Bearer + cookie valido: segue para o cookie (200).
+      const basic = await app.inject({
+        method: 'GET',
+        url: '/api/v1/auth/me',
+        headers: { authorization: 'Basic dXNlcjpwYXNz', cookie: cookieHeader },
+      });
+      expect(basic.statusCode).toBe(200);
+    });
+
     it('DELETE /auth/tokens/:id revoga; Bearer seguinte 401 e cookie intacto', async () => {
       if (!pgAvailable || app === undefined || db === undefined) {
         console.warn('[pat-auth] PG inalcançavel — teste pulado (offline).');
