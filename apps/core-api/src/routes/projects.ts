@@ -1,11 +1,16 @@
 // apps/core-api — rotas /api/v1/projects/* (LAB-01, PLAT-03, CORE-01).
 //
 // `buildProjectRoutes(app, db)` registra o plugin sem tocar no boot (wiring e
-// do 02-04). `ownerId` vem SEMPRE de `request.actor` (sessao via requireAuth);
-// body/query NUNCA fornecem owner. Fora do escopo -> 404 NOT_FOUND identico a
-// inexistente ("Recurso não encontrado.", sem distinguir motivo). Arquivar =
-// PATCH { status: 'archived' }; reativar = PATCH { status: 'active' } (D-24).
-// Excluir exige ?confirm=true (400 CONFIRMATION_REQUIRED sem ele).
+// do 02-04). `ownerId` vem SEMPRE de `request.actor` (sessao via requireAuth
+// ou Bearer PAT); body/query NUNCA fornecem owner. Fora do escopo -> 404
+// NOT_FOUND identico a inexistente ("Recurso não encontrado.", sem distinguir
+// motivo). Arquivar = PATCH { status: 'archived' }; reativar = PATCH
+// { status: 'active' } (D-24). Excluir exige ?confirm=true (400
+// CONFIRMATION_REQUIRED sem ele).
+//
+// Adaptadores finos sobre execute() (05-02, CORE-02): casos de uso via
+// `../capabilities.js` (acesso direto ao `lib` proibido aqui). Status e mensagens identicos aos de
+// antes do refactor.
 
 import { randomUUID } from 'node:crypto';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
@@ -15,17 +20,11 @@ import {
   createProjectSchema,
   paginationQuerySchema,
   updateProjectSchema,
+  type ProjectDTO,
 } from '@uhhu/contracts';
 import type { Db } from '@uhhu/db';
 import { requireAuth } from '../auth/requireAuth.js';
-import {
-  createProject,
-  deleteProjectForActor,
-  getProjectForActor,
-  listProjectsForActor,
-  updateProjectForActor,
-  type ListProjectsStatus,
-} from '../lib/projects.js';
+import { buildExecutor, callCapability, type ListProjectsResult } from '../capabilities.js';
 
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9_.:~-]{1,128}$/;
 
@@ -77,6 +76,8 @@ function withClampedLimit(query: unknown): unknown {
 }
 
 export async function buildProjectRoutes(app: FastifyInstance, db: Db): Promise<void> {
+  const execute = buildExecutor(db);
+
   app.post(
     '/api/v1/projects',
     { preHandler: requireAuth(db) },
@@ -95,8 +96,15 @@ export async function buildProjectRoutes(app: FastifyInstance, db: Db): Promise<
           .send(buildEnvelope('VALIDATION_ERROR', requestId, parsed.error.flatten()));
         return;
       }
-      const dto = await createProject(db, actor, parsed.data);
-      await reply.code(201).send(dto);
+      const got = await callCapability<ProjectDTO>(
+        execute('platform.project.create', parsed.data, actor),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
+      await reply.code(201).send(got.value);
     },
   );
 
@@ -118,13 +126,19 @@ export async function buildProjectRoutes(app: FastifyInstance, db: Db): Promise<
           .send(buildEnvelope('VALIDATION_ERROR', requestId, parsed.error.flatten()));
         return;
       }
-      const status: ListProjectsStatus = parsed.data.status;
-      const result = await listProjectsForActor(db, actor, {
-        limit: parsed.data.limit,
-        cursor: parsed.data.cursor,
-        status,
-      });
-      await reply.code(200).send({ items: result.items, page: result.page });
+      const got = await callCapability<ListProjectsResult>(
+        execute(
+          'platform.project.list',
+          { limit: parsed.data.limit, cursor: parsed.data.cursor, status: parsed.data.status },
+          actor,
+        ),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
+      await reply.code(200).send({ items: got.value.items, page: got.value.page });
     },
   );
 
@@ -144,12 +158,19 @@ export async function buildProjectRoutes(app: FastifyInstance, db: Db): Promise<
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      const dto = await getProjectForActor(db, actor, parsed.data.id);
-      if (dto === null) {
+      const got = await callCapability<ProjectDTO | null>(
+        execute('platform.project.get', { id: parsed.data.id }, actor),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
+      if (got.value === null) {
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      await reply.code(200).send(dto);
+      await reply.code(200).send(got.value);
     },
   );
 
@@ -176,12 +197,19 @@ export async function buildProjectRoutes(app: FastifyInstance, db: Db): Promise<
           .send(buildEnvelope('VALIDATION_ERROR', requestId, body.error.flatten()));
         return;
       }
-      const dto = await updateProjectForActor(db, actor, params.data.id, body.data);
-      if (dto === null) {
+      const got = await callCapability<ProjectDTO | null>(
+        execute('platform.project.update', { id: params.data.id, patch: body.data }, actor),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
+      if (got.value === null) {
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      await reply.code(200).send(dto);
+      await reply.code(200).send(got.value);
     },
   );
 
@@ -207,8 +235,15 @@ export async function buildProjectRoutes(app: FastifyInstance, db: Db): Promise<
         await reply.code(400).send(buildEnvelope('CONFIRMATION_REQUIRED', requestId, {}));
         return;
       }
-      const removed = await deleteProjectForActor(db, actor, params.data.id);
-      if (!removed) {
+      const got = await callCapability<boolean>(
+        execute('platform.project.delete', { id: params.data.id }, actor),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
+      if (!got.value) {
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }

@@ -3,9 +3,13 @@
 // `buildLabRoutes(app, db)` registra o plugin sem tocar no boot (o wiring vive
 // no index.ts, ao lado de auth/projects, com o mesmo db único uhhu_app). TODA
 // rota exige `requireAuth(db)`; `ownerId` vem SEMPRE de `request.actor`
-// (sessão via cookie), nunca do body/query. Fora do escopo → 404 NOT_FOUND
-// idêntico a inexistente (inclui jobs). Rotas fora deste slice caem no
-// notFoundHandler global — 404 natural, sem stub.
+// (sessão via cookie ou Bearer PAT), nunca do body/query. Fora do escopo →
+// 404 NOT_FOUND idêntico a inexistente (inclui jobs). Rotas fora deste slice
+// caem no notFoundHandler global — 404 natural, sem stub.
+//
+// Adaptadores finos sobre execute() (05-02, CORE-02): casos de uso via
+// `../capabilities.js` (registry §10 + extensoes 05-02; acesso direto ao
+// `lib` proibido aqui). Status e mensagens identicos aos de antes do refactor.
 //
 // Semântica de POST .../runs (D-28/D-30/D-37/D-39):
 // - concluiu dentro de 25s → 201 com o SearchRunDTO (QUALQUER status final,
@@ -36,56 +40,32 @@ import {
   pinInputSchema,
   resultsQuerySchema,
   updateSearchSchema,
-  type CorpusEntryDTO,
+  type CompareDTO,
+  type DedupGroupDTO,
   type JobDTO,
+  type ProjectDTO,
+  type ResultDTO,
+  type SearchDTO,
   type SearchRunDTO,
+  type SourceHealthDTO,
 } from '@uhhu/contracts';
+import type { SourceRegistryEntry } from '@uhhu/integrations';
 import type { Db } from '@uhhu/db';
-import { computeSourceHealth, listSources } from '@uhhu/integrations';
 import { requireAuth } from '../auth/requireAuth.js';
-import { getProjectForActor } from '../lib/projects.js';
 import {
-  createSearchForActor,
-  deleteSearchForActor,
-  getResultForActor,
-  getRunForActor,
-  getSearchForActor,
-  listResultsForActor,
-  listRunsForActor,
-  listSearchesForActor,
-  updateSearchForActor,
-} from '../lib/searches.js';
-import {
-  cancelRunForActor,
-  executeSearchRun,
-  IdempotencyConflictError,
-  RunRateLimitedError,
-  SourceDisabledError,
+  buildExecutor,
+  callCapability,
+  sendExport,
+  toHttpError,
+  type CancelRunResult,
+  type CorpusListResult,
   type ExecuteSearchRunResult,
-} from '../lib/searchRuns.js';
-import {
-  attachTagForActor,
-  clearPinForActor,
-  compareSearchesForActor,
-  computeDedupGroupsForActor,
-  confirmGroupForActor,
-  createTagForActor,
-  detachTagForActor,
-  ensureDefaultTags,
-  EXPORT_MAX_GROUPS,
-  getCorpusForActor,
-  getExportProvenanceForActor,
-  listExportMembersForActor,
-  listTagsForActor,
-  rejectGroupForActor,
-  resolveSelectionGroupsForActor,
-  setDivergenceForActor,
-  setGroupDecisionForActor,
-  setPinForActor,
-  type ExportMemberRaw,
-  type ExportProvenance,
-} from '../lib/corpus.js';
-import { exportFilename, toBibTeX, toCSV, toExportJSON } from '../lib/exports.js';
+  type ExportAssembly,
+  type ListResultsResult,
+  type ListRunsResult,
+  type ListSearchesResult,
+  type ProjectTag,
+} from '../capabilities.js';
 
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9_.:~-]{1,128}$/;
 
@@ -223,58 +203,9 @@ function toJobDTO(run: SearchRunDTO): JobDTO {
   };
 }
 
-async function replyRunExecutionError(
-  reply: FastifyReply,
-  requestId: string,
-  error: unknown,
-): Promise<void> {
-  if (error instanceof SourceDisabledError) {
-    await reply.code(400).send(buildEnvelope('SOURCE_DISABLED', requestId, {}));
-    return;
-  }
-  if (error instanceof IdempotencyConflictError) {
-    await reply.code(422).send(buildEnvelope('IDEMPOTENCY_CONFLICT', requestId, {}));
-    return;
-  }
-  if (error instanceof RunRateLimitedError) {
-    await reply.code(429).send(buildEnvelope('RATE_LIMITED', requestId, {}));
-    return;
-  }
-  throw error;
-}
-
-// Exportacao (D-50..D-53): attachment com filename ASCII + 3 content-types.
-// Serializadores puros de '../lib/exports.js' (guards 04-01); a rota so
-// resolve escopo + embargo DoS (1000 grupos) + headers.
-async function sendExport(
-  reply: FastifyReply,
-  projectId: string,
-  projectTitle: string,
-  format: 'csv' | 'bibtex' | 'json',
-  entries: CorpusEntryDTO[],
-  extra: { members: ExportMemberRaw[]; provenance: ExportProvenance },
-): Promise<void> {
-  const date = new Date().toISOString().slice(0, 10);
-  if (format === 'csv') {
-    reply.header('Content-Disposition', `attachment; filename="${exportFilename(projectTitle, date, 'csv')}"`);
-    reply.type('text/csv; charset=utf-8');
-    await reply.send(toCSV(entries));
-    return;
-  }
-  if (format === 'bibtex') {
-    reply.header('Content-Disposition', `attachment; filename="${exportFilename(projectTitle, date, 'bib')}"`);
-    reply.type('application/x-bibtex; charset=utf-8');
-    await reply.send(toBibTeX(entries));
-    return;
-  }
-  reply.header('Content-Disposition', `attachment; filename="${exportFilename(projectTitle, date, 'json')}"`);
-  reply.type('application/json; charset=utf-8');
-  await reply.send(
-    toExportJSON(projectId, entries, { members: extra.members, provenance: extra.provenance }),
-  );
-}
-
 export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void> {
+  const execute = buildExecutor(db);
+
   app.post(
     '/api/v1/lab/searches',
     { preHandler: requireAuth(db) },
@@ -293,12 +224,19 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
           .send(buildEnvelope('VALIDATION_ERROR', requestId, parsed.error.flatten()));
         return;
       }
-      const dto = await createSearchForActor(db, actor, parsed.data);
-      if (dto === null) {
+      const got = await callCapability<SearchDTO | null>(
+        execute('lab.search.create', parsed.data, actor),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
+      if (got.value === null) {
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      await reply.code(201).send(dto);
+      await reply.code(201).send(got.value);
     },
   );
 
@@ -320,16 +258,35 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
           .send(buildEnvelope('VALIDATION_ERROR', requestId, parsed.error.flatten()));
         return;
       }
-      const project = await getProjectForActor(db, actor, parsed.data.projectId);
-      if (project === null) {
+      const scoped = await callCapability<ProjectDTO | null>(
+        execute('platform.project.get', { id: parsed.data.projectId }, actor),
+        reply,
+        requestId,
+      );
+      if (scoped.replied) {
+        return;
+      }
+      if (scoped.value === null) {
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      const result = await listSearchesForActor(db, actor, parsed.data.projectId, {
-        limit: parsed.data.limit,
-        cursor: parsed.data.cursor,
-      });
-      await reply.code(200).send({ items: result.items, page: result.page });
+      const got = await callCapability<ListSearchesResult>(
+        execute(
+          'lab.search.list',
+          {
+            projectId: parsed.data.projectId,
+            limit: parsed.data.limit,
+            cursor: parsed.data.cursor,
+          },
+          actor,
+        ),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
+      await reply.code(200).send({ items: got.value.items, page: got.value.page });
     },
   );
 
@@ -349,12 +306,19 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      const dto = await getSearchForActor(db, actor, parsed.data.searchId);
-      if (dto === null) {
+      const got = await callCapability<SearchDTO | null>(
+        execute('lab.search.get', { id: parsed.data.searchId }, actor),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
+      if (got.value === null) {
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      await reply.code(200).send(dto);
+      await reply.code(200).send(got.value);
     },
   );
 
@@ -381,12 +345,19 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
           .send(buildEnvelope('VALIDATION_ERROR', requestId, body.error.flatten()));
         return;
       }
-      const dto = await updateSearchForActor(db, actor, params.data.searchId, body.data);
-      if (dto === null) {
+      const got = await callCapability<SearchDTO | null>(
+        execute('lab.search.update', { id: params.data.searchId, patch: body.data }, actor),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
+      if (got.value === null) {
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      await reply.code(200).send(dto);
+      await reply.code(200).send(got.value);
     },
   );
 
@@ -412,8 +383,15 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
         await reply.code(400).send(buildEnvelope('CONFIRMATION_REQUIRED', requestId, {}));
         return;
       }
-      const removed = await deleteSearchForActor(db, actor, params.data.searchId);
-      if (!removed) {
+      const got = await callCapability<boolean>(
+        execute('lab.search.delete', { id: params.data.searchId }, actor),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
+      if (!got.value) {
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
@@ -443,9 +421,11 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
         return;
       }
       const searchId = params.data.searchId;
-      const execPromise = executeSearchRun(db, actor, searchId, {
-        ...(idempotencyKey === null ? {} : { idempotencyKey }),
-      });
+      const execPromise = execute(
+        'lab.search.execute',
+        { searchId, ...(idempotencyKey === null ? {} : { idempotencyKey }) },
+        actor,
+      ) as Promise<ExecuteSearchRunResult | null>;
       let timer: ReturnType<typeof setTimeout> | undefined = undefined;
       const timeoutPromise = new Promise<typeof SYNC_TIMEOUT>((resolve) => {
         timer = setTimeout(() => resolve(SYNC_TIMEOUT), SYNC_TIMEOUT_MS);
@@ -457,7 +437,11 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
         if (timer !== undefined) {
           clearTimeout(timer);
         }
-        await replyRunExecutionError(reply, requestId, error);
+        const mapped = toHttpError(error, requestId);
+        if (mapped === null) {
+          throw error;
+        }
+        await reply.code(mapped.status).send(mapped.envelope);
         return;
       }
       if (timer !== undefined) {
@@ -472,8 +456,15 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
           () => undefined,
           (err: unknown) => request.log.warn({ err, requestId }, 'background search run failed'),
         );
-        const history = await listRunsForActor(db, actor, searchId, { limit: 1 });
-        const current = history.items[0];
+        const history = await callCapability<ListRunsResult>(
+          execute('lab.run.list', { searchId, limit: 1 }, actor),
+          reply,
+          requestId,
+        );
+        if (history.replied) {
+          return;
+        }
+        const current = history.value.items[0];
         if (current === undefined) {
           // Corrida extrema (linha ainda não visível): aguarda o desfecho
           // real em vez de inventar um 202 sem run.
@@ -491,7 +482,11 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
             await reply.code(201).send(late.run);
             return;
           } catch (error) {
-            await replyRunExecutionError(reply, requestId, error);
+            const mapped = toHttpError(error, requestId);
+            if (mapped === null) {
+              throw error;
+            }
+            await reply.code(mapped.status).send(mapped.envelope);
             return;
           }
         }
@@ -528,8 +523,15 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      const search = await getSearchForActor(db, actor, params.data.searchId);
-      if (search === null) {
+      const scoped = await callCapability<SearchDTO | null>(
+        execute('lab.search.get', { id: params.data.searchId }, actor),
+        reply,
+        requestId,
+      );
+      if (scoped.replied) {
+        return;
+      }
+      if (scoped.value === null) {
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
@@ -540,11 +542,19 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
           .send(buildEnvelope('VALIDATION_ERROR', requestId, parsed.error.flatten()));
         return;
       }
-      const result = await listRunsForActor(db, actor, params.data.searchId, {
-        limit: parsed.data.limit,
-        cursor: parsed.data.cursor,
-      });
-      await reply.code(200).send({ items: result.items, page: result.page });
+      const got = await callCapability<ListRunsResult>(
+        execute(
+          'lab.run.list',
+          { searchId: params.data.searchId, limit: parsed.data.limit, cursor: parsed.data.cursor },
+          actor,
+        ),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
+      await reply.code(200).send({ items: got.value.items, page: got.value.page });
     },
   );
 
@@ -564,12 +574,19 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      const dto = await getRunForActor(db, actor, parsed.data.runId);
-      if (dto === null) {
+      const got = await callCapability<SearchRunDTO | null>(
+        execute('lab.run.get', { id: parsed.data.runId }, actor),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
+      if (got.value === null) {
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      await reply.code(200).send(dto);
+      await reply.code(200).send(got.value);
     },
   );
 
@@ -589,7 +606,15 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      const run = await getRunForActor(db, actor, params.data.runId);
+      const scoped = await callCapability<SearchRunDTO | null>(
+        execute('lab.run.get', { id: params.data.runId }, actor),
+        reply,
+        requestId,
+      );
+      if (scoped.replied) {
+        return;
+      }
+      const run = scoped.value;
       if (run === null) {
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
@@ -601,14 +626,22 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
           .send(buildEnvelope('VALIDATION_ERROR', requestId, parsed.error.flatten()));
         return;
       }
-      const result = await listResultsForActor(db, actor, params.data.runId, {
-        limit: parsed.data.limit,
-        cursor: parsed.data.cursor,
-      });
+      const got = await callCapability<ListResultsResult>(
+        execute(
+          'lab.run.results.list',
+          { runId: params.data.runId, limit: parsed.data.limit, cursor: parsed.data.cursor },
+          actor,
+        ),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
       await reply.code(200).send({
-        items: result.items,
-        page: result.page,
-        total: result.total,
+        items: got.value.items,
+        page: got.value.page,
+        total: got.value.total,
         newCount: run.metrics.newCount,
       });
     },
@@ -630,12 +663,19 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      const dto = await getResultForActor(db, actor, parsed.data.resultId);
-      if (dto === null) {
+      const got = await callCapability<ResultDTO | null>(
+        execute('lab.result.get', { id: parsed.data.resultId }, actor),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
+      if (got.value === null) {
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      await reply.code(200).send(dto);
+      await reply.code(200).send(got.value);
     },
   );
 
@@ -650,7 +690,15 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
         await reply.code(401).send(buildEnvelope('UNAUTHENTICATED', requestId, {}));
         return;
       }
-      await reply.code(200).send(listSources());
+      const got = await callCapability<SourceRegistryEntry[]>(
+        execute('lab.source.list', {}, actor),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
+      await reply.code(200).send(got.value);
     },
   );
 
@@ -670,8 +718,15 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      const health = await computeSourceHealth(db, parsed.data.sourceName);
-      await reply.code(200).send(health);
+      const got = await callCapability<SourceHealthDTO>(
+        execute('lab.source.health', { source: parsed.data.sourceName }, actor),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
+      await reply.code(200).send(got.value);
     },
   );
 
@@ -691,12 +746,19 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      const run = await getRunForActor(db, actor, parsed.data.jobId);
-      if (run === null) {
+      const got = await callCapability<SearchRunDTO | null>(
+        execute('lab.run.get', { id: parsed.data.jobId }, actor),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
+      if (got.value === null) {
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      await reply.code(200).send(toJobDTO(run));
+      await reply.code(200).send(toJobDTO(got.value));
     },
   );
 
@@ -716,12 +778,19 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      const outcome = await cancelRunForActor(db, actor, parsed.data.jobId);
-      if (outcome === null) {
+      const got = await callCapability<CancelRunResult | null>(
+        execute('lab.run.cancel', { id: parsed.data.jobId }, actor),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
+      if (got.value === null) {
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      await reply.code(200).send(outcome.run);
+      await reply.code(200).send(got.value.run);
     },
   );
 
@@ -750,12 +819,27 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
           .send(buildEnvelope('VALIDATION_ERROR', requestId, parsed.error.flatten()));
         return;
       }
-      const project = await getProjectForActor(db, actor, params.data.projectId);
-      if (project === null) {
+      const scoped = await callCapability<ProjectDTO | null>(
+        execute('platform.project.get', { id: params.data.projectId }, actor),
+        reply,
+        requestId,
+      );
+      if (scoped.replied) {
+        return;
+      }
+      if (scoped.value === null) {
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      const groups = await computeDedupGroupsForActor(db, actor, params.data.projectId);
+      const grouped = await callCapability<DedupGroupDTO[]>(
+        execute('lab.group.list', { projectId: params.data.projectId }, actor),
+        reply,
+        requestId,
+      );
+      if (grouped.replied) {
+        return;
+      }
+      const groups = grouped.value;
       const filtered =
         parsed.data.status === undefined
           ? groups
@@ -805,12 +889,19 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      const dto = await confirmGroupForActor(db, actor, parsed.data.groupId);
-      if (dto === null) {
+      const got = await callCapability<DedupGroupDTO | null>(
+        execute('lab.group.confirm', { id: parsed.data.groupId }, actor),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
+      if (got.value === null) {
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      await reply.code(200).send(dto);
+      await reply.code(200).send(got.value);
     },
   );
 
@@ -830,12 +921,19 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      const singles = await rejectGroupForActor(db, actor, parsed.data.groupId);
-      if (singles === null) {
+      const got = await callCapability<DedupGroupDTO[] | null>(
+        execute('lab.group.reject', { id: parsed.data.groupId }, actor),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
+      if (got.value === null) {
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      await reply.code(200).send({ singles });
+      await reply.code(200).send({ singles: got.value });
     },
   );
 
@@ -862,12 +960,23 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
           .send(buildEnvelope('VALIDATION_ERROR', requestId, body.error.flatten()));
         return;
       }
-      const dto = await setGroupDecisionForActor(db, actor, params.data.groupId, body.data);
-      if (dto === null) {
+      const got = await callCapability<DedupGroupDTO | null>(
+        execute(
+          'lab.result.decision.update',
+          { groupId: params.data.groupId, input: body.data },
+          actor,
+        ),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
+      if (got.value === null) {
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      await reply.code(200).send(dto);
+      await reply.code(200).send(got.value);
     },
   );
 
@@ -887,17 +996,31 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      const ensured = await ensureDefaultTags(db, actor, parsed.data.projectId);
-      if (ensured === null) {
+      const ensured = await callCapability<ProjectTag[] | null>(
+        execute('lab.tag.ensure', { projectId: parsed.data.projectId }, actor),
+        reply,
+        requestId,
+      );
+      if (ensured.replied) {
+        return;
+      }
+      if (ensured.value === null) {
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      const tags = await listTagsForActor(db, actor, parsed.data.projectId);
-      if (tags === null) {
+      const got = await callCapability<ProjectTag[] | null>(
+        execute('lab.tag.list', { projectId: parsed.data.projectId }, actor),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
+      if (got.value === null) {
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      await reply.code(200).send(tags);
+      await reply.code(200).send(got.value);
     },
   );
 
@@ -924,17 +1047,31 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
           .send(buildEnvelope('VALIDATION_ERROR', requestId, body.error.flatten()));
         return;
       }
-      const ensured = await ensureDefaultTags(db, actor, params.data.projectId);
-      if (ensured === null) {
+      const ensured = await callCapability<ProjectTag[] | null>(
+        execute('lab.tag.ensure', { projectId: params.data.projectId }, actor),
+        reply,
+        requestId,
+      );
+      if (ensured.replied) {
+        return;
+      }
+      if (ensured.value === null) {
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      const tag = await createTagForActor(db, actor, params.data.projectId, body.data);
-      if (tag === null) {
+      const got = await callCapability<ProjectTag | null>(
+        execute('lab.tag.create', { projectId: params.data.projectId, input: body.data }, actor),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
+      if (got.value === null) {
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      await reply.code(201).send(tag);
+      await reply.code(201).send(got.value);
     },
   );
 
@@ -961,12 +1098,23 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
           .send(buildEnvelope('VALIDATION_ERROR', requestId, body.error.flatten()));
         return;
       }
-      const dto = await attachTagForActor(db, actor, params.data.groupId, body.data.tagId);
-      if (dto === null) {
+      const got = await callCapability<DedupGroupDTO | null>(
+        execute(
+          'lab.group.tag.attach',
+          { groupId: params.data.groupId, tagId: body.data.tagId },
+          actor,
+        ),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
+      if (got.value === null) {
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      await reply.code(200).send(dto);
+      await reply.code(200).send(got.value);
     },
   );
 
@@ -986,8 +1134,19 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      const removed = await detachTagForActor(db, actor, parsed.data.groupId, parsed.data.tagId);
-      if (!removed) {
+      const got = await callCapability<boolean>(
+        execute(
+          'lab.group.tag.detach',
+          { groupId: parsed.data.groupId, tagId: parsed.data.tagId },
+          actor,
+        ),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
+      if (!got.value) {
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
@@ -1018,12 +1177,23 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
           .send(buildEnvelope('VALIDATION_ERROR', requestId, body.error.flatten()));
         return;
       }
-      const dto = await setDivergenceForActor(db, actor, params.data.groupId, body.data);
-      if (dto === null) {
+      const got = await callCapability<DedupGroupDTO | null>(
+        execute(
+          'lab.result.duplicate.diverge',
+          { groupId: params.data.groupId, input: body.data },
+          actor,
+        ),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
+      if (got.value === null) {
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      await reply.code(200).send(dto);
+      await reply.code(200).send(got.value);
     },
   );
 
@@ -1050,12 +1220,19 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
           .send(buildEnvelope('VALIDATION_ERROR', requestId, body.error.flatten()));
         return;
       }
-      const dto = await setPinForActor(db, actor, params.data.groupId, body.data);
-      if (dto === null) {
+      const got = await callCapability<DedupGroupDTO | null>(
+        execute('lab.group.pin.set', { groupId: params.data.groupId, input: body.data }, actor),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
+      if (got.value === null) {
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      await reply.code(200).send(dto);
+      await reply.code(200).send(got.value);
     },
   );
 
@@ -1075,8 +1252,15 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      const dto = await clearPinForActor(db, actor, parsed.data.groupId);
-      if (dto === null) {
+      const got = await callCapability<DedupGroupDTO | null>(
+        execute('lab.group.pin.clear', { id: parsed.data.groupId }, actor),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
+      if (got.value === null) {
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
@@ -1107,16 +1291,35 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
           .send(buildEnvelope('VALIDATION_ERROR', requestId, parsed.error.flatten()));
         return;
       }
-      const project = await getProjectForActor(db, actor, params.data.projectId);
-      if (project === null) {
+      const scoped = await callCapability<ProjectDTO | null>(
+        execute('platform.project.get', { id: params.data.projectId }, actor),
+        reply,
+        requestId,
+      );
+      if (scoped.replied) {
+        return;
+      }
+      if (scoped.value === null) {
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      const result = await getCorpusForActor(db, actor, params.data.projectId, {
-        limit: parsed.data.limit,
-        cursor: parsed.data.cursor,
-      });
-      await reply.code(200).send({ items: result.items, page: result.page });
+      const got = await callCapability<CorpusListResult>(
+        execute(
+          'lab.corpus.get',
+          {
+            projectId: params.data.projectId,
+            limit: parsed.data.limit,
+            cursor: parsed.data.cursor,
+          },
+          actor,
+        ),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
+      await reply.code(200).send({ items: got.value.items, page: got.value.page });
     },
   );
 
@@ -1156,12 +1359,19 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
         await reply.code(400).send(buildEnvelope('VALIDATION_ERROR', requestId, {}));
         return;
       }
-      const dto = await compareSearchesForActor(db, actor, params.data.searchId, withIds);
-      if (dto === null) {
+      const got = await callCapability<CompareDTO | null>(
+        execute('lab.search.compare', { searchId: params.data.searchId, with: withIds }, actor),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
+      if (got.value === null) {
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      await reply.code(200).send(dto);
+      await reply.code(200).send(got.value);
     },
   );
 
@@ -1188,105 +1398,38 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
           .send(buildEnvelope('VALIDATION_ERROR', requestId, parsed.error.flatten()));
         return;
       }
-      const project = await getProjectForActor(db, actor, params.data.projectId);
-      if (project === null) {
-        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
-        return;
-      }
-      const overflow = buildEnvelope('VALIDATION_ERROR', requestId, {
-        message: 'Seleção excede o limite de 1000 grupos para exportação.',
-      });
-      const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (parsed.data.scope === 'corpus') {
-        const all: CorpusEntryDTO[] = [];
-        let cursor: string | undefined = undefined;
-        for (;;) {
-          const page = await getCorpusForActor(db, actor, params.data.projectId, {
-            limit: 100,
-            cursor,
-          });
-          all.push(...page.items);
-          if (all.length > EXPORT_MAX_GROUPS) {
-            await reply.code(400).send(overflow);
-            return;
-          }
-          if (page.page.nextCursor === null) {
-            break;
-          }
-          cursor = page.page.nextCursor;
-        }
-        const groupIds = all.map((e) => e.groupId);
-        const members = await listExportMembersForActor(db, actor, params.data.projectId, groupIds);
-        const provenance = await getExportProvenanceForActor(db, actor, params.data.projectId);
-        if (members === null || provenance === null) {
-          await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
-          return;
-        }
-        await sendExport(reply, params.data.projectId, project.title, parsed.data.format, all, {
-          members,
-          provenance,
-        });
-        return;
-      }
-      if (parsed.data.selection === undefined || parsed.data.selection.trim().length === 0) {
-        await reply
-          .code(400)
-          .send(
-            buildEnvelope('VALIDATION_ERROR', requestId, {
-              message: 'Seleção é obrigatória para scope=selection.',
-            }),
-          );
-        return;
-      }
-      const ids = parsed.data.selection
-        .split(',')
-        .map((part) => part.trim())
-        .filter((part) => part.length > 0);
-      if (
-        ids.length < 1 ||
-        ids.length > EXPORT_MAX_GROUPS ||
-        ids.some((id) => !uuidPattern.test(id))
-      ) {
-        await reply.code(400).send(overflow);
-        return;
-      }
-      const resolved = await resolveSelectionGroupsForActor(
-        db,
-        actor,
-        params.data.projectId,
-        ids,
+      const got = await callCapability<ExportAssembly | null>(
+        execute(
+          'lab.project.export',
+          {
+            projectId: params.data.projectId,
+            format: parsed.data.format,
+            scope: parsed.data.scope,
+            selection: parsed.data.selection,
+          },
+          actor,
+        ),
+        reply,
+        requestId,
       );
-      if (resolved === null) {
+      if (got.replied) {
+        return;
+      }
+      if (got.value === null) {
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      const entries: CorpusEntryDTO[] = [];
-      let cursor: string | undefined = undefined;
-      for (;;) {
-        const page = await getCorpusForActor(db, actor, params.data.projectId, {
-          limit: 100,
-          cursor,
-        });
-        for (const e of page.items) {
-          if (resolved.includes(e.groupId)) {
-            entries.push(e);
-          }
-        }
-        if (page.page.nextCursor === null) {
-          break;
-        }
-        cursor = page.page.nextCursor;
-      }
-      const members = await listExportMembersForActor(db, actor, params.data.projectId, resolved);
-      const provenance = await getExportProvenanceForActor(db, actor, params.data.projectId);
-      if (members === null || provenance === null) {
-        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
-        return;
-      }
-      await sendExport(reply, params.data.projectId, project.title, parsed.data.format, entries, {
-        members: members.filter((m) => resolved.includes(m.groupId)),
-        provenance,
-      });
+      await sendExport(
+        reply,
+        params.data.projectId,
+        got.value.projectTitle,
+        parsed.data.format,
+        got.value.entries,
+        {
+          members: got.value.members,
+          provenance: got.value.provenance,
+        },
+      );
     },
   );
 }
