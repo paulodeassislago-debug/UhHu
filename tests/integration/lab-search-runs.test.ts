@@ -50,8 +50,14 @@ const MIGRATION_URL = readDatabaseUrl('MIGRATION_DATABASE_URL');
 
 const GHOST_UUID = '00000000-0000-4000-8000-000000000000';
 
-const BDTD_RAW = readFileSync(join(process.cwd(), 'tests/integration/fixtures/bdtd-search.json'), 'utf8');
-const CAPES_RAW = readFileSync(join(process.cwd(), 'tests/integration/fixtures/capes-busca.json'), 'utf8');
+const BDTD_RAW = readFileSync(
+  join(process.cwd(), 'tests/integration/fixtures/bdtd-search.json'),
+  'utf8',
+);
+const CAPES_RAW = readFileSync(
+  join(process.cwd(), 'tests/integration/fixtures/capes-busca.json'),
+  'utf8',
+);
 const BDTD_DATA: unknown = JSON.parse(BDTD_RAW);
 const CAPES_DATA: unknown = JSON.parse(CAPES_RAW);
 
@@ -95,11 +101,12 @@ function jsonFetchResponse(data: unknown, status = 200): Response {
   });
 }
 
-async function fakeFetch(input: string | URL | Request, init?: RequestInit): Promise<Response> {
+async function fakeFetch(input: string | URL | Request): Promise<Response> {
   if (fetchDelayMs > 0) {
     await sleep(fetchDelayMs);
   }
-  const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+  const url =
+    typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
   if (url.includes('bdtd.ibict.br')) {
     if (fetchMode === 'both-fail') {
       return jsonFetchResponse({ erro: 'bdtd fora' }, 500);
@@ -304,7 +311,9 @@ async function apiRequest(
 ): Promise<ApiResponse> {
   const headers: Record<string, string> = {
     ...(options.body !== undefined ? { 'content-type': 'application/json' } : {}),
-    ...(options.cookieValue !== undefined ? { cookie: `${COOKIE_NAME}=${options.cookieValue}` } : {}),
+    ...(options.cookieValue !== undefined
+      ? { cookie: `${COOKIE_NAME}=${options.cookieValue}` }
+      : {}),
     ...(options.idempotencyKey !== undefined ? { 'idempotency-key': options.idempotencyKey } : {}),
   };
   if (method === 'GET' || method === 'DELETE') {
@@ -363,7 +372,11 @@ async function createMember(
   return { userId: userOf(regBody).id, cookie: requireSessionCookie(reg) };
 }
 
-async function createProject(app: FastifyInstance, cookieValue: string, title: string): Promise<string> {
+async function createProject(
+  app: FastifyInstance,
+  cookieValue: string,
+  title: string,
+): Promise<string> {
   const res = await apiRequest(app, 'POST', '/api/v1/projects', {
     body: { title },
     cookieValue,
@@ -427,7 +440,9 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
       } catch (err: unknown) {
         if (isConnectionFailure(errorText(err))) {
           pgAvailable = false;
-          console.warn('[lab-search-runs] PG inalcançavel no migrate — pulando integracao (offline).');
+          console.warn(
+            '[lab-search-runs] PG inalcançavel no migrate — pulando integracao (offline).',
+          );
           return;
         }
         throw err;
@@ -502,9 +517,14 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
       );
       expect(search.term).toBe('"ensino de química"');
 
-      const listed = await apiRequest(app, 'GET', `/api/v1/lab/searches?projectId=${search.projectId}`, {
-        cookieValue: owner.cookie,
-      });
+      const listed = await apiRequest(
+        app,
+        'GET',
+        `/api/v1/lab/searches?projectId=${search.projectId}`,
+        {
+          cookieValue: owner.cookie,
+        },
+      );
       expect(listed.statusCode).toBe(200);
       expectClean(listed);
       expect(searchPageOf(listed.json()).items.length).toBe(1);
@@ -594,9 +614,14 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
       expect(partial.metrics.perSource['bdtd'].status).toBe('ok');
       expect(partial.metrics.perSource['capes'].status).toBe('failed');
 
-      const results = await apiRequest(app, 'GET', `/api/v1/lab/runs/${partial.id}/results?limit=20`, {
-        cookieValue: owner.cookie,
-      });
+      const results = await apiRequest(
+        app,
+        'GET',
+        `/api/v1/lab/runs/${partial.id}/results?limit=20`,
+        {
+          cookieValue: owner.cookie,
+        },
+      );
       expect(results.statusCode).toBe(200);
       expectClean(results);
       const page = resultPageOf(results.json());
@@ -631,9 +656,14 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
       expect(runRes.statusCode).toBe(201);
       const run = runOf(runRes.json());
 
-      const resultsRes = await apiRequest(app, 'GET', `/api/v1/lab/runs/${run.id}/results?limit=20`, {
-        cookieValue: owner.cookie,
-      });
+      const resultsRes = await apiRequest(
+        app,
+        'GET',
+        `/api/v1/lab/runs/${run.id}/results?limit=20`,
+        {
+          cookieValue: owner.cookie,
+        },
+      );
       expect(resultsRes.statusCode).toBe(200);
       expectClean(resultsRes);
       const items = resultPageOf(resultsRes.json()).items;
@@ -694,10 +724,16 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
       let pages = 0;
       const order: string[] = [];
       do {
-        const suffix = cursor === undefined || cursor === null ? '' : `&cursor=${encodeURIComponent(cursor)}`;
-        const res = await apiRequest(app, 'GET', `/api/v1/lab/runs/${run.id}/results?limit=1${suffix}`, {
-          cookieValue: owner.cookie,
-        });
+        const suffix =
+          cursor === undefined || cursor === null ? '' : `&cursor=${encodeURIComponent(cursor)}`;
+        const res = await apiRequest(
+          app,
+          'GET',
+          `/api/v1/lab/runs/${run.id}/results?limit=1${suffix}`,
+          {
+            cookieValue: owner.cookie,
+          },
+        );
         expect(res.statusCode).toBe(200);
         expectClean(res);
         const page = resultPageOf(res.json());
@@ -768,20 +804,28 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
       expectIsolatedError(conflict, 'IDEMPOTENCY_CONFLICT');
 
       const projectRate = await createProject(app, owner.cookie, 'Projeto lab rate');
-      const searchRate = await createSearch(app, owner.cookie, projectRate, '"rate limit 10/h"', {}, [
-        'bdtd',
-        'capes',
-      ]);
+      const searchRate = await createSearch(
+        app,
+        owner.cookie,
+        projectRate,
+        '"rate limit 10/h"',
+        {},
+        ['bdtd', 'capes'],
+      );
       installFake('ok', 0);
       // 2 runs já contam no usuário (first + replay não conta — replay não cria).
       // Precisamos de 10 no total: 1 existente + 9 aqui = 10; o próximo (11º) dá 429.
       // Para isolar a contagem, usa-se um segundo usuário só para o rate-limit.
       const rateOwner = await createMember(app, owner.cookie, 'Rate User', 'rate@example.com');
       const rateProject = await createProject(app, rateOwner.cookie, 'Projeto rate isolado');
-      const rateSearch = await createSearch(app, rateOwner.cookie, rateProject, '"rate isolado"', {}, [
-        'bdtd',
-        'capes',
-      ]);
+      const rateSearch = await createSearch(
+        app,
+        rateOwner.cookie,
+        rateProject,
+        '"rate isolado"',
+        {},
+        ['bdtd', 'capes'],
+      );
       for (let index = 0; index < 10; index += 1) {
         const res = await apiRequest(app, 'POST', `/api/v1/lab/searches/${rateSearch.id}/runs`, {
           cookieValue: rateOwner.cookie,
@@ -866,9 +910,14 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
       expectClean(cancelRes);
       expect(runOf(cancelRes.json()).status).toBe('cancelled');
 
-      const afterCancel = await apiRequest(app, 'GET', `/api/v1/lab/runs/${running.id}/results?limit=20`, {
-        cookieValue: owner.cookie,
-      });
+      const afterCancel = await apiRequest(
+        app,
+        'GET',
+        `/api/v1/lab/runs/${running.id}/results?limit=20`,
+        {
+          cookieValue: owner.cookie,
+        },
+      );
       expect(afterCancel.statusCode).toBe(200);
       expectClean(afterCancel);
       expect(resultPageOf(afterCancel.json()).items.length).toBe(1);
@@ -960,9 +1009,14 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
       });
       expect(runRes.statusCode).toBe(201);
       const run = runOf(runRes.json());
-      const resultsRes = await apiRequest(app, 'GET', `/api/v1/lab/runs/${run.id}/results?limit=1`, {
-        cookieValue: owner.cookie,
-      });
+      const resultsRes = await apiRequest(
+        app,
+        'GET',
+        `/api/v1/lab/runs/${run.id}/results?limit=1`,
+        {
+          cookieValue: owner.cookie,
+        },
+      );
       expect(resultsRes.statusCode).toBe(200);
       const resultId = resultPageOf(resultsRes.json()).items[0]?.id;
       if (resultId === undefined) {
@@ -1000,9 +1054,14 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
       expect(patchB.statusCode).toBe(404);
       expectIsolatedError(patchB, 'NOT_FOUND');
 
-      const delB = await apiRequest(app, 'DELETE', `/api/v1/lab/searches/${search.id}?confirm=true`, {
-        cookieValue: stranger.cookie,
-      });
+      const delB = await apiRequest(
+        app,
+        'DELETE',
+        `/api/v1/lab/searches/${search.id}?confirm=true`,
+        {
+          cookieValue: stranger.cookie,
+        },
+      );
       expect(delB.statusCode).toBe(404);
       expectIsolatedError(delB, 'NOT_FOUND');
 
