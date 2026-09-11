@@ -380,11 +380,13 @@ export const compareQuerySchema = z.object({
 
 export type CompareQuery = z.infer<typeof compareQuerySchema>;
 
-/** D-50: selection = CSV de UUIDs, max 1000 IDs (DoS guard); scope=corpus resolve server-side. */
+/** D-50: selection = CSV de UUIDs; Zod limita a 40000 chars (~1000 UUIDs) para o
+ * guard de 1000 IDs da rota (com mensagem PT-BR) ser alcancavel; scope=corpus
+ * resolve server-side. */
 export const exportQuerySchema = z.object({
   format: z.enum(['csv', 'bibtex', 'json']),
   scope: z.enum(['corpus', 'selection']),
-  selection: z.string().max(20000).optional(),
+  selection: z.string().max(40000).optional(),
 });
 
 export type ExportQuery = z.infer<typeof exportQuerySchema>;

@@ -11,7 +11,7 @@
 // existente por chave exata (mantem status+pin+decisao), (3) fuzzy novo →
 // pending. Sem HTTP/envelope na lib — so DTOs e null.
 
-import { and, asc, desc, eq, inArray, lt, or } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import type { CompareDTO, CorpusEntryDTO, DedupGroupDTO, ExecutableSource, PageInfo } from '@uhhu/contracts';
 import { decodeCursor, encodeCursor } from '@uhhu/contracts';
