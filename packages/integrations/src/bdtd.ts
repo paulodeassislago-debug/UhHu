@@ -454,7 +454,7 @@ const ABSTRACT_PATTERNS: RegExp[] = [
 const ORIENTADOR_PATTERN = /Orientador(?:\(a\))?\s*:?\s*([^<]{1,300})/i;
 const PROGRAMA_PATTERN = /Programas?(?:\s+[Dd]e\b[^<:\n]{0,80})?\s*:\s*([^<]{1,300})/i;
 const BANCA_PATTERN = /Banca(?:\s+[Ee]xaminadora)?\s*:\s*([^<]{1,500})/i;
-const KEYWORDS_PATTERN = /Palavra-?chaves?\s*:?\s*([^<]{1,500})/i;
+const KEYWORDS_PATTERN = /Palavras?-?chaves?\s*:?\s*([^<]{1,500})/i;
 
 function splitList(value: string | null, max: number): string[] {
   if (value === null) {
