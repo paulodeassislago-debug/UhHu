@@ -5,6 +5,15 @@
 # (ou `tsx src/index.ts`) com o mesmo .env (ex.: .env.dev.cs dentro do code-server).
 # NUNCA contra prod de terceiros (so local/staging proprio).
 #
+# PRÉ-CONDIÇÃO DE BANCO (04-05 checkpoint): o bootstrap `POST /auth/invites`
+# retorna 201 SOMENTE com banco vazio (sem usuários). Com o DEV já populado,
+# o bootstrap dá 401 e o script segue tolerante (registro 400/409 → login).
+# Porém a suíte de integração faz wipe FK-safe que APAGA os usuários
+# curl-corpus-a/b@example.com — rodar `pnpm test` entre duas execuções do
+# script invalida os jars e o login seguinte falha 401. Para ALL PASS
+# determinístico: rode contra banco zerado OU recrie os usuários (registro)
+# após qualquer wipe da suíte.
+#
 # Fluxo: bootstrap→2 usuários→projeto→2 searches→run→poll job→results (LAB-06 regressao)→
 # groups→confirm→decision→corpus reflete→compare 4 blocos→export csv|bib|json+selection→
 # 5 provas IDOR (estranho 404×3, fantasma 404, sem cookie 401).

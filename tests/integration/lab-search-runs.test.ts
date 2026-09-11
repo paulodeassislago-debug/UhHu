@@ -10,9 +10,9 @@
 // server-side, nunca vem do cliente). O lib usa `init.fetchFn ?? globalThis.fetch`,
 // então o stub do `globalThis.fetch` neste teste equivale à injeção server-side
 // de fetchFn — sem override de módulo, sem flag de produção, sem rede real.
-// Restauração garantida no afterEach. Cobertura real das fixtures: 3+3 itens
-// (bdtd-001..003, capes-101..103); o plano citava 2+2 de rascunho — este teste
-// ancora em 3+3 (ver `BDTD_FIXTURE`/`CAPES_FIXTURE`).
+// Cobertura real das fixtures: 3+3 itens
+// (UECE-*/IFES-*/bdtd-003 + capes-101..103); snapshot BDTD real VuFind
+// 2026-09-11 (primary-map, formats[], urls[], year=null).
 
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
@@ -23,11 +23,19 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 import { createDb, type Db } from '@uhhu/db';
 import {
   invites,
+  labCanonicalPins,
+  labDedupGroups,
+  labDedupMembers,
+  labDivergences,
+  labGroupDecisions,
+  labGroupTags,
   labIdempotencyKeys,
+  labRejectedPairs,
   labResults,
   labSearches,
   labSearchRuns,
   labSourceEvents,
+  labTags,
   passwordResets,
   projects,
   sessions,
@@ -81,15 +89,16 @@ function sleep(ms: number): Promise<void> {
 
 function extraBdtdPayload(): unknown {
   const base = BDTD_DATA as { resultCount: number; records: Record<string, unknown>[] };
+  // Item extra no shape REAL VuFind (primary-map + formats[] + urls[]).
   const extra: Record<string, unknown> = {
     id: 'bdtd-004',
     title: 'Item novo do rerun para diff de novos',
-    authors: ['Novo Autor'],
-    publishDate: ['2023'],
-    format: 'masterThesis',
-    institution: 'Universidade Federal do Vale',
-    program: 'Ensino',
-    link: 'https://bdtd.ibict.br/vufind/Record/bdtd-004',
+    authors: { primary: { 'Autor, Novo': [] }, secondary: [], corporate: [] },
+    formats: ['masterThesis'],
+    languages: ['por'],
+    series: [],
+    subjects: [],
+    urls: [{ url: 'https://bdtd.ibict.br/vufind/Record/bdtd-004', desc: 'ficha' }],
   };
   return { resultCount: base.resultCount + 1, records: [...base.records, extra] };
 }
@@ -482,6 +491,15 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
       if (!pgAvailable || db === undefined) {
         return;
       }
+      // Wipe FK-safe total (Phase 4: corpus antes de runs/searches/projects).
+      await db.delete(labGroupTags);
+      await db.delete(labDedupMembers);
+      await db.delete(labCanonicalPins);
+      await db.delete(labDivergences);
+      await db.delete(labGroupDecisions);
+      await db.delete(labRejectedPairs);
+      await db.delete(labDedupGroups);
+      await db.delete(labTags);
       await db.delete(labResults);
       await db.delete(labIdempotencyKeys);
       await db.delete(labSourceEvents);
@@ -673,7 +691,7 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
         throw new Error('run sem resultados');
       }
       expect(first.source).toBe('bdtd');
-      expect(first.sourceId).toBe('bdtd-001');
+      expect(first.sourceId).toBe('UECE-0_286db9542bbce84c5cf658a269c2c9d2');
 
       const gotResult = await apiRequest(app, 'GET', `/api/v1/lab/results/${first.id}`, {
         cookieValue: owner.cookie,

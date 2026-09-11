@@ -318,6 +318,10 @@ function fuzzyScore(
   b: FuzzyCandidate,
   veto: Set<string>,
 ): number | null {
+  // Blocking ano-null (04-05/2): BDTD/search nunca traz ano; fuzzy exige anos
+  // iguais non-null para nunca agrupar BDTD∩CAPES por título parecido sem ano.
+  // Exact com year=null continua (título+autores idênticos) — transparente e
+  // divergível; enrich de ano só on-demand, nunca no run (§6 da spec).
   const yearA = parseNullableYear(a.row.year);
   const yearB = parseNullableYear(b.row.year);
   if (yearA === null || yearB === null || yearA !== yearB) {
@@ -1015,6 +1019,8 @@ export async function compareSearchesForActor(
     if (keys !== undefined) {
       keys.add(resultKey(r));
     }
+    // Ano BDTD/search é null por desenho (04-05/2) — bucket explícito em vez
+    // de omitir: compare sinaliza 'desconhecido' para o pesquisador decidir.
     const year = parseNullableYear(r.year);
     const bucket = year === null ? 'desconhecido' : String(year);
     yearHistogram[bucket] = (yearHistogram[bucket] ?? 0) + 1;

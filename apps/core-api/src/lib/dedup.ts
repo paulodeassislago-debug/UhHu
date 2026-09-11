@@ -5,6 +5,16 @@
 // criam novos UUIDs de resultado, a chave SHA-256 e estavel entre runs.
 // Fuzzy exige mesmo ano non-null (blocking, Pitfall 3); threshold 0.9 sobre
 // titulos NORMALIZADOS (NFKD, sem acentos/pontuacao).
+//
+// Decisão explícita ano-null (checkpoint 04-05/2): a VuFind/BDTD NÃO retorna
+// ano no search (só via ficha Record/enrich sob demanda). Enrich leve em
+// paralelo ao materializar o run foi REJEITADO: violaria 03-lab-spec-v1 §6
+// (nunca 1 request por resultado na busca; batch só para elegíveis) e a
+// cortesia batch ≤10 + wait. Tratamento adotado: aceitar year=null, bloquear
+// fuzzy com ano null (sem falso-positivo cross-fonte), manter exact por
+// título+autores (transparente + divergência manual se errar) e sinalizar
+// 'desconhecido' no compare/yearHistogram. Ano BDTD só via enrich on-demand
+// futuro — nunca no run.
 
 import { createHash } from 'node:crypto';
 import { distance } from 'fastest-levenshtein';

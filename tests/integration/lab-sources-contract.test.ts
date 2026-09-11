@@ -2,9 +2,12 @@
 //
 // Teste puro de adapter com `fetchFn` fake injetado no SourceClient real: SEM PG
 // e SEM rede — roda sempre, nunca pula. As fixtures congelam os shapes das
-// fontes observados em 06/09/2026 (dev-docs/04-fontes-bdtd-capes.md §1–§2):
-// BDTD VuFind `{resultCount, records[]}`, CAPES rest/busca
-// `{pagina, total, tesesDissertacoes[]}`.
+// fontes observados em 06/09/2026 (dev-docs/04-fontes-bdtd-capes.md §1–§2) +
+// snapshot real VuFind 2026-09-11 (prova viva checkpoint 04-05):
+// BDTD VuFind `{resultCount, records[]}` com registros reais
+// `{authors:{primary:{Nome:[]}}, formats[], id, title, urls[]}` — SEM
+// publishDate/ano na busca (year=null por desenho, só via ficha/enrich).
+// CAPES rest/busca `{pagina, total, tesesDissertacoes[]}`.
 // Imports por PATH RELATIVO com extensão `.js` sob NodeNext (molde
 // projects.test.ts que usa `../../apps/...`).
 
@@ -145,17 +148,47 @@ describe('contrato BDTD (fixture VuFind)', () => {
     expect(url.searchParams.get('limit')).toBe('20');
 
     expect(page.sourceStatus).toBe('ok');
-    expect(page.total).toBe(3);
+    expect(page.total).toBe(7120);
     expect(page.items).toHaveLength(3);
     const item = first(page.items);
-    expect(item.sourceId).toBe('bdtd-001');
-    expect(item.title).toContain('Ensino de química');
-    expect(item.authors).toEqual(['Maria Silva', 'João Souza']);
-    expect(item.year).toBe(2021);
+    expect(item.sourceId).toBe('UECE-0_286db9542bbce84c5cf658a269c2c9d2');
+    expect(item.title).toContain('Quimica Experimental');
+    expect(item.authors).toEqual(['Fernandes, Jorge Luis Reis']);
+    expect(item.year).toBeNull();
     expect(item.docType).toBe('masterThesis');
-    expect(item.institution).toBe('Universidade Federal do Vale');
-    expect(item.originUrl).toBe('https://bdtd.ibict.br/vufind/Record/bdtd-001');
+    expect(item.institution).toBeNull();
+    expect(item.originUrl).toBe(
+      'https://siduece.uece.br/siduece/trabalhoAcademicoPublico.jsf?id=47824',
+    );
     expect(item.sourceUrl).toBeNull();
+  });
+
+  it('regressão shape real VuFind: primary-map, formats[], urls[], sem ano (04-05/1)', async () => {
+    const { fetchFn } = makeFakeFetch(() => jsonResponse(JSON.parse(BDTD_FIXTURE)));
+    const page = await searchBdtd(
+      new SourceClient('bdtd'),
+      { term: 'ensino de quimica' },
+      { page: 1, perPage: 20 },
+      testContext(fetchFn),
+    );
+    expect(page.sourceStatus).toBe('ok');
+    // Snapshot real 2026-09-11: 20/20 vinham com authors=[] e docType=null no
+    // mapper antigo — agora o mapa primary vira autores e formats[] vira tipo.
+    const [firstItem, secondItem] = page.items;
+    if (firstItem === undefined || secondItem === undefined) {
+      throw new Error('fixture real deveria ter 2+ registros');
+    }
+    expect(firstItem.authors).toEqual(['Fernandes, Jorge Luis Reis']);
+    expect(firstItem.docType).toBe('masterThesis');
+    expect(firstItem.year).toBeNull();
+    expect(secondItem.authors).toEqual(['Seabra, Alessandro da Cruz']);
+    expect(secondItem.docType).toBe('masterThesis');
+    expect(secondItem.year).toBeNull();
+    expect(secondItem.originUrl).toBe('https://repositorio.ifes.edu.br/handle/123456789/3029');
+    // rawMetadata preserva o shape real para proveniência/enrich futuro.
+    const raw = firstItem.rawMetadata;
+    expect(typeof raw['authors']).toBe('object');
+    expect(Array.isArray(raw['formats'])).toBe(true);
   });
 
   it('sem docTypes/anos não envia filter[] (fonte aberta, Core filtra depois)', async () => {
@@ -189,6 +222,7 @@ describe('contrato BDTD (fixture VuFind)', () => {
     expect(partial.authors).toEqual([]);
     expect(partial.docType).toBeNull();
     expect(partial.institution).toBeNull();
+    expect(partial.originUrl).toContain('Record/bdtd-003');
   });
 
   it('HTML de challenge vira sourceStatus challenge (executor retenta 1×)', async () => {
@@ -413,7 +447,7 @@ describe('adapters (registro + versões)', () => {
   it('expõe search/enrich/version por fonte e bloqueia oasisbr', () => {
     const bdtd = getSourceAdapter('bdtd');
     expect(bdtd.version).toBe(BDTD_VERSION);
-    expect(bdtd.version).toBe('bdtd/1.0-fase3');
+    expect(bdtd.version).toBe('bdtd/1.1-fase4');
     expect(typeof bdtd.search).toBe('function');
     expect(typeof bdtd.enrich).toBe('function');
     const capes = getSourceAdapter('capes');

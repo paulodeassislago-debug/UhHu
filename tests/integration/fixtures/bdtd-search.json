@@ -1,29 +1,77 @@
 {
-  "resultCount": 3,
+  "resultCount": 7120,
   "records": [
     {
-      "id": "bdtd-001",
-      "title": "Ensino de química no semiárido: práticas e desafios",
-      "authors": ["Maria Silva", "João Souza"],
-      "publishDate": ["2021"],
-      "format": "masterThesis",
-      "institution": "Universidade Federal do Vale",
-      "program": "Programa de Pós-Graduação em Ensino",
-      "link": "https://bdtd.ibict.br/vufind/Record/bdtd-001",
-      "language": "por"
+      "authors": {
+        "primary": {
+          "Fernandes, Jorge Luis Reis": []
+        },
+        "secondary": [],
+        "corporate": []
+      },
+      "formats": [
+        "masterThesis"
+      ],
+      "id": "UECE-0_286db9542bbce84c5cf658a269c2c9d2",
+      "languages": [
+        "por"
+      ],
+      "series": [],
+      "subjects": [
+        [
+          "Ensino de química"
+        ],
+        [
+          "Quimica Experimental"
+        ]
+      ],
+      "title": "Quimica Experimental: Uma Alternativa para o Ensino de Quimica",
+      "urls": [
+        {
+          "url": "https://siduece.uece.br/siduece/trabalhoAcademicoPublico.jsf?id=47824",
+          "desc": "https://siduece.uece.br/siduece/trabalhoAcademicoPublico.jsf?id=47824"
+        }
+      ]
     },
     {
-      "id": "bdtd-002",
-      "title": "Formação docente e experimentação no laboratório escolar",
-      "authors": "Ana Lima",
-      "publishDate": "2019-06-15",
-      "format": "doctoralThesis",
-      "institution": "Universidade Estadual do Sertão",
-      "abstract": "Resumo do trabalho sobre formação docente."
+      "authors": {
+        "primary": {
+          "Seabra, Alessandro da Cruz": []
+        },
+        "secondary": [],
+        "corporate": []
+      },
+      "formats": [
+        "masterThesis"
+      ],
+      "id": "IFES-2_8fbdaee9abb8d0386820ce92eef59a91",
+      "languages": [
+        "por"
+      ],
+      "series": [],
+      "subjects": [
+        [
+          "Ensino de Química Orgânica"
+        ],
+        [
+          "Aprendizagem Baseada em Problemas"
+        ],
+        [
+          "Química Forense."
+        ]
+      ],
+      "title": "Aplicação da química forense no ensino de química orgânica para o ensino médio",
+      "urls": [
+        {
+          "url": "https://repositorio.ifes.edu.br/handle/123456789/3029",
+          "desc": "https://repositorio.ifes.edu.br/handle/123456789/3029"
+        }
+      ]
     },
     {
       "id": "bdtd-003",
       "title": "Registro incompleto de teste (campos ausentes viram null)"
     }
-  ]
+  ],
+  "status": "OK"
 }

@@ -13,7 +13,7 @@ import type { SourceClient, SourceFetchInit } from './sourceClient.js';
 import type { NormalizedItem, SearchDef, SourceClientContext, SourcePage } from './types.js';
 
 /** Versão do adapter (vai para `adapter_versions` do run — D-34/proveniência). */
-export const ADAPTER_VERSION = 'bdtd/1.0-fase3';
+export const ADAPTER_VERSION = 'bdtd/1.1-fase4';
 
 const BDTD_SEARCH_URL = 'https://bdtd.ibict.br/vufind/api/v1/search';
 const BDTD_RECORD_URL = 'https://bdtd.ibict.br/vufind/Record';
@@ -196,30 +196,32 @@ function yearFromValue(value: unknown): number | null {
 
 /** docType canônico a partir de rótulos VuFind/PT-BR; desconhecido → null. */
 function canonicalDocType(value: unknown): string | null {
-  const raw = Array.isArray(value) ? (value as unknown[])[0] : value;
-  if (typeof raw !== 'string') {
-    return null;
-  }
-  const normalized = norm(raw);
-  if (
-    normalized === 'masterthesis' ||
-    normalized === 'mestrado' ||
-    normalized === 'dissertacao' ||
-    normalized === 'dissertation' ||
-    normalized === 'master'
-  ) {
-    return 'masterThesis';
-  }
-  if (
-    normalized === 'doctoralthesis' ||
-    normalized === 'doutorado' ||
-    normalized === 'tese' ||
-    normalized === 'phdthesis' ||
-    normalized === 'phd' ||
-    normalized === 'doctoral' ||
-    normalized === 'doctorate'
-  ) {
-    return 'doctoralThesis';
+  const candidates: unknown[] = Array.isArray(value) ? (value as unknown[]) : [value];
+  for (const raw of candidates) {
+    if (typeof raw !== 'string') {
+      continue;
+    }
+    const normalized = norm(raw);
+    if (
+      normalized === 'masterthesis' ||
+      normalized === 'mestrado' ||
+      normalized === 'dissertacao' ||
+      normalized === 'dissertation' ||
+      normalized === 'master'
+    ) {
+      return 'masterThesis';
+    }
+    if (
+      normalized === 'doctoralthesis' ||
+      normalized === 'doutorado' ||
+      normalized === 'tese' ||
+      normalized === 'phdthesis' ||
+      normalized === 'phd' ||
+      normalized === 'doctoral' ||
+      normalized === 'doctorate'
+    ) {
+      return 'doctoralThesis';
+    }
   }
   return null;
 }
@@ -239,7 +241,15 @@ function canonicalDocTypes(docTypes: string[] | undefined): string[] {
   return out;
 }
 
-/** Autores a partir de string ("a; b"), array ou {primary, secondary}. */
+/** Autores a partir de string ("a; b"), array ou VuFind `{primary, secondary}`.
+ *
+ * Shape real da VuFind (prova viva 2026-09-11, snapshot em
+ * `tests/integration/fixtures/bdtd-search.json`):
+ * `{primary: {"Sobrenome, Nome": []}, secondary: [], corporate: []}` —
+ * as CHAVES do mapa `primary` são os nomes; `secondary`/`corporate` seguem o
+ * mesmo padrão (mapa ou array). `publishDate`/ano NÃO vem na busca (só via
+ * ficha/enrich sob demanda) — `year` fica null por desenho (ver mapBdtdRecord).
+ */
 function authorsFrom(value: unknown): string[] {
   const out: string[] = [];
   const pushName = (name: string): void => {
@@ -262,8 +272,21 @@ function authorsFrom(value: unknown): string[] {
           pushName(part);
         }
       } else if (isRecord(item)) {
-        for (const nested of authorsFrom(item)) {
-          pushName(nested);
+        // `{name: "..."}` explícito tem precedência sobre mapa-de-chaves.
+        const named =
+          typeof item['name'] === 'string'
+            ? (item['name'] as string)
+            : typeof item['nome'] === 'string'
+              ? (item['nome'] as string)
+              : null;
+        if (named !== null) {
+          for (const part of named.split(';')) {
+            pushName(part);
+          }
+        } else {
+          for (const nested of authorsFrom(item)) {
+            pushName(nested);
+          }
         }
       }
       if (out.length >= AUTHORS_MAX_COUNT) {
@@ -273,10 +296,37 @@ function authorsFrom(value: unknown): string[] {
     return out;
   }
   if (isRecord(value)) {
-    for (const key of ['primary', 'secondary', 'authors', 'author']) {
-      for (const nested of authorsFrom(value[key])) {
-        pushName(nested);
+    // `{name/nome: "..."}` explícito (ficha/enrich futuro) — usa o valor.
+    const named =
+      typeof value['name'] === 'string'
+        ? (value['name'] as string)
+        : typeof value['nome'] === 'string'
+          ? (value['nome'] as string)
+          : null;
+    if (named !== null && !('primary' in value || 'secondary' in value || 'corporate' in value)) {
+      for (const part of named.split(';')) {
+        pushName(part);
       }
+      return out;
+    }
+    // Wrapper VuFind ou legado: coleta de chaves conhecidas. Se alguma chave
+    // conhecida existe, NÃO trata as chaves do wrapper como nomes.
+    const knownKeys = ['primary', 'secondary', 'corporate', 'authors', 'author'];
+    let hasKnownKey = false;
+    for (const key of knownKeys) {
+      if (key in value) {
+        hasKnownKey = true;
+        for (const nested of authorsFrom(value[key])) {
+          pushName(nested);
+        }
+      }
+    }
+    if (hasKnownKey) {
+      return out;
+    }
+    // Mapa VuFind `{"Sobrenome, Nome": []}` — as chaves SÃO os autores.
+    for (const key of Object.keys(value)) {
+      pushName(key);
     }
   }
   return out;
@@ -329,19 +379,44 @@ function mapBdtdRecord(record: Record<string, unknown>): NormalizedItem | null {
     return null;
   }
   const explicitLink = httpString(record, ['link', 'url']);
+  const urlsLink = (() => {
+    const urls: unknown = record['urls'];
+    if (!Array.isArray(urls)) {
+      return null;
+    }
+    for (const item of urls as unknown[]) {
+      if (typeof item === 'string' && HTTP_URL_PATTERN.test(item.trim())) {
+        return item.trim();
+      }
+      if (isRecord(item)) {
+        const u: unknown = item['url'];
+        if (typeof u === 'string' && HTTP_URL_PATTERN.test(u.trim())) {
+          return u.trim();
+        }
+        const d: unknown = item['desc'];
+        if (typeof d === 'string' && HTTP_URL_PATTERN.test(d.trim())) {
+          return d.trim();
+        }
+      }
+    }
+    return null;
+  })();
   return {
     sourceId: id,
     title: truncate(title, TITLE_MAX_LENGTH),
     authors: authorsFrom(record['authors'] ?? record['author']),
+    // VuFind search NÃO retorna ano (só via ficha/enrich sob demanda, §6 da
+    // spec — nunca 1 request por resultado no run). year=null por desenho;
+    // dedup bloqueia fuzzy com ano null e compare sinaliza 'desconhecido'.
     year: yearFromValue(record['publishDate'] ?? record['year']),
-    docType: canonicalDocType(record['format'] ?? record['docType']),
+    docType: canonicalDocType(record['formats'] ?? record['format'] ?? record['docType']),
     institution: firstString(record, ['institution', 'publisher', 'university']),
     program: firstString(record, ['program', 'department', 'course']),
     abstract: (() => {
       const raw = firstString(record, ['abstract', 'summary', 'description']);
       return raw === null ? null : truncate(raw, ABSTRACT_MAX_LENGTH);
     })(),
-    originUrl: explicitLink ?? `${BDTD_RECORD_URL}/${encodeURIComponent(id)}`,
+    originUrl: explicitLink ?? urlsLink ?? `${BDTD_RECORD_URL}/${encodeURIComponent(id)}`,
     // Busca não afirma PDF: texto completo via enrich (Phase 4).
     sourceUrl: null,
     rawMetadata: sanitizeRaw(record),

@@ -22,7 +22,25 @@ import cookie from '@fastify/cookie';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, sql, type Db } from '@uhhu/db';
-import { invites, passwordResets, sessions, users } from '@uhhu/db';
+import {
+  invites,
+  labCanonicalPins,
+  labDedupGroups,
+  labDedupMembers,
+  labDivergences,
+  labGroupDecisions,
+  labGroupTags,
+  labIdempotencyKeys,
+  labRejectedPairs,
+  labResults,
+  labSearches,
+  labSearchRuns,
+  labSourceEvents,
+  labTags,
+  passwordResets,
+  sessions,
+  users,
+} from '@uhhu/db';
 import { COOKIE_NAME } from '../../apps/core-api/src/auth/session.js';
 import { hashToken, newOpaqueToken, resetExpiry } from '../../apps/core-api/src/auth/tokens.js';
 import { requestIdPlugin } from '../../apps/core-api/src/plugins/requestId.js';
@@ -217,6 +235,22 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
       if (!pgAvailable || db === undefined) {
         return;
       }
+      // Wipe FK-safe (Phase 4: lab_* referencia users; lab-search-runs cobre
+      // parcial, lab-corpus cobre total — aqui ordem total para banco DEV
+      // compartilhado com dados do curl-corpus).
+      await db.delete(labGroupTags);
+      await db.delete(labDedupMembers);
+      await db.delete(labCanonicalPins);
+      await db.delete(labDivergences);
+      await db.delete(labGroupDecisions);
+      await db.delete(labRejectedPairs);
+      await db.delete(labDedupGroups);
+      await db.delete(labTags);
+      await db.delete(labResults);
+      await db.delete(labIdempotencyKeys);
+      await db.delete(labSourceEvents);
+      await db.delete(labSearchRuns);
+      await db.delete(labSearches);
       await db.delete(passwordResets);
       await db.delete(sessions);
       await db.delete(invites);
