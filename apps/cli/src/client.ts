@@ -21,6 +21,9 @@ export interface ApiOptions {
 export type ApiFetchArgs = ApiOptions & {
   method?: string;
   body?: unknown;
+  // raw=true devolve o corpo como texto verbatim (export: salva o attachment
+  // byte a byte em vez de re-serializar o JSON parseado).
+  raw?: boolean;
 };
 
 // Erro de API com o envelope PT-BR repassado verbatim (code/message do
@@ -97,7 +100,10 @@ export function parseContentDisposition(header: string | null): string | undefin
   }
   const base = decoded.split('/').pop()?.split('\\').pop() ?? '';
   const clean = base.trim().replace(/[^A-Za-z0-9._-]/g, '_');
-  return clean.length > 0 ? clean : undefined;
+  if (clean.length === 0 || clean === '.' || clean === '..') {
+    return undefined;
+  }
+  return clean;
 }
 
 export async function apiFetch<T>(
@@ -107,9 +113,13 @@ export async function apiFetch<T>(
   const url = joinUrl(opts.baseUrl, path);
   const headers: Record<string, string> = {
     Accept: 'application/json',
-    Authorization: `Bearer ${opts.token}`,
     'X-Request-Id': randomUUID(),
   };
+  // Sem token (ex.: POST /auth/token antes do login) = sem header
+  // Authorization — nunca envia `Bearer ` vazio.
+  if (opts.token.length > 0) {
+    headers['Authorization'] = `Bearer ${opts.token}`;
+  }
   let body: string | undefined = undefined;
   if (opts.body !== undefined) {
     headers['Content-Type'] = 'application/json';
@@ -139,6 +149,10 @@ export async function apiFetch<T>(
   }
   const rawFilename = parseContentDisposition(res.headers.get('content-disposition'));
   const filenameArgs = rawFilename === undefined ? {} : { filename: rawFilename };
+  if (opts.raw === true) {
+    const text = await res.text();
+    return { status: res.status, data: text as unknown as T, ...filenameArgs };
+  }
   const contentType = res.headers.get('content-type') ?? '';
   if (!contentType.includes('application/json')) {
     const text = await res.text();
