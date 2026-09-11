@@ -8,7 +8,7 @@ Da fundação executável (monorepo + PG + gates) ao primeiro vertical slice do 
 
 - [x] **Phase 1: Fundação executável** - Monorepo, PG DEV, migrations e gates verdes
 - [x] **Phase 2: Plataforma e isolamento** - Auth, sessão, convite, ownerId server-side, convenções REST (COMPLETA 2026-09-11 — 4/4 plans, 18/18 integração, curl ALL PASS, 02-VERIFICATION human_needed→approved via HUMAN-UAT 4/4)
-- [ ] **Phase 3: Buscas e adapters** - Searches, runs temporais, BDTD/CAPES, jobs, health
+- [x] **Phase 3: Buscas e adapters** - Searches, runs temporais, BDTD/CAPES, jobs, health (COMPLETA 2026-09-11 — 6/6 plans, 9/9 integração lab + 42/42 suite + curl ALL PASS, checkpoint "approved with capes blocked")
 - [ ] **Phase 4: Corpus e exportação** - Dedup, elegibilidade, tags, comparação, CSV/BibTeX/JSON
 - [ ] **Phase 5: Prova headless** - CLI/MCP mínimos nos mesmos casos de uso + gate de suite
 
@@ -68,7 +68,7 @@ Plans:
 - [x] 03-03-PLAN.md — Wave 2 *(blocked on 03-01, paralelo ao 03-02)*: adapters BDTD/CAPES + pós-filtro + contrato com fixtures (SRC-01, SRC-02, SRC-04, SRC-05) — done 2026-09-11
 - [x] 03-04-PLAN.md — Wave 3 *(blocked on 03-01–03)*: lib searches owner-first + motor de runs sync/async/partial/diff/idempotência (LAB-02/03/04/05, CORE-03/04; D-28–D-39-núcleo) — done 2026-09-11
 - [x] 03-05-PLAN.md — Wave 4 *(blocked on 03-04)*: rotas lab+jobs+sources/health + throttle + boot (LAB-02/03/05/12, CORE-03/04) — done 2026-09-11
-- [ ] 03-06-PLAN.md — Wave 5 *(blocked on 03-05)*: integração PG + curl + auditoria + checkpoint humano busca real (todos os REQ da fase)
+- [x] 03-06-PLAN.md — Wave 5 *(blocked on 03-05)*: integração PG + curl + auditoria + checkpoint humano busca real (todos os REQ da fase) — done 2026-09-11 (9/9 + 42/42 + ALL PASS + 0 crit/0 high + "approved with capes blocked"; BDTD viva 893 resultados, CAPES re-teste no próximo ciclo)
 
 ### Phase 4: Corpus e exportação
 **Goal**: Pesquisador revisa, decide, compara e exporta o corpus com proveniência
@@ -106,6 +106,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. Fundação executável | 3/3 | Complete | 2026-09-10 |
 | 2. Plataforma e isolamento | 4/4 | Complete | 2026-09-11 |
-| 3. Buscas e adapters | 5/6 | In progress | - |
+| 3. Buscas e adapters | 6/6 | Complete | 2026-09-11 |
 | 4. Corpus e exportação | 0/TBD | Not started | - |
 | 5. Prova headless | 0/TBD | Not started | - |
