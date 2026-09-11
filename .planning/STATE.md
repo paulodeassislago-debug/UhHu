@@ -33,8 +33,6 @@ Resume file: .planning/phases/06-fundacao-app-auth-suporte-core/06-HUMAN-UAT.md 
 
 Progress: [██████░░░░] 4/4 plans executed + 1 gap-closure done (phase code-complete, UAT 0/2 with 1 fix pending re-test)
 
-Progress: [██████░░░░] 4/4 plans executed + 1 gap plan open (phase open, UAT 0/2 with 1 issue)
-
 ## Performance Metrics
 
 **Velocity:**
