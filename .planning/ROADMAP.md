@@ -79,10 +79,14 @@ Plans:
   2. Decisões + tags persistem por projeto; corpus (view de elegíveis) consistente na hora
   3. Comparação entre 2+ buscas mostra totais, anos, fontes e sobreposição
   4. Exportação CSV/BibTeX/JSON correta para seleção e corpus
-**Plans**: TBD
+**Plans**: 5 plans in 4 waves (01 contratos+puras + 02 schema/migration em paralelo → 03 lib corpus → 04 rotas+integracao → 05 prova+checkpoint)
 
 Plans:
-- [ ] 04-01: TBD na discussão da fase
+- [ ] 04-01-PLAN.md — Wave 1: fastest-levenshtein + contratos dedup/decisao/tags/compare/export + dedup.ts/exports.ts puros + unit smoke (LAB-07, LAB-11; D-40/D-44/D-49/D-51/D-52/D-53)
+- [ ] 04-02-PLAN.md — Wave 1 (paralelo ao 04-01): schema 8 tabelas + migration 0003 + push BLOCKING + fixtures + skeleton lab-corpus (LAB-07/08/09; D-41/D-42/D-45/D-46)
+- [ ] 04-03-PLAN.md — Wave 2 *(blocked on 04-01, 04-02)*: lib corpus.ts owner-first (groups/confirm/reject/pin + decisao/tags/divergencia/corpus + compare 4 blocos) (LAB-07/08/09/10; D-40–D-49)
+- [ ] 04-04-PLAN.md — Wave 3 *(blocked on 04-03)*: rotas lab revisao + export attachment + bucket lab-export + integracao LAB-07–LAB-11 + IDOR (todos menos LAB-06; D-41/D-46/D-48–D-53)
+- [ ] 04-05-PLAN.md — Wave 4 *(blocked on 04-04)*: curl-corpus.sh ALL PASS + regressao LAB-06 + auditoria + checkpoint humano busca viva (LAB-06–LAB-11)
 
 ### Phase 5: Prova headless
 **Goal**: Mesma capability executável por REST e por CLI/MCP sem duplicar regra; gates de suite verdes
