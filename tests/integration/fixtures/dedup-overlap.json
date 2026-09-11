@@ -1,0 +1,74 @@
+[
+  {
+    "source": "bdtd",
+    "sourceId": "bdtd-exact-001",
+    "title": "Educação inclusiva e tecnologia assistiva",
+    "authors": ["Maria Silva"],
+    "year": 2021,
+    "docType": "masterThesis",
+    "institution": "Universidade de São Paulo"
+  },
+  {
+    "source": "capes",
+    "sourceId": "capes-exact-001",
+    "title": "Educacao inclusiva e tecnologia assistiva!",
+    "authors": ["Maria Silva"],
+    "year": 2021,
+    "docType": "masterThesis",
+    "institution": "Universidade de Sao Paulo"
+  },
+  {
+    "source": "bdtd",
+    "sourceId": "bdtd-fuzzy-002",
+    "title": "Letramento digital nas escolas públicas",
+    "authors": ["Ana Souza", "Bruno Lima"],
+    "year": 2022,
+    "docType": "masterThesis",
+    "institution": "Universidade Federal do Vale"
+  },
+  {
+    "source": "capes",
+    "sourceId": "capes-fuzzy-002",
+    "title": "Letramento digital na escola publica",
+    "authors": ["Ana Souza", "Bruno Lima"],
+    "year": 2022,
+    "docType": "masterThesis",
+    "institution": "Universidade Federal do Vale"
+  },
+  {
+    "source": "bdtd",
+    "sourceId": "bdtd-distinct-003",
+    "title": "Formação docente para a educação do campo",
+    "authors": ["Carlos Ferreira"],
+    "year": 2021,
+    "docType": "masterThesis",
+    "institution": "Universidade Estadual do Norte"
+  },
+  {
+    "source": "capes",
+    "sourceId": "capes-distinct-003",
+    "title": "Formação docente para a educação do campo: tese expandida",
+    "authors": ["Carlos Ferreira"],
+    "year": 2023,
+    "docType": "doctoralThesis",
+    "institution": "Universidade Estadual do Norte"
+  },
+  {
+    "source": "bdtd",
+    "sourceId": "bdtd-crossyear-004",
+    "title": "Alfabetização científica no ensino médio",
+    "authors": ["Paula Mendes"],
+    "year": 2019,
+    "docType": "masterThesis",
+    "institution": "Instituto Federal do Sul"
+  },
+  {
+    "source": "capes",
+    "sourceId": "capes-crossyear-004",
+    "title": "Alfabetização científica no ensino médio",
+    "authors": ["Paula Mendes"],
+    "year": 2023,
+    "docType": "doctoralThesis",
+    "institution": "Instituto Federal do Sul"
+  }
+]
