@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: "Milestone v1.0 ARCHIVED 2026-09-11 (ROADMAP + REQUIREMENTS em milestones/). Próximo: /gsd-new-milestone"
-stopped_at: Milestone v1.0 archived — planning next milestone
-last_updated: "2026-09-11T16:30:00Z"
-last_activity: "2026-09-11 — v1.0 archived (safety commit; REQUIREMENTS.md removal follows)"
+milestone: v1.1
+milestone_name: Lab UI v1
+status: "planning — defining requirements"
+stopped_at: Milestone v1.1 started — defining requirements
+last_updated: "2026-09-11T17:00:00Z"
+last_activity: "2026-09-11 — v1.1 Lab UI v1 started (PROJECT.md updated; requirements next)"
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 23
-  completed_plans: 23
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -20,17 +20,17 @@ progress:
 
 See: .planning/PROJECT.md (updated 2026-09-11)
 
-**Core value:** Um pesquisador consegue executar uma busca real (BDTD/CAPES) pelo CORE, com isolamento por usuário, proveniência e histórico.
-**Current focus:** Planning next milestone (v1.0 shipped 2026-09-11; archives in .planning/milestones/)
+**Core value:** Um pesquisador usa o Lab por interface tablet-first (web/PWA beta + nativo) consumindo SOMENTE o CORE — do login ao corpus exportado.
+**Current focus:** Defining requirements for v1.1 Lab UI v1 (research skipped; esqueleto §14 + spec §9 as base)
 
 ## Current Position
 
-Phase: 5 of 5 (CLOSED — verificação passed 20/20)
-Plan: 5 of 5 in Phase 5 — 05-05 done (checkpoint APPROVED 2026-09-11)
-Status: Milestone v1.0 pronto para fechamento. Próximo: /gsd-complete-milestone
-Last activity: 2026-09-11 — Phase 5 fechada (review + regressão + verificação); CORE-02/CORE-05 complete
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-09-11 — Milestone v1.1 started
 
-Progress: [██████████] 23 plans complete (Phase 1: 3/3 + Phase 2: 4/4 + Phase 3: 6/6 + Phase 4: 5/5 + Phase 5: 5/5)
+Progress: [░░░░░░░░░░] 0 plans complete (new milestone starting)
 
 ## Performance Metrics
 

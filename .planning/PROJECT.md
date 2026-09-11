@@ -8,6 +8,20 @@ UhHu! é uma suite de apps (Lab, Lib, Note, Plan, Prof) sobre um único backend 
 
 Um pesquisador consegue executar uma busca real (BDTD/CAPES) pelo CORE, com isolamento por usuário, proveniência e histórico — sem UI direta no banco e sem Supabase.
 
+## Current Milestone: v1.1 Lab UI v1
+
+**Goal:** Pesquisador usa o Lab por interface tablet-first (web/PWA beta + nativo Android/iOS) consumindo SOMENTE o CORE — slice vertical login → corpus/export primeiro.
+
+**Target features:**
+- Scaffold Expo + TypeScript strict em `apps/lab` + client CORE tipado (contracts em definição única)
+- Auth web (cookie httpOnly) + nativo (PAT por device em secure storage) + CORS da API para origem do web beta
+- Projetos: lista/criar/arquivar + cabeçalho com pergunta + abas (Estratégias/Comparação/Corpus)
+- Busca: formulário + execução com polling de run + estados ok/parcial/falha/cancelled
+- Resultados: cards + DedupGroup expansível + decisão elegibilidade + tags + badge `isNew`
+- Corpus: view derivada + filtros + export CSV/BibTeX/JSON por grupo deduplicado inteiro
+- Comparação 2–4 buscas com destaque só "mais inclusiva" + escolha manual da referência
+- CORE (§14): migration `referenceSearchId` nullable + `isNew` derivado on-read + diálogo hard-delete com cascata
+
 ## Requirements
 
 ### Validated
@@ -19,14 +33,17 @@ Um pesquisador consegue executar uma busca real (BDTD/CAPES) pelo CORE, com isol
 - ✓ Adapters BDTD/CAPES + SourceClient + partial — v1.0
 - ✓ CLI/MCP mínimos + gates (typecheck, IDOR, Gitleaks, SAST, audit, PG) — v1.0
 
-### Active
+### Active (v1.1 Lab UI v1)
 
-Próximo milestone definido via `/gsd-new-milestone`. Carry-over técnico conhecido (candidatos):
-
-- [ ] Adendo ao contrato §10: formalizar as 14 extensões transicionais de capability
-- [ ] Wiring do bin nu `uhhu` na raiz do monorepo
-- [ ] Review info I-01–I-05 (05-REVIEW.md)
-- [ ] Re-teste CAPES ao vivo (bloqueio na fonte durante v1.0)
+- [ ] Scaffold `apps/lab` (Expo + TS strict + web/PWA + nativo) sobre contratos compartilhados
+- [ ] Client CORE tipado (auth, projects, searches, runs, results, decisions, tags, corpus, export, sources, compare)
+- [ ] Auth web cookie + PAT nativo + CORS beta
+- [ ] Telas §2–§8 do esqueleto (login/convite, projetos, estratégias, form busca, execução, resultados, decisão/tags)
+- [ ] Corpus (§10) + export por grupo inteiro (§14-2)
+- [ ] Comparação (§9) só "mais inclusiva" + referência manual (§14-1)
+- [ ] CORE: `referenceSearchId` migration (§14-4) + `isNew` on-read (§14-5) + diálogo hard-delete cascata (§14-3)
+- [ ] Gates: typecheck/lint/testes/IDOR (via CORE)/Gitleaks/SAST/pnpm audit/bundle sem segredos
+- [ ] Carry-over v1.0 (fora do caminho crítico UI; só se bloquear): adendo contrato §10 (14 extensões), wiring bin nu `uhhu`, review info I-01–I-05, re-teste CAPES ao vivo
 
 ### Out of Scope
 
@@ -48,7 +65,9 @@ Próximo milestone definido via `/gsd-new-milestone`. Carry-over técnico conhec
 - Roadmap macro: `dev-docs/09-roadmap-geral.md` — fundação → CORE v1 → Lab v1 → Lib → Note → Plan → Prof → suite integrada → evolução. Este GSD cobre fundação + CORE v1 + Lab v1.
 - Ambiente DEV atual (09/09/2026, verificado): workspace `/home/coder/projetos/UhHu`; sem Node/pnpm/psql/docker no PATH deste container; vault symlink quebrado (`~/ubuntu/vault` → `/home/ubuntu/...` inexistente aqui) — fonte utilizável é `docs/` (espelho) + `dev-docs/`; sem `.planning` antes deste init; git recém-inicializado (`main`, sem commits).
 - GSD: sem runtime Node → `gsd-sdk`/subagents indisponíveis; research paralela pulada (workflow fallback); roadmap gerado inline e ancorado aos dev-docs. `AGENTS.md` existente é normativo e NÃO foi sobrescrito pelo gerador.
+- Out of Scope vigente confirmado em v1.1: paleta/tema visual, refinamento de componentes, IA/síntese, etapa Análise, Lib/Note/Plan/Prof UI, Nextcloud (decisão Paulo 10–11/09/2026)
 - Estado v1.0 SHIPPED 2026-09-11: 5 fases, 23 plans, 104 commits, ~12.4k LOC TS; suite 195/195, typecheck 7/7, scanners zerados; tag v1.0. Dívida conhecida: adendo §10, bin `uhhu`, info I-01–I-05, re-teste CAPES (ver milestones/v1.0-ROADMAP.md).
+- Estado v1.1 INICIADO 2026-09-11: milestone "Lab UI v1" (instrução Hermes/Paulo); esqueleto validado `dev-docs/10-lab-esqueleto-telas.md` §14 (5/5 resolvidas); spec `dev-docs/03-lab-spec-v1.md` §9 (Expo); fases continuam da 6; research pulado (domínio validado; arestas Expo/pnpm viram spike na fase 6).
 
 ## Constraints
 
@@ -91,4 +110,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-09-11 after v1.0 milestone (shipped; próxima definição via /gsd-new-milestone)*
+*Last updated: 2026-09-11 after v1.1 Lab UI v1 start (scope from Hermes/Paulo instruction; phases continue from 6)*
