@@ -96,10 +96,16 @@ Plans:
   1. Uma capability do Lab executa por REST e por CLI/MCP sem implementação paralela de negócio
   2. Auditoria adversarial (arquivo a arquivo) + testes IDOR + scanners passam; achados críticos/altos corrigidos ou com aceite formal
   3. Gate Etapa 2 do roadmap geral atendido: projeto→busca→run→revisão→dedup→decisão→exportação sem tocar o banco
-**Plans**: TBD
+**Plans**: 5 plans in 4 waves (01 fundação capabilities+PAT → 02 servidor PAT+execute → 03 CLI + 04 MCP em paralelo → 05 prova+checkpoint)
 
 Plans:
-- [ ] 05-01: TBD na discussão da fase
+- [ ] 05-01-PLAN.md — Wave 1: registry capabilities + execute() + ActorContext pat + PAT contracts + migration 0004 + guard anti-PG D-55 (CORE-02; D-60/D-61/D-55)
+- [ ] 05-02-PLAN.md — Wave 2 *(blocked on 05-01)*: pat.ts + Bearer no requireAuth + rotas lab/projects como adaptadores execute() + PAT CRUD com lockout/rate-limit + integração (CORE-02, CORE-05; D-56-servidor/D-58-servidor/D-60–D-63)
+- [ ] 05-03-PLAN.md — Wave 3 *(blocked on 05-02, paralelo ao 05-04)*: CLI @uhhu/cli (comandos D-64 + tabela/--json + polling 25s + export arquivo + credencial 600) + smoke + integração sem DATABASE_URL (CORE-02, CORE-05; D-56–D-59 lado CLI, D-62, D-64–D-66)
+- [ ] 05-04-PLAN.md — Wave 3 *(blocked on 05-02, paralelo ao 05-03)*: MCP @uhhu/mcp (11 tools + confirm destrutivas + mesmos DTOs) + smoke + integração (CORE-05, CORE-02; D-56–D-59 lado MCP, D-67–D-70)
+- [ ] 05-05-PLAN.md — Wave 4 *(blocked on 05-03, 05-04, checkpoint humano)*: prova-headless.sh 3 canais ALL PASS + matriz IDOR + auditoria adversarial + scanners + checkpoint gate Etapa 2 (CORE-02, CORE-05; D-54, D-55-gate, D-57)
+
+Cross-cutting constraints: mesma capability nos 3 canais sem duplicar regra; CLI/MCP só por API (nunca PG direto, guard D-55 fail-closed); Bearer PAT 30d sliding com revogação, mesmo 404 IDOR e envelope PT-BR nos 3 canais; `any` proibido até em testes; `Math.random` proibido para tokens.
 
 ## Progress
 
