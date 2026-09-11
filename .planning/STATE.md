@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: "Phase 3 plan 02 COMPLETA 2026-09-11 (SourceClient/registry/health provados vivos contra PG DEV). Próximo: 03-04 bloqueado no 03-03 (adapters, wave paralela)"
-stopped_at: Phase 3 plan 02 complete
-last_updated: "2026-09-11T02:59:03Z"
-last_activity: "2026-09-11 — 03-02 completa: @uhhu/integrations (SourceClient+registry+health); próximo: 03-04 após 03-03"
+status: "Phase 3 plan 03 COMPLETA 2026-09-11 (adapters BDTD/CAPES + pós-filtro + contrato 15 its verdes sem rede/PG). Próximo: 03-04 lib execução (desbloqueado)"
+stopped_at: Phase 3 plan 03 complete
+last_updated: "2026-09-11T03:09:37Z"
+last_activity: "2026-09-11 — 03-03 completa: adapters + pós-filtro + 15/15 contrato; próximo: 03-04"
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 13
-  completed_plans: 9
-  percent: 69
+  completed_plans: 10
+  percent: 77
 ---
 
 # Project State
@@ -21,22 +21,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-09)
 
 **Core value:** Um pesquisador consegue executar uma busca real (BDTD/CAPES) pelo CORE, com isolamento por usuário, proveniência e histórico.
-**Current focus:** Phase 3: Buscas e adapters (03-02 done 2026-09-11 — 03-03 adapters em wave paralela; 03-04 bloqueado nela)
+**Current focus:** Phase 3: Buscas e adapters (03-03 done 2026-09-11 — wave 2 completa 3/3; próximo: 03-04 lib execução)
 
 ## Current Position
 
-Phase: 3 of 5 (em andamento — 03-02 done: @uhhu/integrations vivo contra PG DEV)
-Plan: 2 of 6 in Phase 3 — done
-Status: 03-02 completa (typecheck verde, lint limpo, SourceClient+health provados vivos). Próximo: 03-04 após 03-03
-Last activity: 2026-09-11 — 03-02 completa; 03-04 bloqueado no 03-03 (wave paralela)
+Phase: 3 of 5 (em andamento — 03-03 done: adapters BDTD/CAPES + pós-filtro + contrato 15/15 sem rede)
+Plan: 3 of 6 in Phase 3 — done
+Status: 03-03 completa (typecheck+lint+prettier verdes, workspace 35/35). Próximo: 03-04 lib execução
+Last activity: 2026-09-11 — 03-03 completa; wave 2 fechada (03-02+03-03); próximo: 03-04
 
-Progress: [███████░░░] 9 plans complete (Phase 1: 3/3 + Phase 2: 4/4 + Phase 3: 2/6)
+Progress: [████████░░] 10 plans complete (Phase 1: 3/3 + Phase 2: 4/4 + Phase 3: 3/6)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 3
+- Total plans completed: 4
 - Average duration: ~10min
 - Total execution time: ~19min
 
@@ -45,11 +45,11 @@ Progress: [███████░░░] 9 plans complete (Phase 1: 3/3 + Phas
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1. Fundação executável | 2 | ~19min | ~10min |
-| 3. Buscas e adapters | 2 | ~9min | ~5min |
+| 3. Buscas e adapters | 3 | ~49min | ~16min |
 
 **Recent Trend:**
 
-- Last 5 plans: 02-03, 02-04, 03-01, 03-02 done
+- Last 5 plans: 02-04, 03-01, 03-02, 03-03 done
 - Trend: -
 
 *Updated after each plan completion*
@@ -67,6 +67,7 @@ Recent decisions affecting current work:
 - 01-03 (tasks 1-2): CI fail-closed 6 jobs + aceite formal como única exceção; vitest workspace smoke+integration com env dummy condicional (nunca sobrescreve real); `sql` via `@uhhu/db` (D-10); skip de integração só em offline definitivo; `migrate` loga cadeia de causas redigida; FOUND-03 segue aberto até CI verde + aprovação humana
 - 03-01: `PerSourceMetrics.status` com 'skipped' (Record exige ambas as chaves; fonte única); `SourceHealthDTO.source: LabSource` (health de qualquer fonte do registry); `created_by` sem cascade (cadeia já remove); jsonb sem `$type` (sem dep contracts→db)
 - 03-02: dep `@uhhu/contracts` no integrations (DTO em definição única, sem duplicar); challenge conta como falha no breaker (5 seguidas→60s); barrel em 2 etapas (health só na task 2, gate typecheck por commit)
+- 03-03: erros de search como valores (failed/challenge), só RangeTooWideError/termo-vazio lançam; ficha CAPES só em host público (SSRF); teste sem `import.meta` (tsconfig raiz = CJS, fixtures via process.cwd)
 
 ### Pending Todos
 
@@ -89,6 +90,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-11T02:59:03Z
-Stopped at: Phase 3 plan 02 complete
-Resume file: .planning/phases/03-buscas-e-adapters/03-04-PLAN.md (bloqueado no 03-03, wave paralela)
+Last session: 2026-09-11T03:09:37Z
+Stopped at: Phase 3 plan 03 complete
+Resume file: .planning/phases/03-buscas-e-adapters/03-04-PLAN.md (desbloqueado — 03-02+03-03 done)
