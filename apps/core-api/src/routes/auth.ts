@@ -348,17 +348,21 @@ export async function buildAuthRoutes(app: FastifyInstance, db: Db): Promise<voi
 
   // D-20/D-21 + D-61: logout encerra SO o aparelho atual — sessao via cookie
   // ou, quando chamado com Bearer, revoga o PAT atual (request.patId).
+  // H-03: o delete da sessao e escopado ao ator (userId) — sem isso, um Bearer
+  // de A apresentando o cookie de B apagava a sessao de B.
   app.post(
     '/api/v1/auth/logout',
     { preHandler: requireAuth(db) },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const requestId = resolveRequestId(request);
       reply.header('x-request-id', requestId);
-      const raw = readSessionCookie(request);
-      if (raw !== null) {
-        await db.delete(sessions).where(eq(sessions.tokenHash, hashToken(raw)));
-      }
       const actor = request.actor;
+      const raw = readSessionCookie(request);
+      if (raw !== null && actor !== undefined) {
+        await db
+          .delete(sessions)
+          .where(and(eq(sessions.tokenHash, hashToken(raw)), eq(sessions.userId, actor.userId)));
+      }
       if (actor !== undefined && actor.authMethod === 'pat' && request.patId !== undefined) {
         await revokePat(db, actor.userId, request.patId);
       }

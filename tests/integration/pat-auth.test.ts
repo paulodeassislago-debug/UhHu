@@ -662,6 +662,52 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
       expect(sessionOk.statusCode).toBe(200);
     });
 
+    it('H-03: logout com Bearer de A + cookie de B nao apaga a sessao de B (escopo ao ator)', async () => {
+      if (!pgAvailable || app === undefined || db === undefined) {
+        console.warn('[pat-auth] PG inalcançavel — teste pulado (offline).');
+        return;
+      }
+      const { cookieA, cookieB } = await bootstrapTwoUsers(app);
+      const patA = await issueToken(app, 'ana@example.com', 'SenhaForte123!', 'cli-a');
+      const out = await apiRequest(app, 'POST', '/api/v1/auth/logout', {
+        bearer: patA.token,
+        cookieValue: cookieB,
+      });
+      expect(out.statusCode).toBe(204);
+      const afterPat = await apiRequest(app, 'GET', '/api/v1/auth/me', {
+        bearer: patA.token,
+      });
+      expect(afterPat.statusCode).toBe(401);
+      const sessionB = await apiRequest(app, 'GET', '/api/v1/auth/me', {
+        cookieValue: cookieB,
+      });
+      expect(sessionB.statusCode).toBe(200);
+      const sessionA = await apiRequest(app, 'GET', '/api/v1/auth/me', {
+        cookieValue: cookieA,
+      });
+      expect(sessionA.statusCode).toBe(200);
+    });
+
+    it('H-03: logout com cookie proprio apaga so a sessao atual', async () => {
+      if (!pgAvailable || app === undefined || db === undefined) {
+        console.warn('[pat-auth] PG inalcançavel — teste pulado (offline).');
+        return;
+      }
+      const { cookieA, cookieB } = await bootstrapTwoUsers(app);
+      const out = await apiRequest(app, 'POST', '/api/v1/auth/logout', {
+        cookieValue: cookieA,
+      });
+      expect(out.statusCode).toBe(204);
+      const gone = await apiRequest(app, 'GET', '/api/v1/auth/me', {
+        cookieValue: cookieA,
+      });
+      expect(gone.statusCode).toBe(401);
+      const other = await apiRequest(app, 'GET', '/api/v1/auth/me', {
+        cookieValue: cookieB,
+      });
+      expect(other.statusCode).toBe(200);
+    });
+
     it('logout-all revoga sessoes e todos os PATs (sair de todas)', async () => {
       if (!pgAvailable || app === undefined || db === undefined) {
         console.warn('[pat-auth] PG inalcançavel — teste pulado (offline).');
