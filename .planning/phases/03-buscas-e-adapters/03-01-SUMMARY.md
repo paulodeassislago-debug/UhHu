@@ -66,7 +66,7 @@ Each task was committed atomically:
 1. **task 1: contratos lab em packages/contracts** - `175b12b` (feat)
 2. **task 2: schema Drizzle + migration 0002 das tabelas lab** - `052e9fd` (feat)
 
-**Plan metadata:** _(pending final docs commit)_
+**Plan metadata:** `ded3ac5` (docs: complete plan)
 
 ## Files Created/Modified
 
