@@ -57,3 +57,35 @@ export interface SessionInfo {
   ip: string | null;
   current: boolean;
 }
+
+// PAT por device (D-60/D-61: Bearer proprio CLI/MCP, formato e ciclo nascem
+// aqui em definicao unica). O raw circula UMA vez em PersonalAccessTokenCreated,
+// como sessao/reset em tokens.ts; listagens usam PersonalAccessTokenInfo sem
+// hash nem raw (D-62: nunca em log/resposta/bundle/Git).
+export const patDeviceNameSchema = z
+  .string()
+  .trim()
+  .min(1, 'Nome do dispositivo é obrigatório.')
+  .max(100, 'Nome deve ter no máximo 100 caracteres.');
+
+export const patCreateSchema = z.object({
+  email: emailSchema,
+  password: z.string().min(1).max(128),
+  deviceName: patDeviceNameSchema,
+});
+
+export type PatCreateInput = z.infer<typeof patCreateSchema>;
+
+// Listagem de PATs ativos. NUNCA inclui hash nem raw (D-62).
+export interface PersonalAccessTokenInfo {
+  id: string;
+  deviceName: string;
+  createdAt: string;
+  lastSeenAt: string;
+  expiresAt: string;
+}
+
+// Resposta unica da criacao: o token raw aparece aqui e nunca mais.
+export interface PersonalAccessTokenCreated extends PersonalAccessTokenInfo {
+  token: string;
+}

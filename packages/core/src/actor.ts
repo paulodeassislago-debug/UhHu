@@ -9,7 +9,8 @@ export interface ActorContext {
   userId: string;
   role: UserRole;
   requestId: string;
-  authMethod: 'session';
+  // D-60–D-63: PAT espelha sessão; requireAuth deriva, nunca body.
+  authMethod: 'session' | 'pat';
 }
 
 export class UnauthenticatedError extends Error {

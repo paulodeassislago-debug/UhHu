@@ -4,5 +4,6 @@
 export * from './errors.js';
 export * from './pagination.js';
 export * from './auth.js';
+export * from './capabilities.js';
 export * from './projects.js';
 export * from './lab.js';
