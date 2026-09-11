@@ -66,7 +66,7 @@ Each task was committed atomically:
 1. **task 1: pacote + SourceClient compartilhado + registry** - `925f4d8` (feat)
 2. **task 2: health ok|degraded|offline a partir de eventos** - `16b4613` (feat)
 
-**Plan metadata:** _(preenchido no commit final de docs)_
+**Plan metadata:** `b0d2799` (docs: complete plan)
 
 ## Files Created/Modified
 
