@@ -85,6 +85,24 @@ export const sessions = pgTable('sessions', {
 export type Session = typeof sessions.$inferSelect;
 export type NewSession = typeof sessions.$inferInsert;
 
+// PAT por device (D-60/D-61): espelho de sessions + deviceName + revokedAt,
+// sem rememberMe/userAgent/ip — PAT e por device com ciclo 30d sliding.
+export const personalAccessTokens = pgTable('personal_access_tokens', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  tokenHash: text('token_hash').notNull().unique(),
+  deviceName: text('device_name').notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export type PersonalAccessToken = typeof personalAccessTokens.$inferSelect;
+export type NewPersonalAccessToken = typeof personalAccessTokens.$inferInsert;
+
 export const passwordResets = pgTable('password_resets', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id')

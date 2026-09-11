@@ -31,3 +31,8 @@ export function resetExpiry(from: Date = new Date()): Date {
 export function sessionExpiry(rememberMe: boolean, from: Date = new Date()): Date {
   return new Date(from.getTime() + (rememberMe ? 30 * DAY_MS : DAY_MS));
 }
+
+// patExpiry(): PAT 30d sliding (D-61: espelha sessão rememberMe=true, sem PAT eterno no v1).
+export function patExpiry(from: Date = new Date()): Date {
+  return new Date(from.getTime() + 30 * DAY_MS);
+}

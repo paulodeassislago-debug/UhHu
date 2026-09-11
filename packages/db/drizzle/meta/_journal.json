@@ -29,6 +29,13 @@
       "when": 1789122200073,
       "tag": "0003_corpus",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789129977314,
+      "tag": "0004_personal_access_tokens",
+      "breakpoints": true
     }
   ]
 }
