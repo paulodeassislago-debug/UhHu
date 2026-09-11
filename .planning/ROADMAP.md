@@ -31,10 +31,15 @@
   2. User faz login na web (cookie httpOnly) e no nativo (PAT em secure storage), registra-se por convite e cai no login com aviso ao expirar a sessão
   3. `referenceSearchId` persiste por migration e `isNew` aparece no GET results sem coluna nova (testes de isolamento/IDOR verdes)
   4. Web beta carrega dados da API via CORS a partir da origem aprovada; gates do app verdes (typecheck strict, lint, testes, bundle sem segredos)
-**Plans**: TBD
+**Plans**: 4 plans in 3 waves
 
 Plans:
-- [ ] 06-01: TBD during `/gsd-plan-phase 6`
+- [ ] 06-01: Suporte CORE — referenceSearchId + isNew + CORS (Wave 1)
+- [ ] 06-02: Scaffold Expo + client tipado + navegação esqueleto (Wave 1)
+- [ ] 06-03: Auth web cookie + PAT nativo + convite + expiração (Wave 2, blocked on 06-02)
+- [ ] 06-04: Estados §11 + gates + prova beta com dados reais (Wave 3, blocked on 06-03)
+
+Cross-cutting constraints: CORS allowlist exata sem espelho (06-01, 06-04); `any` proibido + `import type` de contracts (todos); ownerId sempre do ator no servidor (06-01, 06-03).
 
 #### Phase 7: Projetos, buscas e execução
 **Goal**: Pesquisador organiza projetos, define estratégias e executa buscas com acompanhamento do run
