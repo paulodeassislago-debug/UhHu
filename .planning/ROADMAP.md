@@ -7,7 +7,7 @@ Da fundação executável (monorepo + PG + gates) ao primeiro vertical slice do 
 ## Phases
 
 - [x] **Phase 1: Fundação executável** - Monorepo, PG DEV, migrations e gates verdes
-- [ ] **Phase 2: Plataforma e isolamento** - Auth, sessão, convite, ownerId server-side, convenções REST
+- [x] **Phase 2: Plataforma e isolamento** - Auth, sessão, convite, ownerId server-side, convenções REST (COMPLETA 2026-09-11 — 4/4 plans, 18/18 integração, curl ALL PASS, 02-VERIFICATION human_needed→approved via HUMAN-UAT 4/4)
 - [ ] **Phase 3: Buscas e adapters** - Searches, runs temporais, BDTD/CAPES, jobs, health
 - [ ] **Phase 4: Corpus e exportação** - Dedup, elegibilidade, tags, comparação, CSV/BibTeX/JSON
 - [ ] **Phase 5: Prova headless** - CLI/MCP mínimos nos mesmos casos de uso + gate de suite
@@ -44,10 +44,10 @@ Cross-cutting constraints: nenhum segredo em codigo/Git/logs/respostas; nenhuma 
 **Plans**: 4 plans in 3 waves (01 fundacao → 02 auth + 03 projetos em paralelo → 04 wiring+IDOR+checkpoint)
 
 Plans:
-- [ ] 02-01-PLAN.md — Wave 1: contratos compartilhados + schema/migration 0001 (users/sessions/invites/resets/projects) + envelope PT-BR/requestId/ActorContext (CORE-01, PLAT-05; D-23, D-25, D-27)
-- [ ] 02-02-PLAN.md — Wave 2 *(blocked on Wave 1)*: convites admin + registro/login/logout + sessoes multi-device + reset + lockout 5→15min (PLAT-01, PLAT-02, PLAT-05; D-15--D-21, D-26)
-- [ ] 02-03-PLAN.md — Wave 2 *(blocked on Wave 1, paralelo ao 02-02)*: CRUD projetos + isolamento ownerId + arquivar/excluir + paginacao cursor (LAB-01, PLAT-03, CORE-01; D-22--D-24, D-27)
-- [ ] 02-04-PLAN.md — Wave 3 *(blocked on Wave 2)*: wiring boot + rate limit + matriz IDOR curl + auditoria adversarial + checkpoint humano (PLAT-03, PLAT-04, PLAT-05; D-25, D-26)
+- [x] 02-01-PLAN.md — Wave 1: contratos compartilhados + schema/migration 0001 (users/sessions/invites/resets/projects) + envelope PT-BR/requestId/ActorContext (CORE-01, PLAT-05; D-23, D-25, D-27) — done 2026-09-11
+- [x] 02-02-PLAN.md — Wave 2 *(blocked on Wave 1)*: convites admin + registro/login/logout + sessoes multi-device + reset + lockout 5→15min (PLAT-01, PLAT-02, PLAT-05; D-15--D-21, D-26) — done 2026-09-11
+- [x] 02-03-PLAN.md — Wave 2 *(blocked on Wave 1, paralelo ao 02-02)*: CRUD projetos + isolamento ownerId + arquivar/excluir + paginacao cursor (LAB-01, PLAT-03, CORE-01; D-22--D-24, D-27) — done 2026-09-11
+- [x] 02-04-PLAN.md — Wave 3 *(blocked on Wave 2)*: wiring boot + rate limit + matriz IDOR curl + auditoria adversarial + checkpoint humano (PLAT-03, PLAT-04, PLAT-05; D-25, D-26) — done 2026-09-11 (checkpoint approved + curl ALL PASS)
 
 Cross-cutting constraints: `ownerId` sempre da sessao, nunca do body; fora do escopo → 404 sem revelar existencia; envelope `{error:{code,message,details,requestId}}` PT-BR sem stack/SQL/tokens; `any` proibido ate em testes; `Math.random` proibido para tokens.
 
@@ -100,7 +100,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Fundação executável | 3/3 | Complete | 2026-09-10 |
-| 2. Plataforma e isolamento | 0/TBD | Not started | - |
+| 2. Plataforma e isolamento | 4/4 | Complete | 2026-09-11 |
 | 3. Buscas e adapters | 0/TBD | Not started | - |
 | 4. Corpus e exportação | 0/TBD | Not started | - |
 | 5. Prova headless | 0/TBD | Not started | - |

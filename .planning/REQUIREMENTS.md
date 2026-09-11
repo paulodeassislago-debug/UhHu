@@ -16,15 +16,15 @@ Fontes: `dev-docs/07-core-contract.md` §10–13/21, `dev-docs/03-lab-spec-v1.md
 
 ### Plataforma, identidade e isolamento
 
-- [ ] **PLAT-01**: Usuário cria conta e-mail+senha (argon2id) somente com token de convite válido; convite revogado para de valer
-- [ ] **PLAT-02**: Usuário faz login e mantém sessão segura (cookie `httpOnly`/`Secure`/`SameSite`); logout revoga
-- [ ] **PLAT-03**: Toda leitura/alteração/exclusão por ID verifica `ownerId`/`workspaceId` da sessão no servidor; recurso fora do escopo retorna 404 sem revelar existência
-- [ ] **PLAT-04**: Testes automatizados cobrem dono, estranho e ID adulterado via `curl` em leitura, alteração e exclusão de cada recurso com ID
-- [ ] **PLAT-05**: Rate limit em login/convite/busca/exportação; `X-Request-Id` propagado; erros no formato `{error:{code,message,details,requestId}}` sem vazar stack/SQL/tokens
+- [x] **PLAT-01**: Usuário cria conta e-mail+senha (argon2id) somente com token de convite válido; convite revogado para de valer (validado 2026-09-11 Fase 2: convite 30d uso único atômico, bootstrap, 409 sem consumir)
+- [x] **PLAT-02**: Usuário faz login e mantém sessão segura (cookie `httpOnly`/`Secure`/`SameSite`); logout revoga (validado 2026-09-11: sliding 30d/24h, lista+revoga+logout-all, curl proof)
+- [x] **PLAT-03**: Toda leitura/alteração/exclusão por ID verifica `ownerId`/`workspaceId` da sessão no servidor; recurso fora do escopo retorna 404 sem revelar existência (validado 2026-09-11: owner-first projects+sessions, curl 404 triplo)
+- [x] **PLAT-04**: Testes automatizados cobrem dono, estranho e ID adulterado via `curl` em leitura, alteração e exclusão de cada recurso com ID (validado 2026-09-11: 4 its + curl-idor.sh ALL PASS)
+- [x] **PLAT-05**: Rate limit em login/convite/busca/exportação; `X-Request-Id` propagado; erros no formato `{error:{code,message,details,requestId}}` sem vazar stack/SQL/tokens (validado 2026-09-11: 200 global + fino auth, envelope PT-BR)
 
 ### Convenções e capabilities headless
 
-- [ ] **CORE-01**: REST sob `/api/v1`, JSON UTF-8, datas ISO 8601 UTC, IDs opacos, camelCase público / snake_case banco, paginação `limit`+cursor com `nextCursor`/`hasMore`
+- [x] **CORE-01**: REST sob `/api/v1`, JSON UTF-8, datas ISO 8601 UTC, IDs opacos, camelCase público / snake_case banco, paginação `limit`+cursor com `nextCursor`/`hasMore` (validado 2026-09-11 Fase 2)
 - [ ] **CORE-02**: Capabilities executáveis por `execute(name, input, ActorContext)`; HTTP/CLI/MCP adaptam E/S sem duplicar regra de negócio
 - [ ] **CORE-03**: Operações com efeitos externos/jobs aceitam `Idempotency-Key` sem criar duplicatas na janela
 - [ ] **CORE-04**: Jobs longos são observáveis (`queued|running|succeeded|partial|failed|cancelled`), com timeout de fila, retry idempotente e cancelamento; logs sem credenciais
@@ -32,7 +32,7 @@ Fontes: `dev-docs/07-core-contract.md` §10–13/21, `dev-docs/03-lab-spec-v1.md
 
 ### Lab — projetos, buscas e execuções
 
-- [ ] **LAB-01**: Usuário cria lista, lê e atualiza projetos de pesquisa (título + pergunta); múltiplos projetos por usuário
+- [x] **LAB-01**: Usuário cria lista, lê e atualiza projetos de pesquisa (título + pergunta); múltiplos projetos por usuário (validado 2026-09-11 Fase 2: CRUD + arquivar/reativar)
 - [ ] **LAB-02**: Usuário define busca declarativa por projeto (termo, booleanos, filtros ano/tipo/fonte/área/instituição/programa, fontes `bdtd|capes|ambas`, default ambas) sem executar
 - [ ] **LAB-03**: Usuário executa busca → cria `SearchRun` temporal (`queued|running|ok|partial|failed|cancelled`, `executedAt`, métricas); reexecução cria novo run com diff de novos vs run anterior
 - [ ] **LAB-04**: Execução multi-fonte preserva `source`, `sourceId`, `runId`, `retrievedAt`, adapter/versão, URLs e `rawMetadata`; cadeia `Result→Run→Search→Project` reconstruível

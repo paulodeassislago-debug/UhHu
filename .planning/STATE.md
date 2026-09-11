@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: "Phase 1 fechada (commits f1663c6 checkpoint + 667676a fix CI). Repo GitHub criado (privado, paulodeassislago-debug/UhHu); CI verde run 2. PENDENTE: branch protection (BLOQUEADO pelo plano GitHub — repo privado free não permite; decisão do Paulo: tornar público vs Pro vs aceite de risco)"
-stopped_at: Phase 2 context gathered
-last_updated: "2026-09-10T22:52:48.849Z"
-last_activity: "2026-09-10 — CI verde 6/6 + Phase 1 completa; próximo: /gsd-discuss-phase 2 (sem 02-CONTEXT.md)"
+status: "Phase 2 COMPLETA 2026-09-11 (4/4 plans, 18/18 integração, curl-idor ALL PASS, HUMAN-UAT 4/4, REVIEW 0 crit/0 high). Próximo: /gsd-discuss-phase 3"
+stopped_at: Phase 2 complete
+last_updated: "2026-09-11T01:40:00Z"
+last_activity: "2026-09-11 — Phase 2 completa: auth+projetos+IDOR provados ao vivo; próximo: Phase 3 buscas"
 progress:
   total_phases: 5
-  completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  completed_phases: 2
+  total_plans: 7
+  completed_plans: 7
   percent: 100
 ---
 
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-09)
 
 **Core value:** Um pesquisador consegue executar uma busca real (BDTD/CAPES) pelo CORE, com isolamento por usuário, proveniência e histórico.
-**Current focus:** Phase 2: Plataforma e isolamento (Phase 1 COMPLETA 2026-09-10 — sem 02-CONTEXT.md: próximo passo é /gsd-discuss-phase 2)
+**Current focus:** Phase 3: Buscas e adapters (Phase 2 COMPLETA 2026-09-11 — próximo: /gsd-discuss-phase 3)
 
 ## Current Position
 
-Phase: 1 of 5 (COMPLETA 2026-09-10 — 4/4 critérios: migrate+health vs PG real, CI 6/6 verde, dev/prod separados sem segredos, contrato aprovado 1–24)
-Plan: 3 of 3 in Phase 1 — done
-Status: Phase 1 fechada (commits f1663c6 checkpoint + 667676a fix CI). Repo GitHub criado (privado, paulodeassislago-debug/UhHu); CI verde run 2. PENDENTE: branch protection (BLOQUEADO pelo plano GitHub — repo privado free não permite; decisão do Paulo: tornar público vs Pro vs aceite de risco)
-Last activity: 2026-09-10 — CI verde 6/6 + Phase 1 completa; próximo: /gsd-discuss-phase 2 (sem 02-CONTEXT.md)
+Phase: 2 of 5 (COMPLETA 2026-09-11 — 4/4 criteria: registro/login/sessão, isolamento 404, curl IDOR ALL PASS, envelope+rate-limit+paginação)
+Plan: 4 of 4 in Phase 2 — done
+Status: Phase 2 completa (18/18 integração, curl ALL PASS, HUMAN-UAT 4/4, REVIEW 0 crit/0 high, 4 medium advisory). Próximo: Phase 3 buscas
+Last activity: 2026-09-11 — Phase 2 completa provada ao vivo; próximo: /gsd-discuss-phase 3
 
-Progress: [███░░░░░░░] 3 plans complete (Phase 1: 3/3 COMPLETA)
+Progress: [█████░░░░░] 7 plans complete (Phase 1: 3/3 + Phase 2: 4/4 COMPLETAS)
 
 ## Performance Metrics
 
