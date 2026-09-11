@@ -25,13 +25,13 @@ See: .planning/PROJECT.md (updated 2026-09-11)
 
 ## Current Position
 
-Phase: 6 of 9 (Phase 6 COMPLETE 4/4: 06-01 + 06-02 + 06-03 + 06-04 done sequential, no worktree isolation in this runtime)
-Plan: 06-04 of 4
-Status: Phase 6 complete — ready for Phase 7 planning
-Last activity: 2026-09-11 — 06-04 done (estados §11, 2 commits 37ef874+768135c, SUMMARY written)
-Resume file: .planning/phases/07-projetos-buscas-execucao/07-CONTEXT.md (next: /gsd-plan-phase 7)
+Phase: 6 of 9 (Executed 4/4 — UAT found 1 real issue, gap plan 06-05 open, phase NOT closed)
+Plan: 06-05 (gap closure, wave 4)
+Status: Fixing UAT gap (list scroll)
+Last activity: 2026-09-11 — UAT issue: projects list does not scroll (View+map, web+nativo); 06-05-PLAN.md written
+Resume file: .planning/phases/06-fundacao-app-auth-suporte-core/06-05-PLAN.md
 
-Progress: [██████░░░░] 4/4 plans complete (Phase 6 complete)
+Progress: [██████░░░░] 4/4 plans executed + 1 gap plan open (phase open, UAT 0/2 with 1 issue)
 
 ## Performance Metrics
 
