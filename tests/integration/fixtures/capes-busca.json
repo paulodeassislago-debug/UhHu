@@ -1,0 +1,41 @@
+{
+  "pagina": 1,
+  "total": 3,
+  "tesesDissertacoes": [
+    {
+      "id": "capes-101",
+      "titulo": "Ensino de química: uma revisão das práticas",
+      "autor": "Carlos Mendes",
+      "ano": 2022,
+      "grauAcademico": "Mestrado",
+      "instituicao": "Universidade Federal do Vale",
+      "programa": "Ensino de Ciências",
+      "areaConhecimento": "Ensino",
+      "resumo": "Resumo CAPES do trabalho sobre ensino de química.",
+      "link": "https://catalogodeteses.capes.gov.br/catalogo-teses/ficha/101",
+      "semDivulgacao": false
+    },
+    {
+      "id": "capes-102",
+      "titulo": "Trabalho sem divulgação autorizada",
+      "autor": "Paula Rocha; Rui Alves",
+      "ano": "2020",
+      "grauAcademico": "Doutorado",
+      "instituicao": "Universidade Estadual do Sertão",
+      "programa": "Educação",
+      "link": "https://catalogodeteses.capes.gov.br/catalogo-teses/ficha/102",
+      "semDivulgacao": true
+    },
+    {
+      "id": "capes-103",
+      "titulo": "Metodologias ativas no laboratório de química",
+      "autor": "Lúcia Ferreira",
+      "ano": 2023,
+      "grauAcademico": "Mestrado",
+      "instituicao": "Instituto Federal do Nordeste",
+      "programa": "Ensino de Química",
+      "resumo": null,
+      "link": "https://catalogodeteses.capes.gov.br/catalogo-teses/ficha/103"
+    }
+  ]
+}

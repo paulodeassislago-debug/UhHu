@@ -1,0 +1,29 @@
+{
+  "resultCount": 3,
+  "records": [
+    {
+      "id": "bdtd-001",
+      "title": "Ensino de química no semiárido: práticas e desafios",
+      "authors": ["Maria Silva", "João Souza"],
+      "publishDate": ["2021"],
+      "format": "masterThesis",
+      "institution": "Universidade Federal do Vale",
+      "program": "Programa de Pós-Graduação em Ensino",
+      "link": "https://bdtd.ibict.br/vufind/Record/bdtd-001",
+      "language": "por"
+    },
+    {
+      "id": "bdtd-002",
+      "title": "Formação docente e experimentação no laboratório escolar",
+      "authors": "Ana Lima",
+      "publishDate": "2019-06-15",
+      "format": "doctoralThesis",
+      "institution": "Universidade Estadual do Sertão",
+      "abstract": "Resumo do trabalho sobre formação docente."
+    },
+    {
+      "id": "bdtd-003",
+      "title": "Registro incompleto de teste (campos ausentes viram null)"
+    }
+  ]
+}
