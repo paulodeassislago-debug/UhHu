@@ -16,7 +16,7 @@ Requirements for this milestone. Each maps to roadmap phases 6–9.
 
 ### Autenticação
 
-- [x] **UI-05**: User faz login com e-mail + senha na web/PWA (cookie httpOnly, mesmo fluxo browser existente) e vê a lista de projetos — done 06-03 (AuthProvider cookie + projects lista real)
+- [x] **UI-05**: User faz login com e-mail + senha na web/PWA (cookie httpOnly, mesmo fluxo browser existente) e vê a lista de projetos — done 06-03 (AuthProvider cookie + projects lista real) + gap-closure 06-05 (lista FlatList rolável + tripwire; re-teste humano pendente no UAT)
 - [x] **UI-06**: User registra conta com token de convite válido e recebe erro legível com token inválido/expirado — done 06-03 (registerSchema + envelope verbatim, sem oráculo)
 - [x] **UI-07**: User autentica no app nativo via PAT por device (POST /auth/token, guardado em secure storage) com logout que revoga — done 06-03 (deviceName automático + SecureStore + revogação patId)
 - [x] **UI-08**: User com sessão expirada é redirecionado ao login com aviso, sem perder o projeto atual — done 06-03 (expired + next interno via isSafeNext)

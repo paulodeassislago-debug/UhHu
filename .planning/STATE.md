@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Lab UI v1
-status: "executing — phase 6 complete, ready for phase 7"
-stopped_at: 06-04 done, phase 6 complete (4/4), ready for phase 7 planning
-last_updated: "2026-09-11T19:27:33Z"
-last_activity: "2026-09-11 — 06-04 done (estados §11 + gates app + prova beta; UI-03/UI-04; 2 task commits + SUMMARY)"
+status: "executing — phase 6 complete incl. gap-closure 06-05, ready for phase 7"
+stopped_at: 06-05 done, phase 6 complete (4/4 + 1 gap-closure), ready for phase 7 planning
+last_updated: "2026-09-11T22:20:36Z"
+last_activity: "2026-09-11 — 06-05 done (FlatList rolável + ScrollView + tripwire 10/10; UI-05 gap fechado no código; 2 task commits + SUMMARY)"
 progress:
   total_phases: 4
   completed_phases: 0
@@ -25,11 +25,13 @@ See: .planning/PROJECT.md (updated 2026-09-11)
 
 ## Current Position
 
-Phase: 6 of 9 (Executed 4/4 — UAT found 1 real issue, gap plan 06-05 open, phase NOT closed)
-Plan: 06-05 (gap closure, wave 4)
-Status: Fixing UAT gap (list scroll)
-Last activity: 2026-09-11 — UAT issue: projects list does not scroll (View+map, web+nativo); 06-05-PLAN.md written
-Resume file: .planning/phases/06-fundacao-app-auth-suporte-core/06-05-PLAN.md
+Phase: 6 of 9 (Executed 4/4 + 1 gap-closure 06-05 done; human UAT re-test pending)
+Plan: 06-05 done (gap closure, wave 4)
+Status: Gap fixed in code (FlatList + tripwire); awaiting human UAT re-test
+Last activity: 2026-09-11 — 06-05 done: projects list scrolls (FlatList virtualizada), login/register/[id] ScrollView, tripwire 3/3, gates 10/10
+Resume file: .planning/phases/06-fundacao-app-auth-suporte-core/06-HUMAN-UAT.md (re-testar: LISTA ROLA web + nativo)
+
+Progress: [██████░░░░] 4/4 plans executed + 1 gap-closure done (phase code-complete, UAT 0/2 with 1 fix pending re-test)
 
 Progress: [██████░░░░] 4/4 plans executed + 1 gap plan open (phase open, UAT 0/2 with 1 issue)
 
@@ -82,6 +84,7 @@ Recent decisions affecting current work:
 - 06-02: scaffold Expo SDK57 + client tipado (UI-01/UI-02, bef85d9+aad160f): montagem manual (não template) com pins template 57 (react 19.2.3 + RN 0.86.3, não latest 19.3.0/0.87.1 que quebra rn-get-polyfills) + screens/safe-area/linking/constants do router; 7 rotas placeholder (Stack typedRoutes, export web 1.1MB ok, Expo Go tailnet sem EAS); apiFetch (cookie include + Bearer injetado, x-request-id, envelope PT-BR, raw export, unknown+narrowing) + auth/projects/lab via import type + Zod fronteira, zero any; exactOptional body spread + eslint-disable node em babel/metro + .expo gitignore (Rules 1/3); gate localStorage em comentário + grep -c insatisfatível documentados; eslint exit 0; audit só toolchain Expo (5 mod + 2 high sem patch); auditoria 0 crit/0 high
 - 06-03: auth web cookie + PAT nativo + convite + expiração (UI-05/UI-06/UI-07/UI-08, 83527eb+d60f213): AuthProvider memória (zero storage privilégio) com getToken por plataforma + isSafeNext; login MESMA tela Platform branch (web authApi.login cookie, nativo nativeLogin issuePat+SecureStore+refresh); register convite com prefill ?token= e erro verbatim; projects lista real com vazio/skeleton/retry + 401 expired; _layout gate UX com expired+next preservando /project/<id>; Metro resolve .js NodeNext dos contracts + imports extensionless no lab (Rules 3, export web 1.7MB); tsc+eslint verdes; pat-auth 15/15 + auth 6/6 PG real; auditoria 0 crit/0 high
 - 06-04: estados §11 + gates app + prova beta (UI-03/UI-04, 37ef874+768135c): Empty/CardSkeleton/ErrorBanner/PartialBanner verbatim (Partial ok→null, sem fingir dado); login/projetos/projeto migrados (projeto busca listById real; 401→expired+next); vitest 7/7 sem rede (Response real + SecureStore mock Map); typecheck+lint exit 0, any 0; export web 1.7MB + dist grep 0; Gitleaks histórico 126 commits 0 + lab 0 (tree só 2 pré-existentes fora de escopo); audit só toolchain Expo; beta porta 3009 me 200+ACAO/projects real/401 PT-BR/adulterada sem ACAO/preflight 204; auditoria 0 crit/0 high
+- 06-05: gap-closure UAT rolagem (UI-05/UI-04, 4592cd3+ee663f1): projects View+map → FlatList virtualizada (keyExtractor id opaco, mesmo card, ListEmpty verbatim + branch vazio preservado); login/register/[id] raiz ScrollView (flexGrow+keyboardShouldPersistTaps; [id] nos 4 branches); tripwire scroll-containers 3/3 (import+uso reais, zero .map fora de FlatList/renderItem); typecheck+lint exit 0, vitest 10/10, any 0, dist reexportado 1.7MB grep 0; Gitleaks sem binário local (CI cobre); auditoria 0 crit/0 high; re-teste humano UAT pendente
 
 ### Pending Todos
 
@@ -104,6 +107,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-11T19:27:33Z
-Stopped at: Phase 6 COMPLETE — 06-04 done, ready for Phase 7 planning
-Resume file: .planning/phases/07-projetos-buscas-execucao/07-CONTEXT.md (REQUIREMENTS.md UI-01/UI-02/UI-03/UI-04/UI-05/UI-06/UI-07/UI-08/UI-30/UI-31/UI-32 all done)
+Last session: 2026-09-11T22:20:36Z
+Stopped at: Phase 6 CODE-COMPLETE — 06-05 done (gap scroll fechado no código), UAT re-test humano pendente
+Resume file: .planning/phases/06-fundacao-app-auth-suporte-core/06-HUMAN-UAT.md (re-testar LISTA ROLA web+nativo) → depois .planning/phases/07-projetos-buscas-execucao/07-CONTEXT.md (REQUIREMENTS.md UI-01/UI-02/UI-03/UI-04/UI-05/UI-06/UI-07/UI-08/UI-30/UI-31/UI-32 all done)
