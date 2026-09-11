@@ -151,6 +151,13 @@ describe('auth-store (HOME fake)', () => {
     expect(loaded.from).toBe('file');
   });
 
+  it('M-01: arquivo afrouxado (644) falha alto na leitura em vez de usar o PAT', async () => {
+    const { chmodSync } = await import('node:fs');
+    const path = await saveToken('http://127.0.0.1:3000', 'tok-600');
+    chmodSync(path, 0o644);
+    await expect(loadToken()).rejects.toThrow(/permissão insegura/);
+  });
+
   it('saveToken nunca devolve o token (so o path)', async () => {
     const path = await saveToken('http://127.0.0.1:3000', 'segredo-total');
     expect(path).not.toContain('segredo-total');
@@ -165,10 +172,13 @@ describe('auth-store (HOME fake)', () => {
   });
 
   it('arquivo corrompido vira CliAuthError pedindo novo login', async () => {
-    const { mkdirSync, writeFileSync } = await import('node:fs');
+    const { chmodSync, mkdirSync, writeFileSync } = await import('node:fs');
     const { dirname } = await import('node:path');
     mkdirSync(dirname(credentialsPath()), { recursive: true });
     writeFileSync(credentialsPath(), '{json quebrado', 'utf8');
+    // M-01: o stat de permissao roda antes do parse — fixa 600 para exercitar
+    // o caminho de JSON invalido (e nao o de permissao insegura).
+    chmodSync(credentialsPath(), 0o600);
     await expect(loadToken()).rejects.toThrow(/login/);
   });
 });

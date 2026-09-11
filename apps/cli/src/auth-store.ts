@@ -103,6 +103,13 @@ export async function loadToken(explicitBaseUrl?: string): Promise<LoadedCredent
     }
     throw err;
   }
+  // M-01: 0600 verificado tambem na leitura — arquivo afrouxado depois da
+  // escrita (chmod 644, backup/restore, copia, umask) falha alto em vez de
+  // usar o PAT silenciosamente (paridade com o stat do saveToken).
+  const st = await stat(file);
+  if ((st.mode & 0o777) !== 0o600) {
+    throw new CliAuthError(`Credencial local com permissão insegura em ${file} (esperado 600).`);
+  }
   let parsed: unknown = null;
   try {
     parsed = JSON.parse(raw) as unknown;
