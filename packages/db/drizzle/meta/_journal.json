@@ -8,6 +8,34 @@
       "when": 1788964205784,
       "tag": "0000_infra_proof",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789082219541,
+      "tag": "0001_0001_platform_projects",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789095095659,
+      "tag": "0002_fancy_hiroim",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789122200073,
+      "tag": "0003_corpus",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789129977314,
+      "tag": "0004_personal_access_tokens",
+      "breakpoints": true
     }
   ]
 }

@@ -21,6 +21,12 @@ const envSchema = z.object({
   MIGRATION_DATABASE_URL: postgresUrlSchema,
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
+  COOKIE_SECRET: z.string().min(32).optional(),
+  SMTP_HOST: z.string().min(1).optional(),
+  SMTP_PORT: z.coerce.number().int().min(1).max(65535).optional(),
+  SMTP_USER: z.string().min(1).optional(),
+  SMTP_PASS: z.string().min(1).optional(),
+  SMTP_FROM: z.string().max(254).optional(),
 });
 
 export type AppEnv = z.infer<typeof envSchema>;

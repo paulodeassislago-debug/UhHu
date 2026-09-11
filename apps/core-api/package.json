@@ -9,10 +9,18 @@
     "start": "tsx src/index.ts"
   },
   "dependencies": {
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/rate-limit": "^10.3.0",
     "@uhhu/config": "workspace:*",
     "@uhhu/contracts": "workspace:*",
+    "@uhhu/core": "workspace:^",
     "@uhhu/db": "workspace:*",
-    "fastify": "^5.12.3"
+    "@uhhu/integrations": "workspace:*",
+    "argon2": "^0.41.1",
+    "drizzle-orm": "^0.45.2",
+    "fastest-levenshtein": "1.0.16",
+    "fastify": "^5.12.3",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "tsx": "^4.23.13"

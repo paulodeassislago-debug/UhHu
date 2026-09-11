@@ -1,0 +1,56 @@
+{
+  "resultCount": 7120,
+  "records": [
+    {
+      "authors": {
+        "primary": {
+          "Fernandes, Jorge Luis Reis": []
+        },
+        "secondary": [],
+        "corporate": []
+      },
+      "formats": ["masterThesis"],
+      "id": "UECE-0_286db9542bbce84c5cf658a269c2c9d2",
+      "languages": ["por"],
+      "series": [],
+      "subjects": [["Ensino de química"], ["Quimica Experimental"]],
+      "title": "Quimica Experimental: Uma Alternativa para o Ensino de Quimica",
+      "urls": [
+        {
+          "url": "https://siduece.uece.br/siduece/trabalhoAcademicoPublico.jsf?id=47824",
+          "desc": "https://siduece.uece.br/siduece/trabalhoAcademicoPublico.jsf?id=47824"
+        }
+      ]
+    },
+    {
+      "authors": {
+        "primary": {
+          "Seabra, Alessandro da Cruz": []
+        },
+        "secondary": [],
+        "corporate": []
+      },
+      "formats": ["masterThesis"],
+      "id": "IFES-2_8fbdaee9abb8d0386820ce92eef59a91",
+      "languages": ["por"],
+      "series": [],
+      "subjects": [
+        ["Ensino de Química Orgânica"],
+        ["Aprendizagem Baseada em Problemas"],
+        ["Química Forense."]
+      ],
+      "title": "Aplicação da química forense no ensino de química orgânica para o ensino médio",
+      "urls": [
+        {
+          "url": "https://repositorio.ifes.edu.br/handle/123456789/3029",
+          "desc": "https://repositorio.ifes.edu.br/handle/123456789/3029"
+        }
+      ]
+    },
+    {
+      "id": "bdtd-003",
+      "title": "Registro incompleto de teste (campos ausentes viram null)"
+    }
+  ],
+  "status": "OK"
+}

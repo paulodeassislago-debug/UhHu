@@ -12,17 +12,21 @@ Um pesquisador consegue executar uma busca real (BDTD/CAPES) pelo CORE, com isol
 
 ### Validated
 
-(None yet — ship to validate. Pesquisa validada em dev-docs/03 + 04 + docs/ existe como insumo, não como entrega.)
+- ✓ Fundação executável (monorepo, PG DEV, CI fail-closed) — v1.0
+- ✓ Plataforma/isolamento (auth, ownerId, IDOR, UAT 4/4) — v1.0
+- ✓ Convenções CORE + capabilities execute() nos 3 canais — v1.0
+- ✓ Lab v1 (buscas, runs, dedup, corpus, compare, exportação) — v1.0
+- ✓ Adapters BDTD/CAPES + SourceClient + partial — v1.0
+- ✓ CLI/MCP mínimos + gates (typecheck, IDOR, Gitleaks, SAST, audit, PG) — v1.0
 
 ### Active
 
-- [ ] Fundação executável: monorepo pnpm/TS strict + PostgreSQL DEV + migrations versionadas
-- [ ] `platform`: contas e-mail+senha (argon2id), sessão segura, convite beta, isolamento `ownerId`/`workspaceId` server-side
-- [ ] Convenções CORE: `/api/v1`, erros, paginação, idempotência, `X-Request-Id`, capabilities versionadas
-- [ ] Lab v1: projetos, buscas declarativas, `SearchRun` temporal, resultados com proveniência, dedup transparente, decisões de elegibilidade, tags, corpus derivado, comparação, exportação CSV/BibTeX/JSON
-- [ ] Adapters BDTD (VuFind) + CAPES (rest/busca) com SourceClient compartilhado, rate limit, circuit breaker, `partial` sem perda
-- [ ] Superfície CLI/MCP mínima chamando os mesmos casos de uso (sem duplicar regra)
-- [ ] Gates desde o primeiro commit: typecheck, lint, testes (incl. IDOR dono/estranho/ID adulterado via curl), Gitleaks (tree+histórico), SAST, `pnpm audit`, integração PG
+Próximo milestone definido via `/gsd-new-milestone`. Carry-over técnico conhecido (candidatos):
+
+- [ ] Adendo ao contrato §10: formalizar as 14 extensões transicionais de capability
+- [ ] Wiring do bin nu `uhhu` na raiz do monorepo
+- [ ] Review info I-01–I-05 (05-REVIEW.md)
+- [ ] Re-teste CAPES ao vivo (bloqueio na fonte durante v1.0)
 
 ### Out of Scope
 
@@ -44,6 +48,7 @@ Um pesquisador consegue executar uma busca real (BDTD/CAPES) pelo CORE, com isol
 - Roadmap macro: `dev-docs/09-roadmap-geral.md` — fundação → CORE v1 → Lab v1 → Lib → Note → Plan → Prof → suite integrada → evolução. Este GSD cobre fundação + CORE v1 + Lab v1.
 - Ambiente DEV atual (09/09/2026, verificado): workspace `/home/coder/projetos/UhHu`; sem Node/pnpm/psql/docker no PATH deste container; vault symlink quebrado (`~/ubuntu/vault` → `/home/ubuntu/...` inexistente aqui) — fonte utilizável é `docs/` (espelho) + `dev-docs/`; sem `.planning` antes deste init; git recém-inicializado (`main`, sem commits).
 - GSD: sem runtime Node → `gsd-sdk`/subagents indisponíveis; research paralela pulada (workflow fallback); roadmap gerado inline e ancorado aos dev-docs. `AGENTS.md` existente é normativo e NÃO foi sobrescrito pelo gerador.
+- Estado v1.0 SHIPPED 2026-09-11: 5 fases, 23 plans, 104 commits, ~12.4k LOC TS; suite 195/195, typecheck 7/7, scanners zerados; tag v1.0. Dívida conhecida: adendo §10, bin `uhhu`, info I-01–I-05, re-teste CAPES (ver milestones/v1.0-ROADMAP.md).
 
 ## Constraints
 
@@ -57,10 +62,13 @@ Um pesquisador consegue executar uma busca real (BDTD/CAPES) pelo CORE, com isol
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| CORE compartilhado + PostgreSQL (ADR-009) | Multiusuário, transações, JSONB, FTS, jobs; evita 5 backends | — Pending (a validar neste milestone) |
-| Lab primeiro, Lib fora do caminho crítico (ADR-006/007) | Cobertura BDTD+CAPES provada necessária; foco | — Pending |
-| Multiusuário desde v1, convite beta (ADR-008) | Isolamento ownerId; IDOR como ameaça principal | — Pending |
-| BDTD VuFind + CAPES rest/busca, ambas obrigatórias | 57% ausência BDTD vs CAPES; dedup por interseção | — Pending (adapters a implementar) |
+| CORE compartilhado + PostgreSQL (ADR-009) | Multiusuário, transações, JSONB, FTS, jobs; evita 5 backends | ✓ Good (v1.0: 195 testes PG real, 5 migrations) |
+| Lab primeiro, Lib fora do caminho crítico (ADR-006/007) | Cobertura BDTD+CAPES provada necessária; foco | ✓ Good (v1.0: Lab v1 entregue; Lib próxima) |
+| Multiusuário desde v1, convite beta (ADR-008) | Isolamento ownerId; IDOR como ameaça principal | ✓ Good (v1.0: IDOR 4/4 + 10/10, UAT passed) |
+| BDTD VuFind + CAPES rest/busca, ambas obrigatórias | 57% ausência BDTD vs CAPES; dedup por interseção | ✓ Good (v1.0: partial provado ao vivo; shape real mapeado) |
+| Capabilities execute() fail-closed; CLI/MCP só por API | Uma regra, três superfícies; guard D-55 | ✓ Good (v1.0: 37/6 call-sites zero-lib, ALL PASS 3 canais) |
+| PAT Bearer 30d sliding, mesmo envelope/404 nos 3 canais | Fecha questão aberta §8.1/§22-1 do contrato | ✓ Good (v1.0: ciclo+revogação+lockout compartilhado) |
+| BDTD/search sem ano → year=null por desenho | VuFind não retorna ano; enrich só on-demand | ✓ Good (v1.0: fuzzy bloqueado, bucket 'desconhecido') |
 | GSD ancorado aos dev-docs, sem duplicar roadmap | dev-docs + docs/ já são a base validada; vault é fonte da verdade | ✓ Good (este init) |
 | `AGENTS.md` preservado (não sobrescrito pelo gerador GSD) | Normativo do projeto; gerador sobrescreveria | ✓ Good |
 | Git `main` inicializado sem commits de código | Rastrear `.planning` + fundação; código só após gates | — Pending |
@@ -83,4 +91,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-09-09 after initialization (ancorado a dev-docs/01–09 + docs/; sem Node/PG no container — toolchain a resolver na Fase 1)*
+*Last updated: 2026-09-11 after v1.0 milestone (shipped; próxima definição via /gsd-new-milestone)*

@@ -1,5 +1,9 @@
-// packages/contracts — única definição de tipos/DTOs/erros (FOUND-02).
-// Esqueleto da Fase 1 (D-01): nenhum tipo de domínio antes da validação
-// do contrato por seções com Paulo. Nenhum app duplica estes tipos.
+// packages/contracts — unica definicao de tipos/DTOs/erros (FOUND-02).
+// Re-exporta os modulos de dominio. Nenhum app duplica estes tipos.
 
-export const CONTRACTS_PLACEHOLDER = 'fase-1-esqueleto';
+export * from './errors.js';
+export * from './pagination.js';
+export * from './auth.js';
+export * from './capabilities.js';
+export * from './projects.js';
+export * from './lab.js';

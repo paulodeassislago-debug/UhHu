@@ -1,0 +1,14 @@
+{
+  "name": "@uhhu/core",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@uhhu/contracts": "workspace:*",
+    "zod": "^4.5.4"
+  }
+}
