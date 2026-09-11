@@ -15,6 +15,7 @@
     "@uhhu/contracts": "workspace:*",
     "@uhhu/core": "workspace:^",
     "@uhhu/db": "workspace:*",
+    "@uhhu/integrations": "workspace:*",
     "argon2": "^0.41.1",
     "drizzle-orm": "^0.45.2",
     "fastify": "^5.12.3",
