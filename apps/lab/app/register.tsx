@@ -11,7 +11,7 @@
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import type { JSX } from 'react';
-import { Button, Text, TextInput, View } from 'react-native';
+import { Button, ScrollView, Text, TextInput } from 'react-native';
 import { ZodError } from 'zod';
 import { registerSchema } from '@uhhu/contracts';
 import { ApiError } from '../src/api/client';
@@ -83,7 +83,11 @@ export default function RegisterScreen(): JSX.Element {
   }
 
   return (
-    <View style={{ flex: 1, padding: 24, gap: 12 }}>
+    <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+      keyboardShouldPersistTaps="handled"
+    >
       <Text style={{ fontSize: 24, fontWeight: '600' }}>Registrar com convite</Text>
       <Text>Nome</Text>
       <TextInput
@@ -129,6 +133,6 @@ export default function RegisterScreen(): JSX.Element {
       {errorMessage !== null ? <Text>{errorMessage}</Text> : null}
       {errorRequestId !== null ? <Text style={{ fontSize: 12 }}>(req {errorRequestId})</Text> : null}
       <Link href="/login">Voltar ao login</Link>
-    </View>
+    </ScrollView>
   );
 }

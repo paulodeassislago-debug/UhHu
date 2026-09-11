@@ -15,7 +15,7 @@
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import type { JSX } from 'react';
-import { Button, Platform, Text, TextInput, View } from 'react-native';
+import { Button, Platform, ScrollView, Text, TextInput } from 'react-native';
 import { ZodError } from 'zod';
 import { ApiError } from '../src/api/client';
 import { nativeLogin } from '../src/auth/pat';
@@ -92,7 +92,11 @@ export default function LoginScreen(): JSX.Element {
   }
 
   return (
-    <View style={{ flex: 1, padding: 24, gap: 12 }}>
+    <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+      keyboardShouldPersistTaps="handled"
+    >
       <Text style={{ fontSize: 24, fontWeight: '600' }}>Entrar</Text>
       {showExpired ? <Text>Sua sessão expirou. Entre novamente.</Text> : null}
       {showRegistered ? <Text>Conta criada, entre com suas credenciais.</Text> : null}
@@ -125,6 +129,6 @@ export default function LoginScreen(): JSX.Element {
         />
       ) : null}
       <Link href="/register">Tenho convite — registrar</Link>
-    </View>
+    </ScrollView>
   );
 }

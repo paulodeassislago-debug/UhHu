@@ -8,12 +8,15 @@
 // - Carregando: skeleton por card (nunca spinner infinito; botão disabled).
 // - Erro: banner com motivo legível + ação repetir.
 // - 401 com sessão prévia → markExpired + redirect /login?expired=1&next=/projects.
+// - Lista virtualizada com FlatList (gap UAT 11/09/2026: View+map não rola na
+//   web nem no nativo; FlatList é o scroll container rolável).
 // Guards são UX; autorização real continua no CORE (AGENTS.md).
 
 import { Link, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import type { JSX } from 'react';
-import { Button, Text, View } from 'react-native';
+import { Button, FlatList, Text, View } from 'react-native';
+import type { ListRenderItemInfo } from 'react-native';
 import type { ProjectDTO } from '@uhhu/contracts';
 import { ApiError } from '../src/api/client';
 import { projectsApi } from '../src/api/projects';
@@ -121,10 +124,11 @@ export default function ProjectsScreen(): JSX.Element {
   }
 
   return (
-    <View style={{ flex: 1, padding: 24, gap: 12 }}>
-      <Text style={{ fontSize: 24, fontWeight: '600' }}>Projetos</Text>
-      {items.map((project) => (
-        <View key={project.id} style={{ borderWidth: 1, padding: 12, gap: 4 }}>
+    <FlatList
+      data={items}
+      keyExtractor={(project: ProjectDTO): string => project.id}
+      renderItem={({ item: project }: ListRenderItemInfo<ProjectDTO>): JSX.Element => (
+        <View style={{ borderWidth: 1, padding: 12, gap: 4 }}>
           <Link
             href={{
               pathname: '/project/[id]',
@@ -138,9 +142,25 @@ export default function ProjectsScreen(): JSX.Element {
           ) : null}
           <Text>Status: {project.status}</Text>
         </View>
-      ))}
-      <Button title="Nova pesquisa (em breve — fase 7)" onPress={() => undefined} disabled />
-      <Link href="/login">Voltar ao login</Link>
-    </View>
+      )}
+      style={{ flex: 1 }}
+      contentContainerStyle={{ padding: 24, gap: 12, flexGrow: 1 }}
+      ListHeaderComponent={<Text style={{ fontSize: 24, fontWeight: '600' }}>Projetos</Text>}
+      ListEmptyComponent={
+        <Empty
+          title="Nenhum projeto ainda"
+          message="Comece uma pesquisa para organizar estratégias, runs e corpus."
+          actionLabel="Criar projeto"
+          disabled
+          disabledHint="disponível na fase 7"
+        />
+      }
+      ListFooterComponent={
+        <View style={{ gap: 12 }}>
+          <Button title="Nova pesquisa (em breve — fase 7)" onPress={() => undefined} disabled />
+          <Link href="/login">Voltar ao login</Link>
+        </View>
+      }
+    />
   );
 }

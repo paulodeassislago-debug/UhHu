@@ -19,7 +19,7 @@
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import type { JSX } from 'react';
-import { Text, View } from 'react-native';
+import { ScrollView, Text } from 'react-native';
 import type { ProjectDTO } from '@uhhu/contracts';
 import { ApiError } from '../../src/api/client';
 import { projectsApi } from '../../src/api/projects';
@@ -92,26 +92,38 @@ export default function ProjectDetailScreen(): JSX.Element {
 
   if (authLoading || (user !== null && state === 'loading')) {
     return (
-      <View style={{ flex: 1, padding: 24, gap: 12 }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+        keyboardShouldPersistTaps="handled"
+      >
         <Text style={{ fontSize: 24, fontWeight: '600' }}>Projeto</Text>
         <CardSkeleton count={2} />
-      </View>
+      </ScrollView>
     );
   }
 
   if (user === null) {
     return (
-      <View style={{ flex: 1, padding: 24, gap: 12 }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+        keyboardShouldPersistTaps="handled"
+      >
         <Text style={{ fontSize: 24, fontWeight: '600' }}>Projeto</Text>
         <Text>Redirecionando para o login…</Text>
         <Link href="/login">Ir para login</Link>
-      </View>
+      </ScrollView>
     );
   }
 
   if (state === 'error') {
     return (
-      <View style={{ flex: 1, padding: 24, gap: 12 }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+        keyboardShouldPersistTaps="handled"
+      >
         <Text style={{ fontSize: 24, fontWeight: '600' }}>Projeto</Text>
         <ErrorBanner
           message={errorMessage ?? 'Erro interno. Tente novamente.'}
@@ -119,12 +131,16 @@ export default function ProjectDetailScreen(): JSX.Element {
           onRetry={() => void load()}
         />
         <Link href="/projects">Voltar aos projetos</Link>
-      </View>
+      </ScrollView>
     );
   }
 
   return (
-    <View style={{ flex: 1, padding: 24, gap: 12 }}>
+    <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+      keyboardShouldPersistTaps="handled"
+    >
       <Text style={{ fontSize: 24, fontWeight: '600' }}>{project?.title ?? 'Projeto'}</Text>
       {project?.researchQuestion !== undefined &&
       project.researchQuestion !== null &&
@@ -158,6 +174,6 @@ export default function ProjectDetailScreen(): JSX.Element {
         Aba Corpus
       </Link>
       <Link href="/projects">Voltar aos projetos</Link>
-    </View>
+    </ScrollView>
   );
 }
