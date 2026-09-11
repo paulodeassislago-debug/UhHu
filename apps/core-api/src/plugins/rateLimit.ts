@@ -20,6 +20,12 @@
 // - POST /api/v1/auth/invites               -> 20/min
 // - POST /api/v1/auth/password/reset-request -> 5/min
 // - POST /api/v1/auth/password/reset         -> 5/min
+// - POST /api/v1/lab/searches/*/runs        -> 30/min  (anti-rajada por IP;
+//    o limite CONTRATUAL de 10 runs/h por USUARIO (D-39) vive no BANCO, em
+//    `apps/core-api/src/lib/searchRuns.ts` (sobrevive a restart, contado por
+//    created_by+executed_at). Este hook NAO o substitui: 30/min/IP barra
+//    rajadas de um mesmo IP; 10/h/usuário barra abuso sustentado por conta.
+//    Ambos retornam o mesmo envelope 429 RATE_LIMITED PT-BR.)
 // Demais rotas: so o global 200/min.
 //
 // Janela: Map<chave, number[]> com timestamps; a cada request filtra os
@@ -54,9 +60,14 @@ export const authRateLimit = {
   reset: { max: 5, timeWindow: '1 minute' },
 } as const;
 
+// Bucket anti-rajada de execução de buscas (03-05): 30 POST .../runs por
+// minuto por IP. Distinção documentada acima: isto é IP/minuto (hook, em
+// memória); o contratual 10 runs/h por usuário (D-39) é no banco.
+export const labRunsRateLimit = { max: 30, timeWindow: '1 minute' } as const;
+
 const WINDOW_MS = 60 * 1000;
 
-type AuthBucket = 'login' | 'register' | 'invites' | 'reset';
+type AuthBucket = 'login' | 'register' | 'invites' | 'reset' | 'lab-runs';
 
 function bucketFor(method: string, url: string): AuthBucket | null {
   if (method !== 'POST') {
@@ -75,6 +86,9 @@ function bucketFor(method: string, url: string): AuthBucket | null {
   if (path === '/api/v1/auth/password/reset-request' || path === '/api/v1/auth/password/reset') {
     return 'reset';
   }
+  if (path.startsWith('/api/v1/lab/searches/') && path.endsWith('/runs')) {
+    return 'lab-runs';
+  }
   return null;
 }
 
@@ -87,6 +101,9 @@ function maxFor(bucket: AuthBucket): number {
   }
   if (bucket === 'invites') {
     return authRateLimit.invites.max;
+  }
+  if (bucket === 'lab-runs') {
+    return labRunsRateLimit.max;
   }
   return authRateLimit.reset.max;
 }
@@ -103,7 +120,8 @@ export async function registerRateLimits(app: FastifyInstance): Promise<void> {
     },
   });
 
-  // Camada 2 — throttle fino por rota auth (hook manual, ver comentario).
+  // Camada 2 — throttle fino por rota auth + lab runs (hook manual, ver
+  // comentario no topo do arquivo).
   const hits = new Map<string, number[]>();
   app.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
     const bucket = bucketFor(request.method, request.url);

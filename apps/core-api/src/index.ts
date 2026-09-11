@@ -15,6 +15,7 @@ import { requestIdPlugin } from './plugins/requestId.js';
 import { errorHandler } from './plugins/errorHandler.js';
 import { registerRateLimits } from './plugins/rateLimit.js';
 import { buildAuthRoutes } from './routes/auth.js';
+import { buildLabRoutes } from './routes/lab.js';
 import { buildProjectRoutes } from './routes/projects.js';
 
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9_.:~-]{1,128}$/;
@@ -47,6 +48,7 @@ await registerRateLimits(app);
 await app.register(healthRoute, { db });
 await app.register(async (child) => buildAuthRoutes(child, db));
 await app.register(async (child) => buildProjectRoutes(child, db));
+await app.register(async (child) => buildLabRoutes(child, db));
 
 // Rota inexistente -> envelope NOT_FOUND PT-BR (sem vazar existencia).
 app.setNotFoundHandler(async (request, reply) => {
