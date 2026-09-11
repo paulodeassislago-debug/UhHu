@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: "Phase 5 EXECUTING 2026-09-11 (wave 3/4 partial: 05-03 CLI done, 05-04 queued). Próximo: 05-04"
-stopped_at: Phase 5 wave 3 partial — 05-03 complete
-last_updated: "2026-09-11T13:25:00Z"
-last_activity: "2026-09-11 — 05-03 done (CLI uhhu 22 comandos + client PAT + store 600 + cli-unit 17/17 + cli-headless 7/7; suite 134/134 PG real)"
+status: "Phase 5 EXECUTING 2026-09-11 (wave 3/4 complete: 05-03 CLI + 05-04 MCP done). Próximo: 05-05"
+stopped_at: Phase 5 wave 3 complete — 05-04 done
+last_updated: "2026-09-11T10:45:00Z"
+last_activity: "2026-09-11 — 05-04 done (MCP uhhu-mcp 11 tools + client PAT + confirm nas 5 + mcp-tools 29/29 + mcp-headless 7/7; suite 170/170 PG real)"
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 23
-  completed_plans: 20
-  percent: 83
+  completed_plans: 22
+  percent: 96
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-09)
 
 **Core value:** Um pesquisador consegue executar uma busca real (BDTD/CAPES) pelo CORE, com isolamento por usuário, proveniência e histórico.
-**Current focus:** Phase 5: Prova headless (EXECUTING — wave 3/4 partial, 05-03 complete; próximo: 05-04 MCP)
+**Current focus:** Phase 5: Prova headless (EXECUTING — wave 3/4 complete, 05-03 + 05-04 done; próximo: 05-05 verify)
 
 ## Current Position
 
-Phase: 5 of 5 (EXECUTING — wave 3/4 partial)
-Plan: 3 of 5 in Phase 5 — 05-03 done, 05-04 ready
-Status: Phase 5 executing (no flags; sequential mode — no worktree isolation in this runtime). Próximo: 05-04 then 05-05 verify
-Last activity: 2026-09-11 — 05-03 done; próximo: 05-04 (MCP sobre PAT + execute)
+Phase: 5 of 5 (EXECUTING — wave 3/4 complete)
+Plan: 4 of 5 in Phase 5 — 05-04 done, 05-05 ready
+Status: Phase 5 executing (no flags; sequential mode — no worktree isolation in this runtime). Próximo: 05-05 verify
+Last activity: 2026-09-11 — 05-04 done; próximo: 05-05 (prova 3 canais + gate Etapa 2)
 
-Progress: [████████░░] 21 plans complete (Phase 1: 3/3 + Phase 2: 4/4 + Phase 3: 6/6 + Phase 4: 5/5 + Phase 5: 3/5)
+Progress: [█████████░] 22 plans complete (Phase 1: 3/3 + Phase 2: 4/4 + Phase 3: 6/6 + Phase 4: 5/5 + Phase 5: 4/5)
 
 ## Performance Metrics
 
@@ -74,7 +74,8 @@ Recent decisions affecting current work:
 - 03-06: checkpoint "approved with capes blocked" (CAPES 61ms sem challenge = bloqueio na fonte, não bug; partial D-37 funcionou); fixtures 03-03 seguem prova de corretude CAPES; re-teste ao vivo entra no próximo ciclo; auditoria 0 crit/0 high
 - 05-01: registry 20 capabilities v1 em contracts (definição única) + execute() fail-closed em core validando contra capabilityNameSchema (nunca duplica nomes); ActorContext session|pat sem consumer `=== 'session'` quebrado; PAT 30d sliding espelhando rememberMe=true (tabela + migration 0004 via generate renomeada + patExpiry); guard D-55 verde em smoke com fallback relativo (@uhhu/core não linkado na raiz); push 0004 ao PG deferido ao 05-02 (T-05-01-TAMPER); suite 98/98 PG real; auditoria 0 crit/0 high
 - 05-02: servidor PAT + execute end-to-end (CORE-02 server-side, núcleo CORE-05): pat.ts (6 fns, sliding 30d, null único) + requireAuth Bearer-first (401 único, cookie intacto, patId p/ logout); capabilities.ts com mapa total (20 §10 + 14 transicionais com allowlist fail-closed — registry §10 não cobre get/cancel/tags/pins; adendo ao contrato adiado) + toHttpError por instanceof + callCapability promise-passing + sendExport/assembleExport movidos; rotas lab/projects 100% via execute() (37/6, zero lib/ incl. types) sem mudar nenhum status (63/63 sem regressão); PAT CRUD com lockout+throttle compartilhados, logout/logout-all/reset revocam PATs; migration 0004 aplicada ao PG DEV e provada; pat-auth 12/12; suite 110/110 PG real; auditoria 0 crit/0 high
-- 05-03: CLI @uhhu/cli headless (CORE-02/05 lado CLI): bin via wrapper bin/uhhu.mjs→tsx sem build (nome nu exige wiring da raiz — adiado, root com hunk Phase 4); client apiFetch (Bearer+X-Request-Id+Idempotency-Key, envelope verbatim, raw byte-exato, sem Bearer vazio) + waitForJob 600s; store 600+stat, env precede, logout revoga+apaga; 22 comandos (D-64 + cadeia total Phase 4); `--result` = grupo de dedup (D-46); comandos nunca exitam (só uhhu.ts); spawn em teste sempre async (sync deadlocka servidor in-process); cli-unit 17/17 + cli-headless 7/7; suite 134/134 PG real; auditoria 0 crit/0 high (traversal `..` e Bearer vazio corrigidos)
+- 05-03: CLI @uhhu/cli headless (CORE-02/05 lado CLI): bin via wrapper bin/uhhu.mjs→tsx sem build (nome nu exige wiring da raiz — adiado, root com hunk Phase 4); client apiFetch (Bearer+X-Request-Id+Idempotency-Key, envelope verbatim, raw byte-exato, sem Bearer vazio) + waitForJob 600s; store 600+stat, env precede, logout revoga+apaga; 22 comandos (D-64 + cadeia total Phase 4); `--result` = grupo de dedup (D-46); comandos nunca exitam (só uhhu.ts); spawn em teste sempre async (sync deadlocka servidor in-process); cli-unit 17/17 + cli-headless 7/7; suite 134/134 PG real; auditoria 0 crit/0 high
+- 05-04: MCP @uhhu/mcp headless (CORE-02/05 lado MCP): sdk 1.30.0 pinado exato (sem fallback, rede ok, zod v4 suportado); client mcpFetch (Bearer PAT via env+X-Request-Id+Idempotency-Key, raw byte-exato) + mcpWaitForJob 600s; 11 tools verbatim com inputSchema=.shape da rota + confirm:z.literal(true) nas 5 (pre-check confirm_required PT-BR sem E/S; SDK valida antes do handler no transporte); execute retorna run em qualquer desfecho; export={filename,contentType,sizeBytes,contentJson|contentText}; McpConfigError vira unauthenticated acionavel; withMcpEnv stripa *DATABASE* com restore; 2º usuário usa cookie admin p/ convite; mcp-tools 29/29 + mcp-headless 7/7; suite 170/170 PG real; auditoria 0 crit/0 high (traversal `..` e Bearer vazio corrigidos)
 
 ### Pending Todos
 
@@ -97,6 +98,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-11T13:25:00Z
-Stopped at: Phase 5 wave 3 partial — 05-03 complete, ready for 05-04
-Resume file: .planning/phases/05-prova-headless/05-04-PLAN.md
+Last session: 2026-09-11T10:45:00Z
+Stopped at: Phase 5 wave 3 complete — 05-04 done, ready for 05-05
+Resume file: .planning/phases/05-prova-headless/05-05-PLAN.md
