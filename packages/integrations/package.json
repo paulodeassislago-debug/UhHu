@@ -1,0 +1,19 @@
+{
+  "name": "@uhhu/integrations",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@uhhu/contracts": "workspace:*",
+    "@uhhu/db": "workspace:*",
+    "drizzle-orm": "^0.45.2",
+    "zod": "^4.5.4"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.13"
+  }
+}

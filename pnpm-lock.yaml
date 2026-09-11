@@ -122,6 +122,25 @@ importers:
         specifier: ^4.23.13
         version: 4.23.13
 
+  packages/integrations:
+    dependencies:
+      '@uhhu/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@uhhu/db':
+        specifier: workspace:*
+        version: link:../db
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(postgres@3.4.9)
+      zod:
+        specifier: ^4.5.4
+        version: 4.5.4
+    devDependencies:
+      tsx:
+        specifier: ^4.23.13
+        version: 4.23.13
+
 packages:
 
   '@drizzle-team/brocli@0.10.2':
