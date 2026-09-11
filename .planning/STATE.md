@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: "Milestone v1.0 COMPLETE 2026-09-11 (5/5 phases, 23/23 plans, verificação 20/20). Próximo: /gsd-complete-milestone"
-stopped_at: Phase 5 verified and closed — milestone ready to complete
-last_updated: "2026-09-11T16:00:00Z"
-last_activity: "2026-09-11 — Phase 5 CLOSED (review advisory 0 crit, regressão 180/180, sem drift, verificação passed 20/20; CORE-02/CORE-05 complete)"
+status: "Milestone v1.0 ARCHIVED 2026-09-11 (ROADMAP + REQUIREMENTS em milestones/). Próximo: /gsd-new-milestone"
+stopped_at: Milestone v1.0 archived — planning next milestone
+last_updated: "2026-09-11T16:30:00Z"
+last_activity: "2026-09-11 — v1.0 archived (safety commit; REQUIREMENTS.md removal follows)"
 progress:
   total_phases: 5
   completed_phases: 5
@@ -18,10 +18,10 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-09-09)
+See: .planning/PROJECT.md (updated 2026-09-11)
 
 **Core value:** Um pesquisador consegue executar uma busca real (BDTD/CAPES) pelo CORE, com isolamento por usuário, proveniência e histórico.
-**Current focus:** Milestone v1.0 COMPLETE — todas as 5 fases fechadas (próximo: /gsd-complete-milestone)
+**Current focus:** Planning next milestone (v1.0 shipped 2026-09-11; archives in .planning/milestones/)
 
 ## Current Position
 
