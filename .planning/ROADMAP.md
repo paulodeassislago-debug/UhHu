@@ -63,7 +63,7 @@ Cross-cutting constraints: `ownerId` sempre da sessao, nunca do body; fora do es
 **Plans**: 6 plans in 5 waves (01 contratos+schema → 02 SourceClient/registry + 03 adapters em paralelo → 04 lib execução → 05 rotas+wiring → 06 prova+IDOR+checkpoint)
 
 Plans:
-- [ ] 03-01-PLAN.md — Wave 1: contratos lab + erros PT-BR + schema/migration 0002 (LAB-02/03/04, CORE-03/04)
+- [x] 03-01-PLAN.md — Wave 1: contratos lab + erros PT-BR + schema/migration 0002 (LAB-02/03/04, CORE-03/04) — done 2026-09-11
 - [ ] 03-02-PLAN.md — Wave 2 *(blocked on 03-01)*: SourceClient + registry + health (SRC-03, SRC-04-parte, LAB-12-parte)
 - [ ] 03-03-PLAN.md — Wave 2 *(blocked on 03-01, paralelo ao 03-02)*: adapters BDTD/CAPES + pós-filtro + contrato com fixtures (SRC-01, SRC-02, SRC-04, SRC-05)
 - [ ] 03-04-PLAN.md — Wave 3 *(blocked on 03-01–03)*: lib searches owner-first + motor de runs sync/async/partial/diff/idempotência (LAB-02/03/04/05, CORE-03/04; D-28–D-39-núcleo)
@@ -106,6 +106,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. Fundação executável | 3/3 | Complete | 2026-09-10 |
 | 2. Plataforma e isolamento | 4/4 | Complete | 2026-09-11 |
-| 3. Buscas e adapters | 0/TBD | Not started | - |
+| 3. Buscas e adapters | 1/6 | In progress | - |
 | 4. Corpus e exportação | 0/TBD | Not started | - |
 | 5. Prova headless | 0/TBD | Not started | - |
