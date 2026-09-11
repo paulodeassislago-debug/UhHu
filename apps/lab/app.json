@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "UhHu Lab",
+    "slug": "uhhu-lab",
+    "scheme": "uhhu-lab",
+    "version": "0.1.0",
+    "orientation": "default",
+    "platforms": ["ios", "android", "web"],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "plugins": ["expo-router"],
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "android": {
+      "package": "com.uhhu.lab"
+    },
+    "ios": {
+      "bundleIdentifier": "com.uhhu.lab"
+    }
+  }
+}
