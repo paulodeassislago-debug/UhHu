@@ -1,8 +1,8 @@
 // packages/integrations — registry de adapters BDTD/CAPES (fronteira integrations).
 //
 // `getSourceAdapter('bdtd' | 'capes')` devolve `{ search, enrich, version }` para
-// o executor de runs (03-04 importa este módulo direto; NÃO reexportar pelo
-// `src/index.ts` — o barrel é dono do 03-02/03-04, sem conflito de wave).
+// o executor de runs e as rotas (03-04/03-05 consomem via barrel `src/index.ts`;
+// o módulo direto continua importável quando o chamador quiser evitar o barrel).
 // `oasisbr` lança o mesmo SourceDisabledError do registry (D-33: a rota traduz
 // para 400 SOURCE_DISABLED).
 //
