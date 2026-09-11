@@ -1110,3 +1110,147 @@ export async function compareSearchesForActor(
   }
   return toCompareDTO(searches, totals, yearHistogram, bySource, pairwiseOverlap);
 }
+
+// ---------------------------------------------------------------------------
+// Export scope server-side (D-50): corpus resolvido no servidor ate 1000
+// grupos; selection aceita IDs de grupos OU de resultados (mapeados aos grupos).
+// ---------------------------------------------------------------------------
+
+export const EXPORT_MAX_GROUPS = 1000;
+
+const rawMetadataRecordSchema = z.record(z.string(), z.unknown());
+
+function parseRawMetadata(value: unknown): Record<string, unknown> {
+  const parsed = rawMetadataRecordSchema.safeParse(value);
+  return parsed.success ? parsed.data : {};
+}
+
+export interface ExportMemberRaw {
+  groupId: string;
+  resultId: string;
+  runId: string;
+  source: string;
+  sourceId: string;
+  rawMetadata: Record<string, unknown>;
+}
+
+export interface ExportProvenance {
+  project: { id: string; title: string };
+  searches: Array<{ id: string; term: string; runId: string | null; executedAt: string | null }>;
+}
+
+export async function getExportProvenanceForActor(
+  db: Db,
+  actor: ActorContext,
+  projectId: string,
+): Promise<ExportProvenance | null> {
+  const project = await getProjectForActor(db, actor, projectId);
+  if (project === null) {
+    return null;
+  }
+  const searchRows = await db
+    .select()
+    .from(labSearches)
+    .where(eq(labSearches.projectId, projectId))
+    .orderBy(asc(labSearches.createdAt), asc(labSearches.id));
+  const searches: ExportProvenance['searches'] = [];
+  for (const s of searchRows) {
+    const runs = await db
+      .select()
+      .from(labSearchRuns)
+      .where(
+        and(
+          eq(labSearchRuns.searchId, s.id),
+          inArray(labSearchRuns.status, ['succeeded', 'partial']),
+        ),
+      )
+      .orderBy(desc(labSearchRuns.executedAt), desc(labSearchRuns.id))
+      .limit(1);
+    const run = runs[0];
+    searches.push({
+      id: s.id,
+      term: s.term,
+      runId: run === undefined ? null : run.id,
+      executedAt: run === undefined ? null : run.executedAt.toISOString(),
+    });
+  }
+  return { project: { id: project.id, title: project.title }, searches };
+}
+
+export async function listExportMembersForActor(
+  db: Db,
+  actor: ActorContext,
+  projectId: string,
+  groupIds: string[],
+): Promise<ExportMemberRaw[] | null> {
+  const project = await getProjectForActor(db, actor, projectId);
+  if (project === null) {
+    return null;
+  }
+  const unique = [...new Set(groupIds)];
+  if (unique.length === 0) {
+    return [];
+  }
+  const bundles = await loadGroupBundles(db, projectId, unique);
+  if (bundles.length !== unique.length) {
+    return null;
+  }
+  const out: ExportMemberRaw[] = [];
+  for (const b of bundles) {
+    for (const r of b.memberRows) {
+      out.push({
+        groupId: b.group.id,
+        resultId: r.id,
+        runId: r.runId,
+        source: r.source,
+        sourceId: r.sourceId,
+        rawMetadata: parseRawMetadata(r.rawMetadata),
+      });
+    }
+  }
+  return out;
+}
+
+export async function resolveSelectionGroupsForActor(
+  db: Db,
+  actor: ActorContext,
+  projectId: string,
+  selection: string[],
+): Promise<string[] | null> {
+  const project = await getProjectForActor(db, actor, projectId);
+  if (project === null) {
+    return null;
+  }
+  const unique = [...new Set(selection)];
+  if (unique.length === 0) {
+    return [];
+  }
+  const bundles = await loadGroupBundles(db, projectId, unique);
+  const groupIds = new Set(bundles.map((b) => b.group.id));
+  const missing = unique.filter((id) => !groupIds.has(id));
+  if (missing.length > 0) {
+    // Tenta como IDs de resultados do projeto (runs correntes escopados).
+    const members = await db
+      .select({ member: labDedupMembers })
+      .from(labDedupMembers)
+      .where(inArray(labDedupMembers.resultId, missing));
+    const memberGroupIds = [...new Set(members.map((m) => m.member.groupId))];
+    const extra =
+      memberGroupIds.length === 0
+        ? []
+        : await loadGroupBundles(db, projectId, memberGroupIds);
+    const extraIds = new Set(extra.map((b) => b.group.id));
+    const resolved = new Set<string>(groupIds);
+    const resultToGroup = new Map(members.map((m) => [m.member.resultId, m.member.groupId] as const));
+    for (const id of missing) {
+      const gid = resultToGroup.get(id);
+      if (gid !== undefined && extraIds.has(gid)) {
+        resolved.add(gid);
+      } else {
+        return null;
+      }
+    }
+    return [...resolved];
+  }
+  return [...groupIds];
+}

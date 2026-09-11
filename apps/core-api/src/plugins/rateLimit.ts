@@ -26,6 +26,8 @@
 //    created_by+executed_at). Este hook NAO o substitui: 30/min/IP barra
 //    rajadas de um mesmo IP; 10/h/usuário barra abuso sustentado por conta.
 //    Ambos retornam o mesmo envelope 429 RATE_LIMITED PT-BR.)
+// - GET|POST /api/v1/lab/projects/*/export   -> 30/min  (D-50/D-52, anti-rajada
+//    de export por IP; o embargo de 1000 grupos vive na ROTA, nao aqui).
 // Demais rotas: so o global 200/min.
 //
 // Janela: Map<chave, number[]> com timestamps; a cada request filtra os
@@ -65,15 +67,27 @@ export const authRateLimit = {
 // memória); o contratual 10 runs/h por usuário (D-39) é no banco.
 export const labRunsRateLimit = { max: 30, timeWindow: '1 minute' } as const;
 
+// Bucket anti-rajada de exportacao de corpus (04-04, D-50): 30 GET|POST
+// .../export por minuto por IP. Distincao como lab-runs: isto e IP/minuto
+// (hook, em memoria); o embargo contratual de 1000 grupos vive na ROTA.
+export const labExportRateLimit = { max: 30, timeWindow: '1 minute' } as const;
+
 const WINDOW_MS = 60 * 1000;
 
-type AuthBucket = 'login' | 'register' | 'invites' | 'reset' | 'lab-runs';
+type AuthBucket = 'login' | 'register' | 'invites' | 'reset' | 'lab-runs' | 'lab-export';
 
 function bucketFor(method: string, url: string): AuthBucket | null {
+  const path = url.split('?')[0] ?? url;
+  if (
+    (method === 'GET' || method === 'POST') &&
+    path.includes('/api/v1/lab/projects/') &&
+    path.endsWith('/export')
+  ) {
+    return 'lab-export';
+  }
   if (method !== 'POST') {
     return null;
   }
-  const path = url.split('?')[0] ?? url;
   if (path === '/api/v1/auth/login') {
     return 'login';
   }
@@ -104,6 +118,9 @@ function maxFor(bucket: AuthBucket): number {
   }
   if (bucket === 'lab-runs') {
     return labRunsRateLimit.max;
+  }
+  if (bucket === 'lab-export') {
+    return labExportRateLimit.max;
   }
   return authRateLimit.reset.max;
 }

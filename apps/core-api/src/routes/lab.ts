@@ -36,6 +36,7 @@ import {
   pinInputSchema,
   resultsQuerySchema,
   updateSearchSchema,
+  type CorpusEntryDTO,
   type JobDTO,
   type SearchRunDTO,
 } from '@uhhu/contracts';
@@ -71,13 +72,20 @@ import {
   createTagForActor,
   detachTagForActor,
   ensureDefaultTags,
+  EXPORT_MAX_GROUPS,
   getCorpusForActor,
+  getExportProvenanceForActor,
+  listExportMembersForActor,
   listTagsForActor,
   rejectGroupForActor,
+  resolveSelectionGroupsForActor,
   setDivergenceForActor,
   setGroupDecisionForActor,
   setPinForActor,
+  type ExportMemberRaw,
+  type ExportProvenance,
 } from '../lib/corpus.js';
+import { exportFilename, toBibTeX, toCSV, toExportJSON } from '../lib/exports.js';
 
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9_.:~-]{1,128}$/;
 
@@ -233,6 +241,37 @@ async function replyRunExecutionError(
     return;
   }
   throw error;
+}
+
+// Exportacao (D-50..D-53): attachment com filename ASCII + 3 content-types.
+// Serializadores puros de '../lib/exports.js' (guards 04-01); a rota so
+// resolve escopo + embargo DoS (1000 grupos) + headers.
+async function sendExport(
+  reply: FastifyReply,
+  projectId: string,
+  projectTitle: string,
+  format: 'csv' | 'bibtex' | 'json',
+  entries: CorpusEntryDTO[],
+  extra: { members: ExportMemberRaw[]; provenance: ExportProvenance },
+): Promise<void> {
+  const date = new Date().toISOString().slice(0, 10);
+  if (format === 'csv') {
+    reply.header('Content-Disposition', `attachment; filename="${exportFilename(projectTitle, date, 'csv')}"`);
+    reply.type('text/csv; charset=utf-8');
+    await reply.send(toCSV(entries));
+    return;
+  }
+  if (format === 'bibtex') {
+    reply.header('Content-Disposition', `attachment; filename="${exportFilename(projectTitle, date, 'bib')}"`);
+    reply.type('application/x-bibtex; charset=utf-8');
+    await reply.send(toBibTeX(entries));
+    return;
+  }
+  reply.header('Content-Disposition', `attachment; filename="${exportFilename(projectTitle, date, 'json')}"`);
+  reply.type('application/json; charset=utf-8');
+  await reply.send(
+    toExportJSON(projectId, entries, { members: extra.members, provenance: extra.provenance }),
+  );
 }
 
 export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void> {
@@ -1123,6 +1162,131 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
         return;
       }
       await reply.code(200).send(dto);
+    },
+  );
+
+  app.get(
+    '/api/v1/lab/projects/:projectId/export',
+    { preHandler: requireAuth(db) },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const requestId = resolveRequestId(request);
+      reply.header('x-request-id', requestId);
+      const actor = request.actor;
+      if (actor === undefined) {
+        await reply.code(401).send(buildEnvelope('UNAUTHENTICATED', requestId, {}));
+        return;
+      }
+      const params = projectIdParamsSchema.safeParse(request.params);
+      if (!params.success) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      const parsed = exportQuerySchema.safeParse(withClampedLimit(request.query));
+      if (!parsed.success) {
+        await reply
+          .code(400)
+          .send(buildEnvelope('VALIDATION_ERROR', requestId, parsed.error.flatten()));
+        return;
+      }
+      const project = await getProjectForActor(db, actor, params.data.projectId);
+      if (project === null) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      const overflow = buildEnvelope('VALIDATION_ERROR', requestId, {
+        message: 'Seleção excede o limite de 1000 grupos para exportação.',
+      });
+      const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (parsed.data.scope === 'corpus') {
+        const all: CorpusEntryDTO[] = [];
+        let cursor: string | undefined = undefined;
+        for (;;) {
+          const page = await getCorpusForActor(db, actor, params.data.projectId, {
+            limit: 100,
+            cursor,
+          });
+          all.push(...page.items);
+          if (all.length > EXPORT_MAX_GROUPS) {
+            await reply.code(400).send(overflow);
+            return;
+          }
+          if (page.page.nextCursor === null) {
+            break;
+          }
+          cursor = page.page.nextCursor;
+        }
+        const groupIds = all.map((e) => e.groupId);
+        const members = await listExportMembersForActor(db, actor, params.data.projectId, groupIds);
+        const provenance = await getExportProvenanceForActor(db, actor, params.data.projectId);
+        if (members === null || provenance === null) {
+          await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+          return;
+        }
+        await sendExport(reply, params.data.projectId, project.title, parsed.data.format, all, {
+          members,
+          provenance,
+        });
+        return;
+      }
+      if (parsed.data.selection === undefined || parsed.data.selection.trim().length === 0) {
+        await reply
+          .code(400)
+          .send(
+            buildEnvelope('VALIDATION_ERROR', requestId, {
+              message: 'Seleção é obrigatória para scope=selection.',
+            }),
+          );
+        return;
+      }
+      const ids = parsed.data.selection
+        .split(',')
+        .map((part) => part.trim())
+        .filter((part) => part.length > 0);
+      if (
+        ids.length < 1 ||
+        ids.length > EXPORT_MAX_GROUPS ||
+        ids.some((id) => !uuidPattern.test(id))
+      ) {
+        await reply.code(400).send(overflow);
+        return;
+      }
+      const resolved = await resolveSelectionGroupsForActor(
+        db,
+        actor,
+        params.data.projectId,
+        ids,
+      );
+      if (resolved === null) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      const entries: CorpusEntryDTO[] = [];
+      let cursor: string | undefined = undefined;
+      for (;;) {
+        const page = await getCorpusForActor(db, actor, params.data.projectId, {
+          limit: 100,
+          cursor,
+        });
+        for (const e of page.items) {
+          if (resolved.includes(e.groupId)) {
+            entries.push(e);
+          }
+        }
+        if (page.page.nextCursor === null) {
+          break;
+        }
+        cursor = page.page.nextCursor;
+      }
+      const members = await listExportMembersForActor(db, actor, params.data.projectId, resolved);
+      const provenance = await getExportProvenanceForActor(db, actor, params.data.projectId);
+      if (members === null || provenance === null) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      await sendExport(reply, params.data.projectId, project.title, parsed.data.format, entries, {
+        members: members.filter((m) => resolved.includes(m.groupId)),
+        provenance,
+      });
     },
   );
 }
