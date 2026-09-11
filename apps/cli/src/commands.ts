@@ -488,6 +488,14 @@ export async function runSearchRun(args: string[], globals: GlobalOptions): Prom
     emit(globals, full, () => runMetricsTable(full));
     return;
   }
+  // Fast path (201 final ou 200 replay): mesmo mapeamento do polling — run
+  // terminal `failed`/`cancelled` vira exit 1 (H-01: antes saia exit 0
+  // dependendo do timing 201 vs 202).
+  if (data.status === 'failed' || data.status === 'cancelled') {
+    const code = data.error?.code ?? 'RUN_FAILED';
+    const message = data.error?.message ?? 'Execução terminou sem sucesso.';
+    throw new CliApiError(500, code, message, '');
+  }
   emit(globals, data, () => runMetricsTable(data));
 }
 

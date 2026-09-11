@@ -20,7 +20,7 @@ import {
   loadToken,
   saveToken,
 } from '../../apps/cli/src/auth-store.js';
-import { exitCodeForStatus, parseArgs } from '../../apps/cli/src/commands.js';
+import { exitCodeForStatus, parseArgs, runSearchRun } from '../../apps/cli/src/commands.js';
 import { printJson, printTable } from '../../apps/cli/src/table.js';
 
 const ORIG_HOME = process.env['HOME'];
@@ -369,5 +369,82 @@ describe('commands puros', () => {
     expect(names).not.toContain('drizzle-orm');
     expect(names).not.toContain('pg');
     expect(names).not.toContain('postgres');
+  });
+});
+
+describe('commands runSearchRun fast path (H-01)', () => {
+  it('201 failed vira CliApiError 500 (exit 1) — paridade com o polling 202', async () => {
+    process.env['UHHU_TOKEN'] = 'tok-h01';
+    vi.stubGlobal(
+      'fetch',
+      async (): Promise<Response> =>
+        jsonResponse(
+          JSON.stringify({
+            id: 'run-fast-failed',
+            status: 'failed',
+            error: { code: 'SOURCE_FAILED', message: 'Fonte falhou.' },
+          }),
+          201,
+        ),
+    );
+    const err: unknown = await runSearchRun(
+      ['--search', 'search-1'],
+      { json: true, verbose: false, timeoutMs: 60000, baseUrl: 'http://127.0.0.1:3000' },
+    ).then(
+      () => null,
+      (caught: unknown) => caught,
+    );
+    expect(err).toBeInstanceOf(CliApiError);
+    if (err instanceof CliApiError) {
+      expect(err.status).toBe(500);
+      expect(err.code).toBe('SOURCE_FAILED');
+      expect(exitCodeForStatus(err.status)).toBe(1);
+    }
+  });
+
+  it('201 cancelled vira CliApiError 500 com fallback RUN_FAILED', async () => {
+    process.env['UHHU_TOKEN'] = 'tok-h01';
+    vi.stubGlobal(
+      'fetch',
+      async (): Promise<Response> =>
+        jsonResponse(JSON.stringify({ id: 'run-fast-cancelled', status: 'cancelled' }), 201),
+    );
+    const err: unknown = await runSearchRun(
+      ['--search', 'search-1'],
+      { json: true, verbose: false, timeoutMs: 60000, baseUrl: 'http://127.0.0.1:3000' },
+    ).then(
+      () => null,
+      (caught: unknown) => caught,
+    );
+    expect(err).toBeInstanceOf(CliApiError);
+    if (err instanceof CliApiError) {
+      expect(err.status).toBe(500);
+      expect(err.code).toBe('RUN_FAILED');
+    }
+  });
+
+  it('201 succeeded nao lanca (exit 0)', async () => {
+    process.env['UHHU_TOKEN'] = 'tok-h01';
+    vi.stubGlobal(
+      'fetch',
+      async (): Promise<Response> =>
+        jsonResponse(
+          JSON.stringify({ id: 'run-fast-ok', status: 'succeeded', error: null }),
+          201,
+        ),
+    );
+    const lines: string[] = [];
+    const spy = vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => {
+      lines.push(args.map((part) => String(part)).join(' '));
+    });
+    try {
+      await runSearchRun(
+        ['--search', 'search-1'],
+        { json: true, verbose: false, timeoutMs: 60000, baseUrl: 'http://127.0.0.1:3000' },
+      );
+    } finally {
+      spy.mockRestore();
+    }
+    expect(lines.join('\n')).toContain('run-fast-ok');
   });
 });
