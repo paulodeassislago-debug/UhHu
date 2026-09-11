@@ -144,6 +144,15 @@ export function toHttpError(error: unknown, requestId: string): HttpErrorMapping
       envelope: buildEnvelope('VALIDATION_ERROR', requestId, error.details),
     };
   }
+  // UI-30 (Rule 2): libs lançam ZodError via schema.parse para input hostil
+  // (ex.: referenceSearchId não-uuid em updateProjectForActor). Mapear para
+  // o mesmo 400 VALIDATION_ERROR da fronteira — sem isso viraria 500.
+  if (error instanceof z.ZodError) {
+    return {
+      status: 400,
+      envelope: buildEnvelope('VALIDATION_ERROR', requestId, error.flatten()),
+    };
+  }
   if (error instanceof SourceDisabledError) {
     return { status: 400, envelope: buildEnvelope('SOURCE_DISABLED', requestId, {}) };
   }
