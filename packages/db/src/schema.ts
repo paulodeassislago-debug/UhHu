@@ -9,6 +9,8 @@
 // proveniencia (D-34), mas NUNCA serializa cookies/segredos — os adapters (03-03)
 // higienizam antes de persistir. Nenhuma rota expoe raw_metadata bruto com
 // credenciais; logs nunca contem cookies/Authorization.
+//
+// Fase 4 (D-40..D-53): revisao por chave de conteudo (projectId, canonicalKey), NUNCA resultId.
 
 import { sql } from 'drizzle-orm';
 import {
@@ -241,3 +243,154 @@ export const labSourceEvents = pgTable('lab_source_events', {
 
 export type LabSourceEvent = typeof labSourceEvents.$inferSelect;
 export type NewLabSourceEvent = typeof labSourceEvents.$inferInsert;
+
+// ---------------------------------------------------------------------------
+// Fase 4 (D-40..D-53): revisao por chave de conteudo (projectId, canonicalKey).
+// Grupos/decisoes/pins/divergencias/rejeicoes enderecados pela canonicalKey
+// SHA-256 escopada por projeto — lab_results.id aparece so em members.
+// ---------------------------------------------------------------------------
+
+// D-40 pending fora do corpus; D-41 persistente por projeto.
+// prettier-ignore
+export const labDedupGroups = pgTable('lab_dedup_groups', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    projectId: uuid('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+    canonicalKey: text('canonical_key').notNull(),
+    confidence: text('confidence').notNull(),
+    status: text('status').notNull().default('confirmed'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
+  },
+  (t) => [
+    unique('lab_dedup_groups_project_key_unique').on(t.projectId, t.canonicalKey),
+    index('lab_dedup_groups_project_status_idx').on(t.projectId, t.status),
+    check('lab_dedup_groups_confidence_check', sql`${t.confidence} IN ('exact','fuzzy','single')`),
+    check('lab_dedup_groups_status_check', sql`${t.status} IN ('confirmed','pending')`),
+  ],
+);
+
+export type LabDedupGroup = typeof labDedupGroups.$inferSelect;
+export type NewLabDedupGroup = typeof labDedupGroups.$inferInsert;
+
+// Proveniencia intacta, 1 resultado em 1 grupo.
+// prettier-ignore
+export const labDedupMembers = pgTable('lab_dedup_members', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    groupId: uuid('group_id').notNull().references(() => labDedupGroups.id, { onDelete: 'cascade' }),
+    resultId: uuid('result_id').notNull().references(() => labResults.id, { onDelete: 'cascade' }),
+  },
+  (t) => [
+    unique('lab_dedup_members_group_result_unique').on(t.groupId, t.resultId),
+    unique('lab_dedup_members_result_unique').on(t.resultId),
+    index('lab_dedup_members_group_idx').on(t.groupId),
+  ],
+);
+
+export type LabDedupMember = typeof labDedupMembers.$inferSelect;
+export type NewLabDedupMember = typeof labDedupMembers.$inferInsert;
+
+// D-46 UMA por grupo (UNIQUE groupId).
+// prettier-ignore
+export const labGroupDecisions = pgTable('lab_group_decisions', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    groupId: uuid('group_id').notNull().references(() => labDedupGroups.id, { onDelete: 'cascade' }).unique(),
+    decision: text('decision').notNull().default('undecided'),
+    reason: text('reason'),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
+  },
+  (t) => [
+    check('lab_group_decisions_decision_check', sql`${t.decision} IN ('eligible','ineligible','undecided')`),
+    check('lab_group_decisions_reason_check', sql`char_length(${t.reason}) <= 500`),
+  ],
+);
+
+export type LabGroupDecision = typeof labGroupDecisions.$inferSelect;
+export type NewLabGroupDecision = typeof labGroupDecisions.$inferInsert;
+
+// D-46 anotacao por origem, sem mudar decisao.
+// prettier-ignore
+export const labDivergences = pgTable('lab_divergences', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    groupId: uuid('group_id').notNull().references(() => labDedupGroups.id, { onDelete: 'cascade' }),
+    source: text('source').notNull(),
+    note: text('note').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    unique('lab_divergences_group_source_unique').on(t.groupId, t.source),
+    check('lab_divergences_source_check', sql`${t.source} IN ('bdtd','capes')`),
+    check('lab_divergences_note_check', sql`char_length(${t.note}) >= 1 AND char_length(${t.note}) <= 1000`),
+  ],
+);
+
+export type LabDivergence = typeof labDivergences.$inferSelect;
+export type NewLabDivergence = typeof labDivergences.$inferInsert;
+
+// LAB-09 defaults via seed preguicoso (sem data migration, RESEARCH A6).
+// prettier-ignore
+export const labTags = pgTable('lab_tags', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    projectId: uuid('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    color: text('color'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    unique('lab_tags_project_name_unique').on(t.projectId, t.name),
+    index('lab_tags_project_idx').on(t.projectId),
+    check('lab_tags_name_check', sql`char_length(${t.name}) >= 1 AND char_length(${t.name}) <= 100`),
+  ],
+);
+
+export type LabTag = typeof labTags.$inferSelect;
+export type NewLabTag = typeof labTags.$inferInsert;
+
+// Sem id proprio; PK logica (groupId,tagId).
+// prettier-ignore
+export const labGroupTags = pgTable('lab_group_tags', {
+    groupId: uuid('group_id').notNull().references(() => labDedupGroups.id, { onDelete: 'cascade' }),
+    tagId: uuid('tag_id').notNull().references(() => labTags.id, { onDelete: 'cascade' }),
+  },
+  (t) => [
+    unique('lab_group_tags_group_tag_unique').on(t.groupId, t.tagId),
+    index('lab_group_tags_group_idx').on(t.groupId),
+  ],
+);
+
+export type LabGroupTag = typeof labGroupTags.$inferSelect;
+export type NewLabGroupTag = typeof labGroupTags.$inferInsert;
+
+// D-42 par de canonicalKeys ordenado (keyA<keyB na escrita), nunca resultIds.
+// prettier-ignore
+export const labRejectedPairs = pgTable('lab_rejected_pairs', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    projectId: uuid('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+    keyA: text('key_a').notNull(),
+    keyB: text('key_b').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    unique('lab_rejected_pairs_project_keys_unique').on(t.projectId, t.keyA, t.keyB),
+    index('lab_rejected_pairs_project_idx').on(t.projectId),
+  ],
+);
+
+export type LabRejectedPair = typeof labRejectedPairs.$inferSelect;
+export type NewLabRejectedPair = typeof labRejectedPairs.$inferInsert;
+
+// D-45 override estavel (source,sourceId) sobrevive a re-runs; UNIQUE groupId = 1 pin por grupo.
+// prettier-ignore
+export const labCanonicalPins = pgTable('lab_canonical_pins', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    groupId: uuid('group_id').notNull().references(() => labDedupGroups.id, { onDelete: 'cascade' }).unique(),
+    source: text('source').notNull(),
+    sourceId: text('source_id').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    check('lab_canonical_pins_source_check', sql`${t.source} IN ('bdtd','capes')`),
+  ],
+);
+
+export type LabCanonicalPin = typeof labCanonicalPins.$inferSelect;
+export type NewLabCanonicalPin = typeof labCanonicalPins.$inferInsert;
