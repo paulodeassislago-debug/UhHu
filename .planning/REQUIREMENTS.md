@@ -16,10 +16,10 @@ Requirements for this milestone. Each maps to roadmap phases 6–9.
 
 ### Autenticação
 
-- [ ] **UI-05**: User faz login com e-mail + senha na web/PWA (cookie httpOnly, mesmo fluxo browser existente) e vê a lista de projetos
-- [ ] **UI-06**: User registra conta com token de convite válido e recebe erro legível com token inválido/expirado
-- [ ] **UI-07**: User autentica no app nativo via PAT por device (POST /auth/token, guardado em secure storage) com logout que revoga
-- [ ] **UI-08**: User com sessão expirada é redirecionado ao login com aviso, sem perder o projeto atual
+- [x] **UI-05**: User faz login com e-mail + senha na web/PWA (cookie httpOnly, mesmo fluxo browser existente) e vê a lista de projetos — done 06-03 (AuthProvider cookie + projects lista real)
+- [x] **UI-06**: User registra conta com token de convite válido e recebe erro legível com token inválido/expirado — done 06-03 (registerSchema + envelope verbatim, sem oráculo)
+- [x] **UI-07**: User autentica no app nativo via PAT por device (POST /auth/token, guardado em secure storage) com logout que revoga — done 06-03 (deviceName automático + SecureStore + revogação patId)
+- [x] **UI-08**: User com sessão expirada é redirecionado ao login com aviso, sem perder o projeto atual — done 06-03 (expired + next interno via isSafeNext)
 
 ### Projetos
 
@@ -107,10 +107,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | UI-02 | Phase 6 | Done (06-02, lado client) |
 | UI-03 | Phase 6 | Pending |
 | UI-04 | Phase 6 | Pending |
-| UI-05 | Phase 6 | Pending |
-| UI-06 | Phase 6 | Pending |
-| UI-07 | Phase 6 | Pending |
-| UI-08 | Phase 6 | Pending |
+| UI-05 | Phase 6 | Done (06-03) |
+| UI-06 | Phase 6 | Done (06-03) |
+| UI-07 | Phase 6 | Done (06-03) |
+| UI-08 | Phase 6 | Done (06-03) |
 | UI-30 | Phase 6 | Done (06-01) |
 | UI-31 | Phase 6 | Done (06-01) |
 | UI-32 | Phase 6 | Done (06-01, lado servidor) |
