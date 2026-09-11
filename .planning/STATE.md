@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Lab UI v1
 status: "planning — defining requirements"
-stopped_at: Milestone v1.1 started — defining requirements
-last_updated: "2026-09-11T17:00:00Z"
-last_activity: "2026-09-11 — v1.1 Lab UI v1 started (PROJECT.md updated; requirements next)"
+stopped_at: Phase 6 context gathered
+last_updated: "2026-09-11T17:30:00Z"
+last_activity: "2026-09-11 — Phase 6 context gathered (3 areas; CONTEXT.md ready for planning)"
 progress:
   total_phases: 4
   completed_phases: 0
@@ -25,10 +25,11 @@ See: .planning/PROJECT.md (updated 2026-09-11)
 
 ## Current Position
 
-Phase: 6 of 9 (Not started — roadmap approved inline, "go")
+Phase: 6 of 9 (Context gathered — ready to plan)
 Plan: —
 Status: Ready to plan Phase 6
 Last activity: 2026-09-11 — Milestone v1.1 roadmap created (4 phases, 32 reqs mapped)
+Resume file: .planning/phases/06-fundacao-app-auth-suporte-core/06-CONTEXT.md
 
 Progress: [░░░░░░░░░░] 0 plans complete (new milestone starting)
 
