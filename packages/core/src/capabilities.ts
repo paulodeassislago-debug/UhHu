@@ -6,11 +6,13 @@
 // importa @uhhu/db: persistencia vive nos casos de uso injetados, nao no
 // registry (guard D-55 prova estruturalmente).
 
-import { capabilityNameSchema } from '@uhhu/contracts';
+import { CAPABILITY_VERSION, capabilityNameSchema } from '@uhhu/contracts';
 import type { CapabilityName } from '@uhhu/contracts';
 import type { ActorContext } from './actor.js';
 
-export const CAPABILITY_VERSION = 'v1' as const;
+// M-04: fonte unica em @uhhu/contracts — re-export sem redefinir (antes dois
+// `CAPABILITY_VERSION = 'v1'` podiam divergir no bump).
+export { CAPABILITY_VERSION };
 
 export type CapabilityHandler = (input: unknown, actor: ActorContext) => Promise<unknown>;
 

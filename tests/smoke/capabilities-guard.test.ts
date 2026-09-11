@@ -12,10 +12,11 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { capabilityNameSchema } from '@uhhu/contracts';
+import { capabilityNameSchema, CAPABILITY_VERSION as CONTRACTS_VERSION } from '@uhhu/contracts';
 import type { CapabilityName } from '@uhhu/contracts';
 import type { ActorContext } from '../../packages/core/src/actor.js';
 import {
+  CAPABILITY_VERSION as CORE_VERSION,
   createExecutor,
   UnknownCapabilityError,
   type CapabilityHandler,
@@ -170,5 +171,19 @@ describe('execute()', () => {
     if (err instanceof Error) {
       expect(err.message).toBe('falha interna do handler');
     }
+  });
+});
+
+describe('M-04 CAPABILITY_VERSION fonte unica', () => {
+  it('core re-exporta o mesmo valor de contracts (v1)', () => {
+    expect(CORE_VERSION).toBe(CONTRACTS_VERSION);
+    expect(CONTRACTS_VERSION).toBe('v1');
+  });
+
+  it('packages/core/src/capabilities.ts nao redefine o literal', () => {
+    const body: string = readFileSync(join(ROOT, 'packages/core/src/capabilities.ts'), 'utf8');
+    expect(body).not.toMatch(/export const CAPABILITY_VERSION\s*=/);
+    expect(body).toContain("from '@uhhu/contracts'");
+    expect(body).toContain('CAPABILITY_VERSION');
   });
 });
