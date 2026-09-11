@@ -39,6 +39,23 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
+// Le so o `baseUrl` salvo (best-effort, sem token): usado na precedencia
+// `UHHU_API_URL` > `--api` > base salva > default quando o token vem do env
+// (H-02). Nunca lanca: arquivo ausente/corrompido = undefined (cai no default).
+async function readStoredBaseUrl(): Promise<string | undefined> {
+  try {
+    const raw = await readFile(credentialsPath(), 'utf8');
+    const parsed: unknown = JSON.parse(raw) as unknown;
+    if (!isRecord(parsed)) {
+      return undefined;
+    }
+    const stored: unknown = parsed['baseUrl'];
+    return typeof stored === 'string' && stored.length > 0 ? stored : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 // Salva `{ baseUrl, token }` com mode 0o600 verificado por stat. Retorna o
 // path (o chamador imprime `Salvo em <path>` — nunca o token).
 export async function saveToken(baseUrl: string, token: string): Promise<string> {
@@ -62,12 +79,16 @@ export async function loadToken(explicitBaseUrl?: string): Promise<LoadedCredent
   const envApi = process.env['UHHU_API_URL'];
   const trimmedEnv = typeof envToken === 'string' && envToken.length > 0 ? envToken : undefined;
   if (trimmedEnv !== undefined) {
+    // H-02: mesmo com token do env, a base salva participa da precedencia
+    // (envApi > explicito > salva > default) — antes caia direto no default
+    // e falava com o servidor errado.
+    const stored = await readStoredBaseUrl();
     const baseUrl =
       typeof envApi === 'string' && envApi.length > 0
         ? envApi
         : typeof explicitBaseUrl === 'string' && explicitBaseUrl.length > 0
           ? explicitBaseUrl
-          : DEFAULT_API_URL;
+          : (stored ?? DEFAULT_API_URL);
     return { baseUrl, token: trimmedEnv, from: 'env' };
   }
   const file = credentialsPath();

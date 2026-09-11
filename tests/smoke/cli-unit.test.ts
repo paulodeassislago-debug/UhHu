@@ -108,6 +108,38 @@ describe('auth-store (HOME fake)', () => {
     expect(loaded.from).toBe('env');
   });
 
+  it('H-02: base salva e usada quando UHHU_TOKEN esta setado (sem UHHU_API_URL/--api)', async () => {
+    await saveToken('https://staging.exemplo.test', 'tok-arquivo');
+    process.env['UHHU_TOKEN'] = 'tok-env-123';
+    const loaded = await loadToken();
+    expect(loaded.token).toBe('tok-env-123');
+    expect(loaded.from).toBe('env');
+    expect(loaded.baseUrl).toBe('https://staging.exemplo.test');
+  });
+
+  it('H-02: precedencia UHHU_API_URL > --api > base salva > default com token do env', async () => {
+    await saveToken('https://staging.exemplo.test', 'tok-arquivo');
+    process.env['UHHU_TOKEN'] = 'tok-env-123';
+    // So salva → salva.
+    expect((await loadToken()).baseUrl).toBe('https://staging.exemplo.test');
+    // --api vence salva.
+    expect((await loadToken('https://api-flag.exemplo.test')).baseUrl).toBe(
+      'https://api-flag.exemplo.test',
+    );
+    // UHHU_API_URL vence tudo.
+    process.env['UHHU_API_URL'] = 'https://env.exemplo.test';
+    expect((await loadToken('https://api-flag.exemplo.test')).baseUrl).toBe(
+      'https://env.exemplo.test',
+    );
+    expect((await loadToken()).baseUrl).toBe('https://env.exemplo.test');
+  });
+
+  it('H-02: sem arquivo e sem UHHU_API_URL, token do env cai no default', async () => {
+    process.env['UHHU_TOKEN'] = 'tok-env-123';
+    const loaded = await loadToken();
+    expect(loaded.baseUrl).toBe('http://127.0.0.1:3000');
+  });
+
   it('saveToken cria arquivo com mode 0o600 e loadToken le do arquivo', async () => {
     const path = await saveToken('http://127.0.0.1:3001', 'tok-arquivo-456');
     expect(path).toBe(credentialsPath());
