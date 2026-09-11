@@ -13,9 +13,11 @@
 //    `request.method + request.url`.
 //
 // Limites exatos (por IP, janela de 1 minuto):
-// - POST /api/v1/auth/login                 -> 10/min  (nao quebra o lockout
-//    de 15min por e-mail: o lockout e por e-mail no banco, independente do
-//    throttle por IP; throttled retorna RATE_LIMITED sem tocar failedAttempts)
+// - POST /api/v1/auth/login + POST /api/v1/auth/token -> 10/min NO MESMO
+//    bucket `login` (D-63: emissao de PAT compartilha o throttle do login;
+//    nao quebra o lockout de 15min por e-mail: o lockout e por e-mail no
+//    banco, independente do throttle por IP; throttled retorna RATE_LIMITED
+//    sem tocar failedAttempts)
 // - POST /api/v1/auth/register              -> 20/min
 // - POST /api/v1/auth/invites               -> 20/min
 // - POST /api/v1/auth/password/reset-request -> 5/min
@@ -88,7 +90,7 @@ function bucketFor(method: string, url: string): AuthBucket | null {
   if (method !== 'POST') {
     return null;
   }
-  if (path === '/api/v1/auth/login') {
+  if (path === '/api/v1/auth/login' || path === '/api/v1/auth/token') {
     return 'login';
   }
   if (path === '/api/v1/auth/register') {
