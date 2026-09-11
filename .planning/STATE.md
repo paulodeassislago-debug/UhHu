@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: "Phase 4 PLANNED 2026-09-11 (5 plans, 4 waves, research+patterns+validation, plan-check PASSED). Próximo: /gsd-execute-phase 4"
-stopped_at: Phase 4 planned — ready to execute
-last_updated: "2026-09-11T05:15:00Z"
-last_activity: "2026-09-11 — Phase 4 planned (5 plans/4 waves, 6/6 REQ + 14/14 D-40–D-53 covered, checker PASSED); próximo: /gsd-execute-phase 4"
+status: "Phase 5 EXECUTING 2026-09-11 (wave 1/4 done: 05-01 capabilities + PAT foundation). Próximo: 05-02"
+stopped_at: Phase 5 wave 1 done — 05-01 complete
+last_updated: "2026-09-11T12:40:00Z"
+last_activity: "2026-09-11 — 05-01 done (registry 20 caps + execute() + ActorContext pat + PAT table/migration 0004 + guard D-55; suite 98/98 PG real)"
 progress:
   total_phases: 5
-  completed_phases: 3
-  total_plans: 13
-  completed_plans: 13
-  percent: 100
+  completed_phases: 4
+  total_plans: 23
+  completed_plans: 19
+  percent: 83
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-09)
 
 **Core value:** Um pesquisador consegue executar uma busca real (BDTD/CAPES) pelo CORE, com isolamento por usuário, proveniência e histórico.
-**Current focus:** Phase 4: Corpus e exportação (PLANNED 2026-09-11 — 5 plans/4 waves, checker PASSED; próximo: /gsd-execute-phase 4)
+**Current focus:** Phase 5: Prova headless (EXECUTING — wave 1/4 done, 05-01 complete; próximo: 05-02 servidor PAT+execute)
 
 ## Current Position
 
-Phase: 4 of 5 (PLANNED 2026-09-11 — 5 plans in 4 waves)
-Plan: 0 of 5 in Phase 4 — ready to execute
-Status: Phase 4 planned (research + patterns + validation + plan-check PASSED, 1 revision round). Próximo: /gsd-execute-phase 4
-Last activity: 2026-09-11 — Phase 4 planned; próximo: /gsd-execute-phase 4
+Phase: 5 of 5 (EXECUTING — wave 1/4 done)
+Plan: 1 of 5 in Phase 5 — 05-01 done, 05-02 ready
+Status: Phase 5 executing (no flags; sequential mode — no worktree isolation in this runtime). Próximo: waves 2-4 then verify
+Last activity: 2026-09-11 — 05-01 done; próximo: 05-02 (pat.ts + Bearer no requireAuth + rotas como adaptadores execute)
 
-Progress: [██████████] 13 plans complete (Phase 1: 3/3 + Phase 2: 4/4 + Phase 3: 6/6)
+Progress: [████████░░] 19 plans complete (Phase 1: 3/3 + Phase 2: 4/4 + Phase 3: 6/6 + Phase 4: 5/5 + Phase 5: 1/5)
 
 ## Performance Metrics
 
@@ -46,6 +46,7 @@ Progress: [██████████] 13 plans complete (Phase 1: 3/3 + Pha
 |-------|-------|-------|----------|
 | 1. Fundação executável | 2 | ~19min | ~10min |
 | 3. Buscas e adapters | 6 | ~74min+40min | ~19min |
+| 4. Corpus e exportação | 5 | ~150min (executor + checkpoint/fixes) | ~30min |
 
 **Recent Trend:**
 
@@ -71,6 +72,7 @@ Recent decisions affecting current work:
 - 03-04: task 3 (barrel) commitada antes da task 2 (executor importa do barrel — gate typecheck); keyHash=sha256(userId|key) + bodyHash separados (corpo na chave mataria o 422); 1 evento health por fonte/run (challenge recuperado conta); UPDATE final condicional + complementar só-métricas (cancel concorrente vence); oasisbr checado na linha crua; try/catch por tentativa (RangeTooWideError→failed, D-37)
 - 03-05: ResultDTO.rawMetadata aditivo (contrato §19; proveniência D-34 no GET result); 202 resolve run corrente via listRuns limit 1 + fallback aguarda desfecho; key malformada → 400 (nunca ignorada); GET /lab/sources = array do registry; JobDTO progress null só em queued, resultRef só em terminal; rota nunca passa fetchFn (handoff 03-04 honrado)
 - 03-06: checkpoint "approved with capes blocked" (CAPES 61ms sem challenge = bloqueio na fonte, não bug; partial D-37 funcionou); fixtures 03-03 seguem prova de corretude CAPES; re-teste ao vivo entra no próximo ciclo; auditoria 0 crit/0 high
+- 05-01: registry 20 capabilities v1 em contracts (definição única) + execute() fail-closed em core validando contra capabilityNameSchema (nunca duplica nomes); ActorContext session|pat sem consumer `=== 'session'` quebrado; PAT 30d sliding espelhando rememberMe=true (tabela + migration 0004 via generate renomeada + patExpiry); guard D-55 verde em smoke com fallback relativo (@uhhu/core não linkado na raiz); push 0004 ao PG deferido ao 05-02 (T-05-01-TAMPER); suite 98/98 PG real; auditoria 0 crit/0 high
 
 ### Pending Todos
 
@@ -93,6 +95,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-11T05:15:00Z
-Stopped at: Phase 4 planned — ready to execute
-Resume file: .planning/phases/04-corpus-e-exportacao/04-01-PLAN.md
+Last session: 2026-09-11T12:40:00Z
+Stopped at: Phase 5 wave 1 done — 05-01 complete, ready for 05-02
+Resume file: .planning/phases/05-prova-headless/05-02-PLAN.md

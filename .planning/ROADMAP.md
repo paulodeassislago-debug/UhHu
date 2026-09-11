@@ -9,7 +9,7 @@ Da fundação executável (monorepo + PG + gates) ao primeiro vertical slice do 
 - [x] **Phase 1: Fundação executável** - Monorepo, PG DEV, migrations e gates verdes
 - [x] **Phase 2: Plataforma e isolamento** - Auth, sessão, convite, ownerId server-side, convenções REST (COMPLETA 2026-09-11 — 4/4 plans, 18/18 integração, curl ALL PASS, 02-VERIFICATION human_needed→approved via HUMAN-UAT 4/4)
 - [x] **Phase 3: Buscas e adapters** - Searches, runs temporais, BDTD/CAPES, jobs, health (COMPLETA 2026-09-11 — 6/6 plans, 9/9 integração lab + 42/42 suite + curl ALL PASS, checkpoint "approved with capes blocked")
-- [ ] **Phase 4: Corpus e exportação** - Dedup, elegibilidade, tags, comparação, CSV/BibTeX/JSON
+- [x] **Phase 4: Corpus e exportação** - Dedup, elegibilidade, tags, comparação, CSV/BibTeX/JSON (COMPLETA 2026-09-11 — 5/5 plans, suite 90/90 + curl ALL PASS vivo + checkpoint approved)
 - [ ] **Phase 5: Prova headless** - CLI/MCP mínimos nos mesmos casos de uso + gate de suite
 
 ## Phase Details
@@ -82,11 +82,11 @@ Plans:
 **Plans**: 5 plans in 4 waves (01 contratos+puras + 02 schema/migration em paralelo → 03 lib corpus → 04 rotas+integracao → 05 prova+checkpoint)
 
 Plans:
-- [ ] 04-01-PLAN.md — Wave 1: fastest-levenshtein + contratos dedup/decisao/tags/compare/export + dedup.ts/exports.ts puros + unit smoke (LAB-07, LAB-11; D-40/D-44/D-49/D-51/D-52/D-53)
-- [ ] 04-02-PLAN.md — Wave 1 (paralelo ao 04-01): schema 8 tabelas + migration 0003 + push BLOCKING + fixtures + skeleton lab-corpus (LAB-07/08/09; D-41/D-42/D-45/D-46)
-- [ ] 04-03-PLAN.md — Wave 2 *(blocked on 04-01, 04-02)*: lib corpus.ts owner-first (groups/confirm/reject/pin + decisao/tags/divergencia/corpus + compare 4 blocos) (LAB-07/08/09/10; D-40–D-49)
-- [ ] 04-04-PLAN.md — Wave 3 *(blocked on 04-03)*: rotas lab revisao + export attachment + bucket lab-export + integracao LAB-07–LAB-11 + IDOR (todos menos LAB-06; D-41/D-46/D-48–D-53)
-- [ ] 04-05-PLAN.md — Wave 4 *(blocked on 04-04)*: curl-corpus.sh ALL PASS + regressao LAB-06 + auditoria + checkpoint humano busca viva (LAB-06–LAB-11)
+- [x] 04-01-PLAN.md — Wave 1: fastest-levenshtein + contratos dedup/decisao/tags/compare/export + dedup.ts/exports.ts puros + unit smoke (LAB-07, LAB-11; D-40/D-44/D-49/D-51/D-52/D-53) — done 2026-09-11
+- [x] 04-02-PLAN.md — Wave 1 (paralelo ao 04-01): schema 8 tabelas + migration 0003 + push BLOCKING + fixtures + skeleton lab-corpus (LAB-07/08/09; D-41/D-42/D-45/D-46) — done 2026-09-11
+- [x] 04-03-PLAN.md — Wave 2 *(blocked on 04-01, 04-02)*: lib corpus.ts owner-first (groups/confirm/reject/pin + decisao/tags/divergencia/corpus + compare 4 blocos) (LAB-07/08/09/10; D-40–D-49) — done 2026-09-11
+- [x] 04-04-PLAN.md — Wave 3 *(blocked on 04-03)*: rotas lab revisao + export attachment + bucket lab-export + integracao LAB-07–LAB-11 + IDOR (todos menos LAB-06; D-41/D-46/D-48–D-53) — done 2026-09-11
+- [x] 04-05-PLAN.md — Wave 4 *(blocked on 04-04)*: curl-corpus.sh ALL PASS + regressao LAB-06 + auditoria + checkpoint humano busca viva (LAB-06–LAB-11) — done 2026-09-11 (approved + 3 fixes checkpoint: mapper BDTD real, ano-null, typecheck raiz)
 
 ### Phase 5: Prova headless
 **Goal**: Mesma capability executável por REST e por CLI/MCP sem duplicar regra; gates de suite verdes
@@ -99,7 +99,7 @@ Plans:
 **Plans**: 5 plans in 4 waves (01 fundação capabilities+PAT → 02 servidor PAT+execute → 03 CLI + 04 MCP em paralelo → 05 prova+checkpoint)
 
 Plans:
-- [ ] 05-01-PLAN.md — Wave 1: registry capabilities + execute() + ActorContext pat + PAT contracts + migration 0004 + guard anti-PG D-55 (CORE-02; D-60/D-61/D-55)
+- [x] 05-01-PLAN.md — Wave 1: registry capabilities + execute() + ActorContext pat + PAT contracts + migration 0004 + guard anti-PG D-55 (CORE-02; D-60/D-61/D-55) — done 2026-09-11 (registry 20 caps + execute fail-closed + PAT table/patExpiry + guard 8 its; suite 98/98 PG real; push 0004 deferido ao 05-02)
 - [ ] 05-02-PLAN.md — Wave 2 *(blocked on 05-01)*: pat.ts + Bearer no requireAuth + rotas lab/projects como adaptadores execute() + PAT CRUD com lockout/rate-limit + integração (CORE-02, CORE-05; D-56-servidor/D-58-servidor/D-60–D-63)
 - [ ] 05-03-PLAN.md — Wave 3 *(blocked on 05-02, paralelo ao 05-04)*: CLI @uhhu/cli (comandos D-64 + tabela/--json + polling 25s + export arquivo + credencial 600) + smoke + integração sem DATABASE_URL (CORE-02, CORE-05; D-56–D-59 lado CLI, D-62, D-64–D-66)
 - [ ] 05-04-PLAN.md — Wave 3 *(blocked on 05-02, paralelo ao 05-03)*: MCP @uhhu/mcp (11 tools + confirm destrutivas + mesmos DTOs) + smoke + integração (CORE-05, CORE-02; D-56–D-59 lado MCP, D-67–D-70)
@@ -117,5 +117,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 1. Fundação executável | 3/3 | Complete | 2026-09-10 |
 | 2. Plataforma e isolamento | 4/4 | Complete | 2026-09-11 |
 | 3. Buscas e adapters | 6/6 | Complete | 2026-09-11 |
-| 4. Corpus e exportação | 0/TBD | Not started | - |
-| 5. Prova headless | 0/TBD | Not started | - |
+| 4. Corpus e exportação | 5/5 | Complete | 2026-09-11 |
+| 5. Prova headless | 1/5 | In progress | - |
