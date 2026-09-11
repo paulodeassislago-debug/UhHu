@@ -20,6 +20,8 @@ import { ZodError } from 'zod';
 import { ApiError } from '../src/api/client';
 import { nativeLogin } from '../src/auth/pat';
 import { isSafeNext, useAuth } from '../src/auth/session';
+import { ErrorBanner } from '../src/ui/ErrorBanner';
+import { CardSkeleton } from '../src/ui/Skeleton';
 
 function toSingleParam(value: string | string[] | undefined): string | undefined {
   if (typeof value === 'string') {
@@ -114,8 +116,14 @@ export default function LoginScreen(): JSX.Element {
         style={{ borderWidth: 1, padding: 8 }}
       />
       <Button title={busy ? 'Entrando…' : 'Entrar'} onPress={() => void handleLogin()} disabled={busy} />
-      {errorMessage !== null ? <Text>{errorMessage}</Text> : null}
-      {errorRequestId !== null ? <Text style={{ fontSize: 12 }}>(req {errorRequestId})</Text> : null}
+      {busy ? <CardSkeleton count={1} /> : null}
+      {errorMessage !== null ? (
+        <ErrorBanner
+          message={errorMessage}
+          requestId={errorRequestId}
+          onRetry={() => void handleLogin()}
+        />
+      ) : null}
       <Link href="/register">Tenho convite — registrar</Link>
     </View>
   );

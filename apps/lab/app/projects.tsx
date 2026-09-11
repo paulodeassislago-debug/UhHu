@@ -18,6 +18,9 @@ import type { ProjectDTO } from '@uhhu/contracts';
 import { ApiError } from '../src/api/client';
 import { projectsApi } from '../src/api/projects';
 import { useAuth } from '../src/auth/session';
+import { Empty } from '../src/ui/Empty';
+import { ErrorBanner } from '../src/ui/ErrorBanner';
+import { CardSkeleton } from '../src/ui/Skeleton';
 
 type LoadState = 'loading' | 'ready' | 'error';
 
@@ -72,12 +75,7 @@ export default function ProjectsScreen(): JSX.Element {
     return (
       <View style={{ flex: 1, padding: 24, gap: 12 }}>
         <Text style={{ fontSize: 24, fontWeight: '600' }}>Projetos</Text>
-        <View style={{ borderWidth: 1, padding: 12 }}>
-          <Text>Carregando projetos…</Text>
-        </View>
-        <View style={{ borderWidth: 1, padding: 12 }}>
-          <Text>Carregando projetos…</Text>
-        </View>
+        <CardSkeleton count={2} />
       </View>
     );
   }
@@ -96,9 +94,11 @@ export default function ProjectsScreen(): JSX.Element {
     return (
       <View style={{ flex: 1, padding: 24, gap: 12 }}>
         <Text style={{ fontSize: 24, fontWeight: '600' }}>Projetos</Text>
-        {errorMessage !== null ? <Text>{errorMessage}</Text> : null}
-        {errorRequestId !== null ? <Text style={{ fontSize: 12 }}>(req {errorRequestId})</Text> : null}
-        <Button title="Repetir" onPress={() => void load()} />
+        <ErrorBanner
+          message={errorMessage ?? 'Erro interno. Tente novamente.'}
+          requestId={errorRequestId}
+          onRetry={() => void load()}
+        />
         <Link href="/login">Voltar ao login</Link>
       </View>
     );
@@ -108,8 +108,13 @@ export default function ProjectsScreen(): JSX.Element {
     return (
       <View style={{ flex: 1, padding: 24, gap: 12 }}>
         <Text style={{ fontSize: 24, fontWeight: '600' }}>Projetos</Text>
-        <Text>Nenhum projeto ainda — comece uma pesquisa</Text>
-        <Button title="Nova pesquisa (em breve — fase 7)" onPress={() => undefined} disabled />
+        <Empty
+          title="Nenhum projeto ainda"
+          message="Comece uma pesquisa para organizar estratégias, runs e corpus."
+          actionLabel="Criar projeto"
+          disabled
+          disabledHint="disponível na fase 7"
+        />
         <Link href="/login">Voltar ao login</Link>
       </View>
     );
