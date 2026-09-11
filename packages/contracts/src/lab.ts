@@ -1,7 +1,15 @@
-// packages/contracts — schemas e DTOs do Lab: buscas/runs/results/sources/health (D-28..D-39).
+// packages/contracts — schemas e DTOs do Lab: buscas/runs/results/sources/health (D-28..D-39)
+// + revisao/corpus/compare/export (D-40..D-53).
 //
 // UNICA definicao de tipos de busca: nenhum outro pacote duplica estes tipos.
 // JSON publico em camelCase; banco em snake_case (mapeado no Drizzle).
+//
+// Desvio de spec registrado (RESEARCH State of Art): contrato §12 parcialmente
+// superseded — Decision.resultId substituido por decisao UMA por grupo via
+// canonicalKey (D-46); DedupGroup.runId substituido por escopo por projectId
+// (D-41–D-45). Decisao/divergencia/pin enderecados por (projectId,
+// canonicalKey), nunca por resultId; grupos estaveis entre re-runs.
+// DTOs de revisao: DedupGroupDTO, CorpusEntryDTO, CompareDTO (D-40/D-46/D-49).
 //
 // Notas de contrato:
 // - Termo e string livre pass-through AND/OR/NOT + frase exata entre aspas (D-31):
@@ -286,4 +294,140 @@ export function decodeResultsCursor(cursor: string): DecodedResultsCursor | null
   } catch {
     return null;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Revisao/corpus/compare/export (D-40..D-53). Definicao UNICA: consumers usam
+// `import type`. Mensagens PT-BR; arrays sempre bounded.
+// ---------------------------------------------------------------------------
+
+/** D-40: confianca do agrupamento (exact chave igual, fuzzy >=0.9, single). */
+export const groupConfidenceSchema = z.enum(['exact', 'fuzzy', 'single']);
+
+export type GroupConfidence = z.infer<typeof groupConfidenceSchema>;
+
+/** D-40: fuzzy nao confirmado = pending, fora do corpus. */
+export const groupStatusSchema = z.enum(['confirmed', 'pending']);
+
+export type GroupStatus = z.infer<typeof groupStatusSchema>;
+
+/** D-46: decisao UMA por grupo. */
+export const groupDecisionSchema = z.enum(['eligible', 'ineligible', 'undecided']);
+
+export type GroupDecision = z.infer<typeof groupDecisionSchema>;
+
+export const decisionInputSchema = z.object({
+  decision: groupDecisionSchema,
+  reason: z
+    .string()
+    .trim()
+    .max(500, 'Motivo deve ter no máximo 500 caracteres.')
+    .optional(),
+});
+
+export type DecisionInput = z.infer<typeof decisionInputSchema>;
+
+export const tagNameSchema = z
+  .string()
+  .trim()
+  .min(1, 'Nome da tag é obrigatório.')
+  .max(100, 'Nome deve ter no máximo 100 caracteres.');
+
+export const createTagSchema = z.object({
+  name: tagNameSchema,
+  color: z.string().trim().max(20).nullable().optional(),
+});
+
+export type CreateTagInput = z.infer<typeof createTagSchema>;
+
+/** D-46: anotacao por origem, sem mudar a decisao; sanitizacao baseline §2.5. */
+export const divergenceInputSchema = z.object({
+  source: executableSourceSchema,
+  note: z
+    .string()
+    .trim()
+    .min(1, 'Nota é obrigatória.')
+    .max(1000, 'Nota deve ter no máximo 1000 caracteres.')
+    .refine((v) => !/<[^>]*>/.test(v), { message: 'Nota não pode conter HTML.' }),
+});
+
+export type DivergenceInput = z.infer<typeof divergenceInputSchema>;
+
+/** D-45: pin estavel por (source,sourceId), NUNCA resultId (sobrevive a re-runs). */
+export const pinInputSchema = z.object({
+  source: executableSourceSchema,
+  sourceId: z
+    .string()
+    .trim()
+    .min(1, 'sourceId é obrigatório.')
+    .max(300, 'sourceId deve ter no máximo 300 caracteres.'),
+});
+
+export type PinInput = z.infer<typeof pinInputSchema>;
+
+export const corpusQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  cursor: z.string().max(512).optional(),
+  status: groupStatusSchema.optional(),
+});
+
+export type CorpusQuery = z.infer<typeof corpusQuerySchema>;
+
+/** D-48/D-49: rota faz split(',') → valida cada UUID → max 10 (DoS guard). */
+export const compareQuerySchema = z.object({
+  with: z.string().trim().min(1, 'Parâmetro with é obrigatório.').max(2000),
+});
+
+export type CompareQuery = z.infer<typeof compareQuerySchema>;
+
+/** D-50: selection = CSV de UUIDs, max 1000 IDs (DoS guard); scope=corpus resolve server-side. */
+export const exportQuerySchema = z.object({
+  format: z.enum(['csv', 'bibtex', 'json']),
+  scope: z.enum(['corpus', 'selection']),
+  selection: z.string().max(20000).optional(),
+});
+
+export type ExportQuery = z.infer<typeof exportQuerySchema>;
+
+/** D-40/D-41: grupo de dedup escopado por projeto, identidade por canonicalKey. */
+export interface DedupGroupDTO {
+  id: string;
+  projectId: string;
+  canonicalKey: string;
+  confidence: 'exact' | 'fuzzy' | 'single';
+  status: 'confirmed' | 'pending';
+  canonicalResultId: string;
+  memberIds: string[];
+  decision: 'eligible' | 'ineligible' | 'undecided';
+  originCount: number;
+  origins: Array<'bdtd' | 'capes'>;
+}
+
+/** LAB-08: entrada do corpus = registro canonico vigente do grupo eligible. */
+export interface CorpusEntryDTO {
+  groupId: string;
+  canonicalKey: string;
+  title: string;
+  authors: string[];
+  year: number | null;
+  docType: DocType | null;
+  institution: string | null;
+  program: string | null;
+  abstract: string | null;
+  originUrl: string | null;
+  sourceUrl: string | null;
+  decision: 'eligible' | 'ineligible' | 'undecided';
+  tags: string[];
+  originCount: number;
+  origins: Array<'bdtd' | 'capes'>;
+  memberIds: string[];
+}
+
+/** D-49: exatamente 4 blocos, sem item lists. */
+export interface CompareDTO {
+  searches: string[];
+  totals: Record<string, number>;
+  yearHistogram: Record<string, number>;
+  bySource: Record<string, Record<'bdtd' | 'capes', number>>;
+  pairwiseOverlap: Record<string, number>;
 }
