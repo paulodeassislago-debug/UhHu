@@ -22,7 +22,7 @@
 
 **Milestone Goal:** Pesquisador usa o Lab por interface tablet-first (web/PWA beta + nativo) consumindo SOMENTE o CORE — slice vertical login → corpus/export primeiro, comparação por último.
 
-#### Phase 6: Fundação do app + auth + suporte CORE
+#### Phase 6: Fundação do app + auth + suporte CORE — ✅ COMPLETE 2026-09-11
 **Goal**: App Expo abre na web e no tablet, autentica nos dois canais e o CORE expõe o que a UI precisa (§14)
 **Depends on**: Phase 5
 **Requirements**: UI-01, UI-02, UI-03, UI-04, UI-05, UI-06, UI-07, UI-08, UI-30, UI-31, UI-32
@@ -94,7 +94,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 3. Buscas e adapters | v1.0 | 6/6 | Complete | 2026-09-11 |
 | 4. Corpus e exportação | v1.0 | 5/5 | Complete | 2026-09-11 |
 | 5. Prova headless | v1.0 | 5/5 | Complete | 2026-09-11 |
-| 6. Fundação do app + auth + suporte CORE | v1.1 | 3/4 | Executing | - |
+| 6. Fundação do app + auth + suporte CORE | v1.1 | 5/5 | Complete | 2026-09-11 |
 | 7. Projetos, buscas e execução | v1.1 | 0/TBD | Not started | - |
 | 8. Resultados e triagem | v1.1 | 0/TBD | Not started | - |
 | 9. Corpus, exportação e comparação | v1.1 | 0/TBD | Not started | - |

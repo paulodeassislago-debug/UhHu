@@ -25,13 +25,13 @@ See: .planning/PROJECT.md (updated 2026-09-11)
 
 ## Current Position
 
-Phase: 6 of 9 (Executed 4/4 + 1 gap-closure 06-05 done; human UAT re-test pending)
-Plan: 06-05 done (gap closure, wave 4)
-Status: Gap fixed in code (FlatList + tripwire); awaiting human UAT re-test
-Last activity: 2026-09-11 — 06-05 done: projects list scrolls (FlatList virtualizada), login/register/[id] ScrollView, tripwire 3/3, gates 10/10
-Resume file: .planning/phases/06-fundacao-app-auth-suporte-core/06-HUMAN-UAT.md (re-testar: LISTA ROLA web + nativo)
+Phase: 7 of 9 (Not started — UAT approved, phase 6 closed 2026-09-11)
+Plan: —
+Status: Phase 6 complete — ready for Phase 7 discussion
+Last activity: 2026-09-11 — Phase 6 closed (UAT 2/2 approved after gap 06-05 re-test)
+Resume file: None (next: /gsd-discuss-phase 7)
 
-Progress: [██████░░░░] 4/4 plans executed + 1 gap-closure done (phase code-complete, UAT 0/2 with 1 fix pending re-test)
+Progress: [██████░░░░] 5/5 plans phase 6 + UAT approved (milestone v1.1 phase 6/9 done)
 
 ## Performance Metrics
 

@@ -32,6 +32,8 @@ Um pesquisador consegue executar uma busca real (BDTD/CAPES) pelo CORE, com isol
 - ✓ Lab v1 (buscas, runs, dedup, corpus, compare, exportação) — v1.0
 - ✓ Adapters BDTD/CAPES + SourceClient + partial — v1.0
 - ✓ CLI/MCP mínimos + gates (typecheck, IDOR, Gitleaks, SAST, audit, PG) — v1.0
+- ✓ Fundação do app Lab UI (Expo scaffold + client tipado + auth web/PAT + estados §11 + lista rolável) — v1.1 Phase 6
+- ✓ Suporte CORE p/ UI (`referenceSearchId` migration + `isNew` on-read + CORS allowlist) — v1.1 Phase 6
 
 ### Active (v1.1 Lab UI v1)
 
