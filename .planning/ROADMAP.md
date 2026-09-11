@@ -103,7 +103,7 @@ Plans:
 - [x] 05-02-PLAN.md — Wave 2: pat.ts + Bearer no requireAuth + rotas lab/projects como adaptadores execute() + PAT CRUD com lockout/rate-limit + integração (CORE-02, CORE-05; D-56-servidor/D-58-servidor/D-60–D-63) — done 2026-09-11 (PAT ciclo completo + capabilities 34 nomes + rotas 37/6 execute zero-lib + pat-auth 12/12; suite 110/110 PG real; 14 extensões transicionais, adendo §10 adiado)
 - [x] 05-03-PLAN.md — Wave 3 *(blocked on 05-02, paralelo ao 05-04)*: CLI @uhhu/cli (comandos D-64 + tabela/--json + polling 25s + export arquivo + credencial 600) + smoke + integração sem DATABASE_URL (CORE-02, CORE-05; D-56–D-59 lado CLI, D-62, D-64–D-66) — done 2026-09-11 (22 comandos + client PAT + store 600; cli-unit 17/17 + cli-headless 7/7; suite 134/134 PG real; wiring do nome nu adiado)
 - [x] 05-04-PLAN.md — Wave 3 *(blocked on 05-02, paralelo ao 05-03)*: MCP @uhhu/mcp (11 tools + confirm destrutivas + mesmos DTOs) + smoke + integração (CORE-05, CORE-02; D-56–D-59 lado MCP, D-67–D-70) — done 2026-09-11 (sdk 1.30.0 pinado + client PAT + 11 tools verbatim com confirm nas 5; mcp-tools 29/29 + mcp-headless 7/7; suite 170/170 PG real)
-- [ ] 05-05-PLAN.md — Wave 4 *(blocked on 05-03, 05-04, checkpoint humano)*: prova-headless.sh 3 canais ALL PASS + matriz IDOR + auditoria adversarial + scanners + checkpoint gate Etapa 2 (CORE-02, CORE-05; D-54, D-55-gate, D-57)
+- [x] 05-05-PLAN.md — Wave 4 *(blocked on 05-03, 05-04, checkpoint humano)*: prova-headless.sh 3 canais ALL PASS + matriz IDOR + auditoria adversarial + scanners + checkpoint gate Etapa 2 (CORE-02, CORE-05; D-54, D-55-gate, D-57) — done 2026-09-11 (approved; ALL PASS REST→CLI→MCP + replay idempotente + 7 negativas; IDOR 10/10; auditoria 0 crit/0 high; Gitleaks hist 0 + SAST 0 + audit 0; suite 180/180)
 
 Cross-cutting constraints: mesma capability nos 3 canais sem duplicar regra; CLI/MCP só por API (nunca PG direto, guard D-55 fail-closed); Bearer PAT 30d sliding com revogação, mesmo 404 IDOR e envelope PT-BR nos 3 canais; `any` proibido até em testes; `Math.random` proibido para tokens.
 
@@ -118,4 +118,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 2. Plataforma e isolamento | 4/4 | Complete | 2026-09-11 |
 | 3. Buscas e adapters | 6/6 | Complete | 2026-09-11 |
 | 4. Corpus e exportação | 5/5 | Complete | 2026-09-11 |
-| 5. Prova headless | 4/5 | In progress | - |
+| 5. Prova headless | 5/5 | Complete | 2026-09-11 |
