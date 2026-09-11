@@ -1,10 +1,14 @@
-// apps/core-api — guards de autenticacao/autorizacao (D-15, D-23, T-02-02-04).
+// apps/core-api — guards de autenticacao/autorizacao (D-15, D-23, T-02-02-04, D-60–D-63).
 //
-// `requireAuth(db)` le o cookie `uhhu_session`, resolve a sessao server-side
-// e injeta `request.actor: ActorContext` (derivado da sessao, NUNCA do body).
+// `requireAuth(db)` deriva `request.actor: ActorContext` (NUNCA do body) por
+// dois caminhos, Bearer-first:
+// 1. `Authorization: Bearer <hex64>` → resolvePat (PAT por device); ok gera
+//    actor pat + `request.patId` (para o logout revogar o PAT atual, D-61); sliding via `touchPat` em background.
+// 2. Sem Bearer → cookie `uhhu_session` → resolveSession (caminho existente,
+//    100% intacto) com actor `authMethod: 'session'`.
 // Falha sempre 401 UNAUTHENTICATED generico, sem distinguir token invalido,
-// expirado ou ausente. O sliding (`touchSession`) roda em background: erro
-// nele nunca bloqueia nem derruba a resposta.
+// expirado, revogado ou ausente — nem formato malformado. O sliding (ambos)
+// roda em background: erro nele nunca bloqueia nem derruba a resposta.
 //
 // `requireAdmin` e o segundo preHandler (apos `requireAuth`): sem sessao 401;
 // com sessao nao-admin 403. Escolha documentada: o catalogo PT-BR nao tem
@@ -13,17 +17,22 @@
 // (message "Autenticação necessária.") preserva o status HTTP correto sem
 // vazar papeis — e NAO usa NOT_FOUND aqui (404 e para recursos, nao para
 // falta de privilegio em rota administrativa conhecida).
+// `requireAdmin` e agnostico ao metodo (le so `actor.role`).
 
 import { randomUUID } from 'node:crypto';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { buildEnvelope } from '@uhhu/contracts';
 import type { ActorContext } from '@uhhu/core';
 import type { Db } from '@uhhu/db';
+import { resolvePat, touchPat } from './pat.js';
 import { COOKIE_NAME, resolveSession, touchSession } from './session.js';
 
 declare module 'fastify' {
   interface FastifyRequest {
     actor?: ActorContext;
+    // Id do PAT autenticado (so quando authMethod === 'pat'); o logout usa
+    // para revogar o PAT atual sem re-resolver o header (D-61).
+    patId?: string;
   }
 }
 
@@ -54,12 +63,56 @@ function toActorRole(role: string): ActorContext['role'] {
   return role === 'admin' ? 'admin' : 'member';
 }
 
+// Raw do PAT: hex de 32 bytes (mesmo formato de newOpaqueToken). Formato
+// invalido cai no mesmo 401 generico, sem mensagem distinta (D-63/T-05-02-ENUM).
+const BEARER_PATTERN = /^Bearer ([a-f0-9]{64})$/;
+
+function readBearerAttempt(request: FastifyRequest): string | null | 'invalid' {
+  const header: unknown = request.headers.authorization;
+  if (header === undefined) {
+    return null;
+  }
+  if (typeof header !== 'string' || !header.startsWith('Bearer ')) {
+    return null;
+  }
+  const match = BEARER_PATTERN.exec(header);
+  const token = match?.[1];
+  return token === undefined ? 'invalid' : token;
+}
+
 export function requireAuth(db: Db) {
   return async function requireAuthHandler(
     request: FastifyRequest,
     reply: FastifyReply,
   ): Promise<void> {
     const requestId = resolveRequestId(request);
+    const bearer = readBearerAttempt(request);
+    if (bearer === 'invalid') {
+      reply.header('x-request-id', requestId);
+      await reply.code(401).send(buildEnvelope('UNAUTHENTICATED', requestId, {}));
+      return;
+    }
+    if (bearer !== null) {
+      const resolved = await resolvePat(db, bearer);
+      if (resolved === null) {
+        reply.header('x-request-id', requestId);
+        await reply.code(401).send(buildEnvelope('UNAUTHENTICATED', requestId, {}));
+        return;
+      }
+      request.actor = {
+        userId: resolved.user.id,
+        role: toActorRole(resolved.user.role),
+        requestId,
+        authMethod: 'pat',
+      };
+      request.patId = resolved.pat.id;
+      // Sliding sem bloquear a resposta; falha de touch vira warn redigido
+      // (sem token/senha — so ids tecnicos).
+      void touchPat(db, resolved.pat).catch((err: unknown) => {
+        request.log.warn({ err, requestId }, 'pat touch failed');
+      });
+      return;
+    }
     const rawToken = readSessionCookie(request);
     if (rawToken === null) {
       reply.header('x-request-id', requestId);
