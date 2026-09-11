@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: "Phase 3 plan 04 COMPLETA 2026-09-11 (lib searches owner-first + motor de runs partial/diff/idempotencia + barrel final). Próximo: 03-05 rotas lab/jobs (desbloqueado)"
-stopped_at: Phase 3 plan 04 complete
-last_updated: "2026-09-11T03:35:00Z"
-last_activity: "2026-09-11 — 03-04 completa: motor de runs + barrel final; próximo: 03-05"
+status: "Phase 3 plan 05 COMPLETA 2026-09-11 (rotas lab/jobs/health + throttle + boot; 201/202/200 provados no boot). Próximo: 03-06 prova PG + IDOR + checkpoint (último da fase)"
+stopped_at: Phase 3 plan 05 complete
+last_updated: "2026-09-11T04:20:00Z"
+last_activity: "2026-09-11 — 03-05 completa: superfície REST lab/jobs + throttle duplo + boot; próximo: 03-06"
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 13
-  completed_plans: 10
-  percent: 77
+  completed_plans: 12
+  percent: 92
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-09)
 
 **Core value:** Um pesquisador consegue executar uma busca real (BDTD/CAPES) pelo CORE, com isolamento por usuário, proveniência e histórico.
-**Current focus:** Phase 3: Buscas e adapters (03-04 done 2026-09-11 — wave 3 completa; próximo: 03-05 rotas lab/jobs)
+**Current focus:** Phase 3: Buscas e adapters (03-05 done 2026-09-11 — wave 4 completa; próximo: 03-06 prova + checkpoint, último da fase)
 
 ## Current Position
 
-Phase: 3 of 5 (em andamento — 03-04 done: motor de runs + barrel final)
-Plan: 4 of 6 in Phase 3 — done
-Status: 03-04 completa (typecheck root+lint+prettier verdes, auditoria adversarial sem achados). Próximo: 03-05 rotas lab/jobs
-Last activity: 2026-09-11 — 03-04 completa; wave 3 fechada; próximo: 03-05
+Phase: 3 of 5 (em andamento — 03-05 done: rotas lab/jobs + throttle + boot)
+Plan: 5 of 6 in Phase 3 — done
+Status: 03-05 completa (typecheck+lint+prettier verdes, boot sobe, 401 sem cookie + 404-compare provados, auditoria adversarial sem achados). Próximo: 03-06 prova PG + IDOR + checkpoint humano
+Last activity: 2026-09-11 — 03-05 completa; wave 4 fechada; próximo: 03-06
 
-Progress: [████████░░] 11 plans complete (Phase 1: 3/3 + Phase 2: 4/4 + Phase 3: 4/6)
+Progress: [█████████░] 12 plans complete (Phase 1: 3/3 + Phase 2: 4/4 + Phase 3: 5/6)
 
 ## Performance Metrics
 
@@ -69,6 +69,7 @@ Recent decisions affecting current work:
 - 03-02: dep `@uhhu/contracts` no integrations (DTO em definição única, sem duplicar); challenge conta como falha no breaker (5 seguidas→60s); barrel em 2 etapas (health só na task 2, gate typecheck por commit)
 - 03-03: erros de search como valores (failed/challenge), só RangeTooWideError/termo-vazio lançam; ficha CAPES só em host público (SSRF); teste sem `import.meta` (tsconfig raiz = CJS, fixtures via process.cwd)
 - 03-04: task 3 (barrel) commitada antes da task 2 (executor importa do barrel — gate typecheck); keyHash=sha256(userId|key) + bodyHash separados (corpo na chave mataria o 422); 1 evento health por fonte/run (challenge recuperado conta); UPDATE final condicional + complementar só-métricas (cancel concorrente vence); oasisbr checado na linha crua; try/catch por tentativa (RangeTooWideError→failed, D-37)
+- 03-05: ResultDTO.rawMetadata aditivo (contrato §19; proveniência D-34 no GET result); 202 resolve run corrente via listRuns limit 1 + fallback aguarda desfecho; key malformada → 400 (nunca ignorada); GET /lab/sources = array do registry; JobDTO progress null só em queued, resultRef só em terminal; rota nunca passa fetchFn (handoff 03-04 honrado)
 
 ### Pending Todos
 
@@ -91,6 +92,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-11T03:35:00Z
-Stopped at: Phase 3 plan 04 complete
-Resume file: .planning/phases/03-buscas-e-adapters/03-05-PLAN.md (desbloqueado — 03-04 done; handoff: rota usa Promise.race 25s → 202, nunca passa fetchFn do cliente)
+Last session: 2026-09-11T04:20:00Z
+Stopped at: Phase 3 plan 05 complete
+Resume file: .planning/phases/03-buscas-e-adapters/03-06-PLAN.md (último da fase — prova PG + curl + IDOR + checkpoint busca real)

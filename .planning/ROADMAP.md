@@ -67,7 +67,7 @@ Plans:
 - [x] 03-02-PLAN.md — Wave 2 *(blocked on 03-01)*: SourceClient + registry + health (SRC-03, SRC-04-parte, LAB-12-parte) — done 2026-09-11
 - [x] 03-03-PLAN.md — Wave 2 *(blocked on 03-01, paralelo ao 03-02)*: adapters BDTD/CAPES + pós-filtro + contrato com fixtures (SRC-01, SRC-02, SRC-04, SRC-05) — done 2026-09-11
 - [x] 03-04-PLAN.md — Wave 3 *(blocked on 03-01–03)*: lib searches owner-first + motor de runs sync/async/partial/diff/idempotência (LAB-02/03/04/05, CORE-03/04; D-28–D-39-núcleo) — done 2026-09-11
-- [ ] 03-05-PLAN.md — Wave 4 *(blocked on 03-04)*: rotas lab+jobs+sources/health + throttle + boot (LAB-02/03/05/12, CORE-03/04)
+- [x] 03-05-PLAN.md — Wave 4 *(blocked on 03-04)*: rotas lab+jobs+sources/health + throttle + boot (LAB-02/03/05/12, CORE-03/04) — done 2026-09-11
 - [ ] 03-06-PLAN.md — Wave 5 *(blocked on 03-05)*: integração PG + curl + auditoria + checkpoint humano busca real (todos os REQ da fase)
 
 ### Phase 4: Corpus e exportação
@@ -106,6 +106,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. Fundação executável | 3/3 | Complete | 2026-09-10 |
 | 2. Plataforma e isolamento | 4/4 | Complete | 2026-09-11 |
-| 3. Buscas e adapters | 4/6 | In progress | - |
+| 3. Buscas e adapters | 5/6 | In progress | - |
 | 4. Corpus e exportação | 0/TBD | Not started | - |
 | 5. Prova headless | 0/TBD | Not started | - |
