@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: "Phase 3 COMPLETA 2026-09-11 (03-06: 9/9 integracao + 42/42 suite + curl ALL PASS + auditoria 0 crit/0 high + checkpoint 'approved with capes blocked'). Próximo: Phase 4 corpus/exportação"
-stopped_at: Phase 3 complete (all 6 plans)
-last_updated: "2026-09-11T04:30:00Z"
-last_activity: "2026-09-11 — 03-06 completa com aprovação humana; Phase 3 fechada 6/6; próximo: Phase 4"
+stopped_at: Phase 4 context gathered
+last_updated: "2026-09-11T04:45:00Z"
+last_activity: "2026-09-11 — Phase 4 context gathered (D-40--D-53, 4/4 areas); próximo: /gsd-plan-phase 4"
 progress:
   total_phases: 5
   completed_phases: 3
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-09)
 
 **Core value:** Um pesquisador consegue executar uma busca real (BDTD/CAPES) pelo CORE, com isolamento por usuário, proveniência e histórico.
-**Current focus:** Phase 3 COMPLETA 2026-09-11 (03-06 done — checkpoint "approved with capes blocked"); próximo: Phase 4 corpus/exportação
+**Current focus:** Phase 4: Corpus e exportação (context gathered 2026-09-11 — D-40--D-53, 4/4 areas; próximo: /gsd-plan-phase 4)
 
 ## Current Position
 
 Phase: 3 of 5 (COMPLETA 2026-09-11 — 6/6 plans)
 Plan: 6 of 6 in Phase 3 — done
 Status: 03-06 completa (9/9 integração + 42/42 suite + curl ALL PASS, auditoria 0 crit/0 high, checkpoint humano "approved with capes blocked" com BDTD viva 893 resultados). Próximo: Phase 4 corpus/exportação
-Last activity: 2026-09-11 — 03-06 completa com aprovação humana; Phase 3 fechada; carry-over: re-teste ao vivo da CAPES no próximo ciclo
+Last activity: 2026-09-11 — Phase 4 context gathered (D-40--D-53); próximo: /gsd-plan-phase 4
 
 Progress: [██████████] 13 plans complete (Phase 1: 3/3 + Phase 2: 4/4 + Phase 3: 6/6)
 
@@ -93,6 +93,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-11T04:30:00Z
-Stopped at: Phase 3 complete (all 6 plans)
-Resume file: .planning/phases/04-corpus-e-exportacao/ (Phase 4 a discutir/planejar; carry-over: re-teste ao vivo da CAPES no próximo ciclo)
+Last session: 2026-09-11T04:45:00Z
+Stopped at: Phase 4 context gathered
+Resume file: .planning/phases/04-corpus-e-exportacao/04-CONTEXT.md
