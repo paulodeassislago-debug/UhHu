@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: "Phase 5 EXECUTING 2026-09-11 (wave 1/4 done: 05-01 capabilities + PAT foundation). Próximo: 05-02"
-stopped_at: Phase 5 wave 1 done — 05-01 complete
-last_updated: "2026-09-11T12:40:00Z"
-last_activity: "2026-09-11 — 05-01 done (registry 20 caps + execute() + ActorContext pat + PAT table/migration 0004 + guard D-55; suite 98/98 PG real)"
+status: "Phase 5 EXECUTING 2026-09-11 (wave 2/4 done: 05-02 servidor PAT + execute). Próximo: 05-03/05-04"
+stopped_at: Phase 5 wave 2 done — 05-02 complete
+last_updated: "2026-09-11T14:30:00Z"
+last_activity: "2026-09-11 — 05-02 done (pat.ts + Bearer + capabilities 34 nomes + rotas via execute + PAT CRUD + pat-auth 12/12; suite 110/110 PG real)"
 progress:
   total_phases: 5
   completed_phases: 4
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-09)
 
 **Core value:** Um pesquisador consegue executar uma busca real (BDTD/CAPES) pelo CORE, com isolamento por usuário, proveniência e histórico.
-**Current focus:** Phase 5: Prova headless (EXECUTING — wave 1/4 done, 05-01 complete; próximo: 05-02 servidor PAT+execute)
+**Current focus:** Phase 5: Prova headless (EXECUTING — wave 2/4 done, 05-02 complete; próximo: 05-03/05-04 CLI+MCP)
 
 ## Current Position
 
-Phase: 5 of 5 (EXECUTING — wave 1/4 done)
-Plan: 1 of 5 in Phase 5 — 05-01 done, 05-02 ready
-Status: Phase 5 executing (no flags; sequential mode — no worktree isolation in this runtime). Próximo: waves 2-4 then verify
-Last activity: 2026-09-11 — 05-01 done; próximo: 05-02 (pat.ts + Bearer no requireAuth + rotas como adaptadores execute)
+Phase: 5 of 5 (EXECUTING — wave 2/4 done)
+Plan: 2 of 5 in Phase 5 — 05-02 done, 05-03/05-04 ready
+Status: Phase 5 executing (no flags; sequential mode — no worktree isolation in this runtime). Próximo: waves 3-4 then verify
+Last activity: 2026-09-11 — 05-02 done; próximo: 05-03/05-04 (CLI + MCP sobre PAT + execute)
 
-Progress: [████████░░] 19 plans complete (Phase 1: 3/3 + Phase 2: 4/4 + Phase 3: 6/6 + Phase 4: 5/5 + Phase 5: 1/5)
+Progress: [████████░░] 20 plans complete (Phase 1: 3/3 + Phase 2: 4/4 + Phase 3: 6/6 + Phase 4: 5/5 + Phase 5: 2/5)
 
 ## Performance Metrics
 
@@ -73,6 +73,7 @@ Recent decisions affecting current work:
 - 03-05: ResultDTO.rawMetadata aditivo (contrato §19; proveniência D-34 no GET result); 202 resolve run corrente via listRuns limit 1 + fallback aguarda desfecho; key malformada → 400 (nunca ignorada); GET /lab/sources = array do registry; JobDTO progress null só em queued, resultRef só em terminal; rota nunca passa fetchFn (handoff 03-04 honrado)
 - 03-06: checkpoint "approved with capes blocked" (CAPES 61ms sem challenge = bloqueio na fonte, não bug; partial D-37 funcionou); fixtures 03-03 seguem prova de corretude CAPES; re-teste ao vivo entra no próximo ciclo; auditoria 0 crit/0 high
 - 05-01: registry 20 capabilities v1 em contracts (definição única) + execute() fail-closed em core validando contra capabilityNameSchema (nunca duplica nomes); ActorContext session|pat sem consumer `=== 'session'` quebrado; PAT 30d sliding espelhando rememberMe=true (tabela + migration 0004 via generate renomeada + patExpiry); guard D-55 verde em smoke com fallback relativo (@uhhu/core não linkado na raiz); push 0004 ao PG deferido ao 05-02 (T-05-01-TAMPER); suite 98/98 PG real; auditoria 0 crit/0 high
+- 05-02: servidor PAT + execute end-to-end (CORE-02 server-side, núcleo CORE-05): pat.ts (6 fns, sliding 30d, null único) + requireAuth Bearer-first (401 único, cookie intacto, patId p/ logout); capabilities.ts com mapa total (20 §10 + 14 transicionais com allowlist fail-closed — registry §10 não cobre get/cancel/tags/pins; adendo ao contrato adiado) + toHttpError por instanceof + callCapability promise-passing + sendExport/assembleExport movidos; rotas lab/projects 100% via execute() (37/6, zero lib/ incl. types) sem mudar nenhum status (63/63 sem regressão); PAT CRUD com lockout+throttle compartilhados, logout/logout-all/reset revocam PATs; migration 0004 aplicada ao PG DEV e provada; pat-auth 12/12; suite 110/110 PG real; auditoria 0 crit/0 high
 
 ### Pending Todos
 
@@ -95,6 +96,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-11T12:40:00Z
-Stopped at: Phase 5 wave 1 done — 05-01 complete, ready for 05-02
-Resume file: .planning/phases/05-prova-headless/05-02-PLAN.md
+Last session: 2026-09-11T14:30:00Z
+Stopped at: Phase 5 wave 2 done — 05-02 complete, ready for 05-03/05-04
+Resume file: .planning/phases/05-prova-headless/05-03-PLAN.md
