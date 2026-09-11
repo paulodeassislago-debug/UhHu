@@ -133,7 +133,12 @@ function sessionCookieOf(headers: unknown): string | null {
     return null;
   }
   const raw: unknown = (headers as Record<string, unknown>)['set-cookie'];
-  const list: string[] = typeof raw === 'string' ? [raw] : Array.isArray(raw) ? raw.filter((v): v is string => typeof v === 'string') : [];
+  const list: string[] =
+    typeof raw === 'string'
+      ? [raw]
+      : Array.isArray(raw)
+        ? raw.filter((v): v is string => typeof v === 'string')
+        : [];
   for (const item of list) {
     const pair = item.split(';')[0] ?? '';
     const cut = pair.indexOf('=');
@@ -200,7 +205,9 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
     function capture(): { lines: string[]; restore: () => void } {
       const lines: string[] = [];
       const spy = vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => {
-        lines.push(args.map((part) => (typeof part === 'string' ? part : JSON.stringify(part))).join(' '));
+        lines.push(
+          args.map((part) => (typeof part === 'string' ? part : JSON.stringify(part))).join(' '),
+        );
       });
       return { lines, restore: () => spy.mockRestore() };
     }
@@ -557,15 +564,11 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
         });
         expect(help.stdout).toContain('uhhu');
 
-        const listed = await execFileAsync(
-          'node',
-          [CLI_WRAPPER, 'project', 'list', '--json'],
-          {
-            env: childEnv,
-            cwd: ROOT,
-            timeout: 90000,
-          },
-        );
+        const listed = await execFileAsync('node', [CLI_WRAPPER, 'project', 'list', '--json'], {
+          env: childEnv,
+          cwd: ROOT,
+          timeout: 90000,
+        });
         expect(listed.stdout).toContain('Projeto Headless');
 
         const cap = capture();

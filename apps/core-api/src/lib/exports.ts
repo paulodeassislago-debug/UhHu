@@ -11,8 +11,8 @@ const BIBTEX_ESCAPES: Record<string, string> = {
   '&': '\\&',
   '%': '\\%',
   '#': '\\#',
-  '_': '\\_',
-  '$': '\\$',
+  _: '\\_',
+  $: '\\$',
   '~': '\\textasciitilde{}',
   '^': '\\textasciicircum{}',
   '{': '\\{',
@@ -132,11 +132,7 @@ export function toBibTeX(entries: CorpusEntryDTO[]): string {
     .join('\n\n');
 }
 
-export function toJSON(
-  projectId: string,
-  entries: CorpusEntryDTO[],
-  provenance: unknown,
-): string {
+export function toJSON(projectId: string, entries: CorpusEntryDTO[], provenance: unknown): string {
   return JSON.stringify(
     { projectId, exportedAt: new Date().toISOString(), groups: entries, provenance },
     null,

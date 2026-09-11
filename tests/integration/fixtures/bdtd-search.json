@@ -9,22 +9,11 @@
         "secondary": [],
         "corporate": []
       },
-      "formats": [
-        "masterThesis"
-      ],
+      "formats": ["masterThesis"],
       "id": "UECE-0_286db9542bbce84c5cf658a269c2c9d2",
-      "languages": [
-        "por"
-      ],
+      "languages": ["por"],
       "series": [],
-      "subjects": [
-        [
-          "Ensino de química"
-        ],
-        [
-          "Quimica Experimental"
-        ]
-      ],
+      "subjects": [["Ensino de química"], ["Quimica Experimental"]],
       "title": "Quimica Experimental: Uma Alternativa para o Ensino de Quimica",
       "urls": [
         {
@@ -41,24 +30,14 @@
         "secondary": [],
         "corporate": []
       },
-      "formats": [
-        "masterThesis"
-      ],
+      "formats": ["masterThesis"],
       "id": "IFES-2_8fbdaee9abb8d0386820ce92eef59a91",
-      "languages": [
-        "por"
-      ],
+      "languages": ["por"],
       "series": [],
       "subjects": [
-        [
-          "Ensino de Química Orgânica"
-        ],
-        [
-          "Aprendizagem Baseada em Problemas"
-        ],
-        [
-          "Química Forense."
-        ]
+        ["Ensino de Química Orgânica"],
+        ["Aprendizagem Baseada em Problemas"],
+        ["Química Forense."]
       ],
       "title": "Aplicação da química forense no ensino de química orgânica para o ensino médio",
       "urls": [

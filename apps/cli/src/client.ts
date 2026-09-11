@@ -64,14 +64,26 @@ function parseErrorEnvelope(text: string): { code: string; message: string; requ
   try {
     parsed = JSON.parse(text) as unknown;
   } catch {
-    return { code: 'INTERNAL_ERROR', message: 'Resposta de erro fora do formato esperado.', requestId: '' };
+    return {
+      code: 'INTERNAL_ERROR',
+      message: 'Resposta de erro fora do formato esperado.',
+      requestId: '',
+    };
   }
   if (!isRecord(parsed)) {
-    return { code: 'INTERNAL_ERROR', message: 'Resposta de erro fora do formato esperado.', requestId: '' };
+    return {
+      code: 'INTERNAL_ERROR',
+      message: 'Resposta de erro fora do formato esperado.',
+      requestId: '',
+    };
   }
   const holder: unknown = parsed['error'];
   if (!isRecord(holder)) {
-    return { code: 'INTERNAL_ERROR', message: 'Resposta de erro fora do formato esperado.', requestId: '' };
+    return {
+      code: 'INTERNAL_ERROR',
+      message: 'Resposta de erro fora do formato esperado.',
+      requestId: '',
+    };
   }
   const envelope = holder as ErrorEnvelopeLike['error'];
   const code = typeof envelope?.code === 'string' ? envelope.code : 'INTERNAL_ERROR';

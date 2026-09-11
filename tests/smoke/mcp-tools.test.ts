@@ -291,7 +291,12 @@ describe('mcp tools — contrato', () => {
 
   it('lab_list_results chama GET results com paginação verbatim', async () => {
     const calls = installFetch(() =>
-      jsonRes({ items: [], page: { limit: 20, nextCursor: null, hasMore: false }, total: 0, newCount: 0 }),
+      jsonRes({
+        items: [],
+        page: { limit: 20, nextCursor: null, hasMore: false },
+        total: 0,
+        newCount: 0,
+      }),
     );
     const out = await callTool('lab_list_results', { runId: RUN_ID, limit: 20 });
     expect(calls[0]?.url).toContain(`/api/v1/lab/runs/${RUN_ID}/results`);
@@ -420,7 +425,11 @@ describe('mcp tools — contrato', () => {
       expect(err.code).toBe('NOT_FOUND');
       expect(err.message).toBe('Recurso não encontrado.');
       expect(err.requestId).toBe('req-123');
-      const leaked = JSON.stringify({ code: err.code, message: err.message, requestId: err.requestId });
+      const leaked = JSON.stringify({
+        code: err.code,
+        message: err.message,
+        requestId: err.requestId,
+      });
       expect(leaked).not.toContain(FAKE_TOKEN);
       expect(leaked).not.toContain('SELECT');
     } else {

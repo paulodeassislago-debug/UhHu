@@ -354,7 +354,12 @@ interface Ctx {
 
 async function setupCtx(app: FastifyInstance, n: number): Promise<Ctx> {
   const admin = await bootstrapAdmin(app, `Dona ${n}`, `dona-${n}@exemplo.test`);
-  const stranger = await createMember(app, admin.cookie, `Estranho ${n}`, `estranho-${n}@exemplo.test`);
+  const stranger = await createMember(
+    app,
+    admin.cookie,
+    `Estranho ${n}`,
+    `estranho-${n}@exemplo.test`,
+  );
   const projectId = await createProject(app, admin.cookie, `Projeto Corpus ${n}`);
   const search = await createSearch(app, admin.cookie, projectId, `termo ${n}`, {}, [
     'bdtd',
@@ -1126,7 +1131,9 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
       expect(headerText(res, 'content-type')).toContain('text/csv');
       // Header real: Content-Disposition attachment com filename ASCII (D-52).
       const disp = headerText(res, 'content-disposition');
-      expect(disp).toMatch(/^attachment; filename="corpus-[a-z0-9-]+-[0-9]{4}-[0-9]{2}-[0-9]{2}\.csv"$/);
+      expect(disp).toMatch(
+        /^attachment; filename="corpus-[a-z0-9-]+-[0-9]{4}-[0-9]{2}-[0-9]{2}\.csv"$/,
+      );
       const lines = textOf(res).split('\n');
       expect(lines[0]).toBe(
         'groupId,canonicalKey,title,authors,year,docType,institution,decision,tags,originCount,origins',
@@ -1433,7 +1440,9 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
       expect(res.statusCode).toBe(200);
       expect(textOf(res)).toContain("'=CMD");
       const disp = headerText(res, 'content-disposition');
-      expect(disp).toMatch(/^attachment; filename="corpus-[a-z0-9-]+-[0-9]{4}-[0-9]{2}-[0-9]{2}\.csv"$/);
+      expect(disp).toMatch(
+        /^attachment; filename="corpus-[a-z0-9-]+-[0-9]{4}-[0-9]{2}-[0-9]{2}\.csv"$/,
+      );
       expect(disp).not.toContain('..');
       expect(disp).not.toContain('"../../etc"');
     });

@@ -100,10 +100,7 @@ export async function touchPat(db: Db, pat: PersonalAccessToken): Promise<void> 
     .where(eq(personalAccessTokens.id, pat.id));
 }
 
-export async function listPatsForUser(
-  db: Db,
-  userId: string,
-): Promise<PersonalAccessTokenInfo[]> {
+export async function listPatsForUser(db: Db, userId: string): Promise<PersonalAccessTokenInfo[]> {
   const rows = await db
     .select()
     .from(personalAccessTokens)
@@ -142,9 +139,7 @@ export async function revokeAllPats(db: Db, userId: string): Promise<number> {
   const updated = await db
     .update(personalAccessTokens)
     .set({ revokedAt: new Date() })
-    .where(
-      and(eq(personalAccessTokens.userId, userId), isNull(personalAccessTokens.revokedAt)),
-    )
+    .where(and(eq(personalAccessTokens.userId, userId), isNull(personalAccessTokens.revokedAt)))
     .returning({ id: personalAccessTokens.id });
   return updated.length;
 }

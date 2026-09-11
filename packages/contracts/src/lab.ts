@@ -318,11 +318,7 @@ export type GroupDecision = z.infer<typeof groupDecisionSchema>;
 
 export const decisionInputSchema = z.object({
   decision: groupDecisionSchema,
-  reason: z
-    .string()
-    .trim()
-    .max(500, 'Motivo deve ter no máximo 500 caracteres.')
-    .optional(),
+  reason: z.string().trim().max(500, 'Motivo deve ter no máximo 500 caracteres.').optional(),
 });
 
 export type DecisionInput = z.infer<typeof decisionInputSchema>;

@@ -33,7 +33,9 @@ function toErrorPayload(err: unknown): { code: string; message: string; requestI
   if (isRecord(err)) {
     const code = typeof err['code'] === 'string' ? (err['code'] as string) : 'INTERNAL_ERROR';
     const message =
-      typeof err['message'] === 'string' ? (err['message'] as string) : 'Erro interno. Tente novamente.';
+      typeof err['message'] === 'string'
+        ? (err['message'] as string)
+        : 'Erro interno. Tente novamente.';
     const requestId = typeof err['requestId'] === 'string' ? (err['requestId'] as string) : '';
     return { code, message, requestId };
   }

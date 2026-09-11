@@ -377,9 +377,14 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
       });
       expect([201, 202]).toContain(run.statusCode);
       const runId = idOf(run.json());
-      const groups = await apiRequest(app, 'GET', `/api/v1/lab/projects/${projectId}/groups?limit=5`, {
-        bearer: patA,
-      });
+      const groups = await apiRequest(
+        app,
+        'GET',
+        `/api/v1/lab/projects/${projectId}/groups?limit=5`,
+        {
+          bearer: patA,
+        },
+      );
       expect(groups.statusCode).toBe(200);
       const list = itemsOf(groups.json());
       expect(list.length).toBeGreaterThan(0);
@@ -657,9 +662,14 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
       }
       const { patA, patB } = await bootstrapTwoUsers();
       const chain = await setupChain(patA.token);
-      const owner = await apiRequest(app, 'GET', `/api/v1/lab/runs/${chain.runId}/results?limit=5`, {
-        bearer: patA.token,
-      });
+      const owner = await apiRequest(
+        app,
+        'GET',
+        `/api/v1/lab/runs/${chain.runId}/results?limit=5`,
+        {
+          bearer: patA.token,
+        },
+      );
       expect(owner.statusCode).toBe(200);
       const stranger = await apiRequest(
         app,
@@ -788,9 +798,14 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
           expect(errGhost.status).toBe(404);
         }
       });
-      const intact = await apiRequest(app, 'GET', `/api/v1/lab/projects/${chain.projectId}/corpus`, {
-        bearer: patA.token,
-      });
+      const intact = await apiRequest(
+        app,
+        'GET',
+        `/api/v1/lab/projects/${chain.projectId}/corpus`,
+        {
+          bearer: patA.token,
+        },
+      );
       expect(intact.statusCode).toBe(200);
     });
 

@@ -85,14 +85,26 @@ function parseErrorEnvelope(text: string): { code: string; message: string; requ
   try {
     parsed = JSON.parse(text) as unknown;
   } catch {
-    return { code: 'INTERNAL_ERROR', message: 'Resposta de erro fora do formato esperado.', requestId: '' };
+    return {
+      code: 'INTERNAL_ERROR',
+      message: 'Resposta de erro fora do formato esperado.',
+      requestId: '',
+    };
   }
   if (!isRecord(parsed)) {
-    return { code: 'INTERNAL_ERROR', message: 'Resposta de erro fora do formato esperado.', requestId: '' };
+    return {
+      code: 'INTERNAL_ERROR',
+      message: 'Resposta de erro fora do formato esperado.',
+      requestId: '',
+    };
   }
   const holder: unknown = parsed['error'];
   if (!isRecord(holder)) {
-    return { code: 'INTERNAL_ERROR', message: 'Resposta de erro fora do formato esperado.', requestId: '' };
+    return {
+      code: 'INTERNAL_ERROR',
+      message: 'Resposta de erro fora do formato esperado.',
+      requestId: '',
+    };
   }
   const envelope = holder as ErrorEnvelopeLike['error'];
   const code = typeof envelope?.code === 'string' ? envelope.code : 'INTERNAL_ERROR';
@@ -217,7 +229,12 @@ export async function mcpWaitForJob(
   for (;;) {
     if (Date.now() - startedAt > timeoutMs) {
       const secs = Math.round(timeoutMs / 1000);
-      throw new McpToolError(0, 'INTERNAL_ERROR', `Timeout após ${secs}s aguardando job ${jobId}.`, '');
+      throw new McpToolError(
+        0,
+        'INTERNAL_ERROR',
+        `Timeout após ${secs}s aguardando job ${jobId}.`,
+        '',
+      );
     }
     const { data } = await mcpFetch<JobDTO>(`/api/v1/jobs/${jobId}`, { method: 'GET' });
     const status: string = data.status;
@@ -228,7 +245,12 @@ export async function mcpWaitForJob(
     const remaining = timeoutMs - elapsed;
     if (remaining <= 0) {
       const secs = Math.round(timeoutMs / 1000);
-      throw new McpToolError(0, 'INTERNAL_ERROR', `Timeout após ${secs}s aguardando job ${jobId}.`, '');
+      throw new McpToolError(
+        0,
+        'INTERNAL_ERROR',
+        `Timeout após ${secs}s aguardando job ${jobId}.`,
+        '',
+      );
     }
     await new Promise((resolve) => setTimeout(resolve, Math.min(intervalMs, remaining)));
   }

@@ -13,7 +13,8 @@ import { join } from 'node:path';
 import cookie from '@fastify/cookie';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createDb, type Db } from '@uhhu/db';import {
+import { createDb, type Db } from '@uhhu/db';
+import {
   invites,
   labCanonicalPins,
   labDedupGroups,
@@ -421,7 +422,11 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
           headers: { authorization: `Bearer ${token}` },
         });
         expect(groupsRes?.statusCode).toBe(200);
-        const groups = reqArray(reqRecord(groupsRes?.json() as unknown, 'grupos'), 'items', 'grupos');
+        const groups = reqArray(
+          reqRecord(groupsRes?.json() as unknown, 'grupos'),
+          'items',
+          'grupos',
+        );
         expect(groups.length).toBeGreaterThan(0);
         const first = reqRecord(groups[0], 'grupos[0]');
         const decided = await callTool('lab_set_result_decision', {
@@ -452,7 +457,9 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
         const ref = reqRecord(out, 'exportação');
         expect(reqString(ref, 'filename', 'exportação').startsWith('corpus-')).toBe(true);
         expect(typeof ref['sizeBytes']).toBe('number');
-        expect(ref['contentJson'] !== undefined || typeof ref['contentText'] === 'string').toBe(true);
+        expect(ref['contentJson'] !== undefined || typeof ref['contentText'] === 'string').toBe(
+          true,
+        );
       });
     });
 

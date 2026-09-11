@@ -17,7 +17,9 @@ import { Client } from '../apps/mcp/node_modules/@modelcontextprotocol/sdk/dist/
 import { StdioClientTransport as StdioTransport } from '../apps/mcp/node_modules/@modelcontextprotocol/sdk/dist/esm/client/stdio.js';
 
 function usage() {
-  console.error("Uso: UHHU_TOKEN=... UHHU_API_URL=... node scripts/mcp-call.mjs <tool> '<json-args>'");
+  console.error(
+    "Uso: UHHU_TOKEN=... UHHU_API_URL=... node scripts/mcp-call.mjs <tool> '<json-args>'",
+  );
 }
 
 const toolName = process.argv[2];

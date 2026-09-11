@@ -204,7 +204,10 @@ async function ctx(globals: GlobalOptions): Promise<Ctx> {
   return { baseUrl: loaded.baseUrl, token: loaded.token };
 }
 
-function apiArgs(globals: GlobalOptions, creds: Ctx): {
+function apiArgs(
+  globals: GlobalOptions,
+  creds: Ctx,
+): {
   baseUrl: string;
   token: string;
   idempotencyKey?: string;
@@ -322,7 +325,8 @@ export async function runAuthLogout(_args: string[], globals: GlobalOptions): Pr
 // project
 // ---------------------------------------------------------------------------
 
-export const PROJECT_LIST_USAGE = 'Uso: uhhu project list [--limit <n>] [--status active|archived|all]';
+export const PROJECT_LIST_USAGE =
+  'Uso: uhhu project list [--limit <n>] [--status active|archived|all]';
 
 export async function runProjectList(args: string[], globals: GlobalOptions): Promise<void> {
   const parsed = parseArgs(args);
@@ -441,7 +445,8 @@ export async function runSearchCreate(args: string[], globals: GlobalOptions): P
   });
 }
 
-export const SEARCH_RUN_USAGE = 'Uso: uhhu lab search run --search <id> [--idempotency-key <k>] [-v]';
+export const SEARCH_RUN_USAGE =
+  'Uso: uhhu lab search run --search <id> [--idempotency-key <k>] [-v]';
 
 function runMetricsTable(run: SearchRunDTO): void {
   const bdtd = run.metrics.perSource['bdtd'];
@@ -468,7 +473,10 @@ export async function runSearchRun(args: string[], globals: GlobalOptions): Prom
   const searchId = reqFlag(parsed, SEARCH_RUN_USAGE, 'search');
   const creds = await ctx(globals);
   const idempotencyKey = optFlag(parsed, 'idempotency-key') ?? globals.idempotencyKey;
-  const base = { ...apiArgs(globals, creds), ...(idempotencyKey === undefined ? {} : { idempotencyKey }) };
+  const base = {
+    ...apiArgs(globals, creds),
+    ...(idempotencyKey === undefined ? {} : { idempotencyKey }),
+  };
   const { data, status } = await apiFetch<SearchRunDTO>(`/api/v1/lab/searches/${searchId}/runs`, {
     ...base,
     method: 'POST',
@@ -507,7 +515,8 @@ export async function runSearchRun(args: string[], globals: GlobalOptions): Prom
   emit(globals, data, () => runMetricsTable(data));
 }
 
-export const SEARCH_COMPARE_USAGE = 'Uso: uhhu lab search compare --search <id> --with <id1,id2[,…até 10]>';
+export const SEARCH_COMPARE_USAGE =
+  'Uso: uhhu lab search compare --search <id> --with <id1,id2[,…até 10]>';
 
 export async function runSearchCompare(args: string[], globals: GlobalOptions): Promise<void> {
   const parsed = parseArgs(args);
@@ -587,10 +596,7 @@ export async function runResultDecide(args: string[], globals: GlobalOptions): P
     body,
   });
   emit(globals, data, () => {
-    printTable(
-      ['grupo', 'decisão', 'estado'],
-      [[data.id, data.decision, data.status]],
-    );
+    printTable(['grupo', 'decisão', 'estado'], [[data.id, data.decision, data.status]]);
   });
 }
 
@@ -778,8 +784,7 @@ export async function runGroupTagAttach(args: string[], globals: GlobalOptions):
   });
 }
 
-export const GROUP_TAG_DETACH_USAGE =
-  'Uso: uhhu lab group tag-detach --group <id> --tag <tag-id>';
+export const GROUP_TAG_DETACH_USAGE = 'Uso: uhhu lab group tag-detach --group <id> --tag <tag-id>';
 
 export async function runGroupTagDetach(args: string[], globals: GlobalOptions): Promise<void> {
   const parsed = parseArgs(args);
@@ -874,7 +879,10 @@ export async function runExport(args: string[], globals: GlobalOptions): Promise
   const outDir = optFlag(parsed, 'out') ?? process.cwd();
   const creds = await ctx(globals);
   const idempotencyKey = optFlag(parsed, 'idempotency-key') ?? globals.idempotencyKey;
-  const base = { ...apiArgs(globals, creds), ...(idempotencyKey === undefined ? {} : { idempotencyKey }) };
+  const base = {
+    ...apiArgs(globals, creds),
+    ...(idempotencyKey === undefined ? {} : { idempotencyKey }),
+  };
   const { data, filename } = await apiFetch<string>(
     `/api/v1/lab/projects/${projectId}/export${buildQuery({ format, scope, selection })}`,
     { ...base, method: 'GET', raw: true },

@@ -51,6 +51,14 @@ export default defineWorkspace([
       name: 'integration',
       include: ['tests/integration/**/*.test.ts'],
       testTimeout: 15000,
+      // Arquivos de integração dividem o MESMO PostgreSQL com wipe FK-safe
+      // por arquivo: em runners 4+ cores o paralelismo por arquivo causa
+      // corrida de banco (CI vermelho, local 2 cores passava). Um único fork
+      // executa os arquivos em série com segurança. Nota: `fileParallelism`
+      // seria o ideal, mas no Vitest 3.2 é opção global (NonProjectOptions)
+      // e o tipo do projeto inline no workspace a rejeita (TS2353) —
+      // singleFork serializa do mesmo jeito (fix ci run 34620303860).
+      poolOptions: { forks: { singleFork: true } },
       env: fallback,
     },
   },

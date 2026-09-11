@@ -129,7 +129,13 @@ describe('completenessScore (D-44)', () => {
 
   it('registro vazio soma 0', () => {
     expect(
-      completenessScore({ abstract: null, authors: [], year: null, originUrl: null, sourceUrl: null }),
+      completenessScore({
+        abstract: null,
+        authors: [],
+        year: null,
+        originUrl: null,
+        sourceUrl: null,
+      }),
     ).toBe(0);
   });
 });

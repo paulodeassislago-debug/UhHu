@@ -13,7 +13,13 @@
 
 import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 import { z } from 'zod';
-import type { CompareDTO, CorpusEntryDTO, DedupGroupDTO, ExecutableSource, PageInfo } from '@uhhu/contracts';
+import type {
+  CompareDTO,
+  CorpusEntryDTO,
+  DedupGroupDTO,
+  ExecutableSource,
+  PageInfo,
+} from '@uhhu/contracts';
 import { decodeCursor, encodeCursor } from '@uhhu/contracts';
 import type { ActorContext } from '@uhhu/core';
 import {
@@ -35,12 +41,7 @@ import {
 } from '@uhhu/db';
 import { getProjectForActor } from './projects.js';
 import { getSearchForActor } from './searches.js';
-import {
-  canonicalKey,
-  completenessScore,
-  FUZZY_THRESHOLD,
-  titleSimilarity,
-} from './dedup.js';
+import { canonicalKey, completenessScore, FUZZY_THRESHOLD, titleSimilarity } from './dedup.js';
 
 const uuidSchema = z.string().uuid();
 
@@ -132,8 +133,7 @@ export function resolveCanonicalResult(
       best === null ||
       score > bestScore ||
       (score === bestScore &&
-        (m.source < best.source ||
-          (m.source === best.source && m.sourceId < best.sourceId)))
+        (m.source < best.source || (m.source === best.source && m.sourceId < best.sourceId)))
     ) {
       best = m;
       bestScore = score;
@@ -174,7 +174,9 @@ function narrowDecision(value: string): 'eligible' | 'ineligible' | 'undecided' 
 }
 
 export function toGroupDTO(bundle: GroupBundle): DedupGroupDTO {
-  const origins = [...new Set(bundle.members.map((m) => m.source).filter(isExecutableSource))].sort();
+  const origins = [
+    ...new Set(bundle.members.map((m) => m.source).filter(isExecutableSource)),
+  ].sort();
   return {
     id: bundle.group.id,
     projectId: bundle.group.projectId,
@@ -313,11 +315,7 @@ interface FuzzyCandidate {
   key: string;
 }
 
-function fuzzyScore(
-  a: FuzzyCandidate,
-  b: FuzzyCandidate,
-  veto: Set<string>,
-): number | null {
+function fuzzyScore(a: FuzzyCandidate, b: FuzzyCandidate, veto: Set<string>): number | null {
   // Blocking ano-null (04-05/2): BDTD/search nunca traz ano; fuzzy exige anos
   // iguais non-null para nunca agrupar BDTD∩CAPES por título parecido sem ano.
   // Exact com year=null continua (título+autores idênticos) — transparente e
@@ -627,10 +625,7 @@ export async function ensureDefaultTags(
     return null;
   }
   for (const name of DEFAULT_TAGS) {
-    await db
-      .insert(labTags)
-      .values({ projectId, name, color: null })
-      .onConflictDoNothing();
+    await db.insert(labTags).values({ projectId, name, color: null }).onConflictDoNothing();
   }
   const rows = await db.select().from(labTags).where(eq(labTags.projectId, projectId));
   return rows.map((t) => ({ id: t.id, name: t.name, color: t.color }));
@@ -812,16 +807,15 @@ export interface CorpusListResult {
   page: PageInfo;
 }
 
-export function toCorpusEntryDTO(
-  bundle: GroupBundle,
-  tagNames: string[],
-): CorpusEntryDTO | null {
+export function toCorpusEntryDTO(bundle: GroupBundle, tagNames: string[]): CorpusEntryDTO | null {
   const canonicalId = resolveCanonicalResult(bundle.members, bundle.pin);
   const canonical = bundle.memberRows.find((r) => r.id === canonicalId);
   if (canonical === undefined) {
     return null;
   }
-  const origins = [...new Set(bundle.members.map((m) => m.source).filter(isExecutableSource))].sort();
+  const origins = [
+    ...new Set(bundle.members.map((m) => m.source).filter(isExecutableSource)),
+  ].sort();
   return {
     groupId: bundle.group.id,
     canonicalKey: bundle.group.canonicalKey,
@@ -868,9 +862,7 @@ export async function getCorpusForActor(
       : await db.select().from(labGroupTags).where(inArray(labGroupTags.groupId, groupIds));
   const tagIds = [...new Set(tagLinks.map((l) => l.tagId))];
   const tagRows =
-    tagIds.length === 0
-      ? []
-      : await db.select().from(labTags).where(inArray(labTags.id, tagIds));
+    tagIds.length === 0 ? [] : await db.select().from(labTags).where(inArray(labTags.id, tagIds));
   const tagNameById = new Map(tagRows.map((t) => [t.id, t.name] as const));
   const entries: Array<{ entry: CorpusEntryDTO; createdAt: Date; id: string }> = [];
   for (const b of eligible) {
@@ -1242,12 +1234,12 @@ export async function resolveSelectionGroupsForActor(
       .where(inArray(labDedupMembers.resultId, missing));
     const memberGroupIds = [...new Set(members.map((m) => m.member.groupId))];
     const extra =
-      memberGroupIds.length === 0
-        ? []
-        : await loadGroupBundles(db, projectId, memberGroupIds);
+      memberGroupIds.length === 0 ? [] : await loadGroupBundles(db, projectId, memberGroupIds);
     const extraIds = new Set(extra.map((b) => b.group.id));
     const resolved = new Set<string>(groupIds);
-    const resultToGroup = new Map(members.map((m) => [m.member.resultId, m.member.groupId] as const));
+    const resultToGroup = new Map(
+      members.map((m) => [m.member.resultId, m.member.groupId] as const),
+    );
     for (const id of missing) {
       const gid = resultToGroup.get(id);
       if (gid !== undefined && extraIds.has(gid)) {

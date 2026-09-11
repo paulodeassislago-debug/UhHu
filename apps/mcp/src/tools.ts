@@ -163,8 +163,7 @@ async function runCreateSearch(input: unknown): Promise<SearchDTO> {
 // o recurso foi criado e o agente precisa do id + erro para reagir.
 async function runExecuteSearch(input: unknown): Promise<SearchRunDTO> {
   const parsed = executeSearchInputSchema.parse(input);
-  const base =
-    parsed.idempotencyKey === undefined ? {} : { idempotencyKey: parsed.idempotencyKey };
+  const base = parsed.idempotencyKey === undefined ? {} : { idempotencyKey: parsed.idempotencyKey };
   const { data, status } = await mcpFetch<SearchRunDTO>(
     `/api/v1/lab/searches/${parsed.searchId}/runs`,
     { ...base, method: 'POST', body: {} },
@@ -252,8 +251,7 @@ async function runExportProject(input: unknown): Promise<ExportReference> {
       '',
     );
   }
-  const base =
-    parsed.idempotencyKey === undefined ? {} : { idempotencyKey: parsed.idempotencyKey };
+  const base = parsed.idempotencyKey === undefined ? {} : { idempotencyKey: parsed.idempotencyKey };
   const { data, filename, contentType } = await mcpFetch<string>(
     `/api/v1/lab/projects/${parsed.projectId}/export${buildQuery({ format: parsed.format, scope, selection: parsed.selection })}`,
     { ...base, method: 'GET', raw: true },
@@ -285,10 +283,9 @@ async function runListSources(input: unknown): Promise<unknown[]> {
 
 async function runGetSourceHealth(input: unknown): Promise<SourceHealthDTO> {
   const parsed = getSourceHealthInputSchema.parse(input);
-  const { data } = await mcpFetch<SourceHealthDTO>(
-    `/api/v1/lab/sources/${parsed.source}/health`,
-    { method: 'GET' },
-  );
+  const { data } = await mcpFetch<SourceHealthDTO>(`/api/v1/lab/sources/${parsed.source}/health`, {
+    method: 'GET',
+  });
   return data;
 }
 
@@ -446,7 +443,12 @@ export async function callTool(name: string, args: unknown): Promise<unknown> {
   if (def.requiresConfirm) {
     const marker = isRecord(args) ? args['confirm'] : undefined;
     if (marker !== true) {
-      throw new McpToolError(0, 'confirm_required', 'Esta operação exige confirm:true explícito.', '');
+      throw new McpToolError(
+        0,
+        'confirm_required',
+        'Esta operação exige confirm:true explícito.',
+        '',
+      );
     }
   }
   const parsed = z.object(def.inputSchema).safeParse(args);
