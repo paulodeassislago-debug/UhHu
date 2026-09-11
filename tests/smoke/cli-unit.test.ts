@@ -181,6 +181,28 @@ describe('auth-store (HOME fake)', () => {
     chmodSync(credentialsPath(), 0o600);
     await expect(loadToken()).rejects.toThrow(/login/);
   });
+
+  it('M-02: UHHU_TOKEN com newline/espaco e aparado (paridade com MCP)', async () => {
+    process.env['UHHU_TOKEN'] = 'tok-env-trim  \n';
+    const loaded = await loadToken();
+    expect(loaded.token).toBe('tok-env-trim');
+    expect(loaded.from).toBe('env');
+  });
+
+  it('M-02: UHHU_TOKEN so com espacos e tratado como ausente', async () => {
+    await saveToken('http://127.0.0.1:3001', 'tok-arquivo-789');
+    process.env['UHHU_TOKEN'] = '   \n';
+    const loaded = await loadToken();
+    expect(loaded.from).toBe('file');
+    expect(loaded.token).toBe('tok-arquivo-789');
+  });
+
+  it('M-02: UHHU_API_URL com espacos e aparado', async () => {
+    process.env['UHHU_TOKEN'] = 'tok-env-123';
+    process.env['UHHU_API_URL'] = '  https://env-trim.exemplo.test  ';
+    const loaded = await loadToken();
+    expect(loaded.baseUrl).toBe('https://env-trim.exemplo.test');
+  });
 });
 
 describe('client apiFetch', () => {

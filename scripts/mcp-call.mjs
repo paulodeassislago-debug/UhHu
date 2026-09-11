@@ -39,12 +39,16 @@ try {
   process.exit(2);
 }
 
-const token = process.env['UHHU_TOKEN'] ?? '';
+const token = (process.env['UHHU_TOKEN'] ?? '').trim();
 if (token.length === 0) {
   console.error('UHHU_TOKEN nao configurado.');
   process.exit(3);
 }
-const apiUrl = process.env['UHHU_API_URL'] ?? 'http://127.0.0.1:3000';
+// M-02: trim por paridade com apps/mcp/src/mcp-client.ts — env com
+// newline/espaco (ex.: `export UHHU_TOKEN=$(cat file)`) nao vira Bearer com
+// whitespace (401 confuso).
+const apiUrl =
+  (process.env['UHHU_API_URL'] ?? 'http://127.0.0.1:3000').trim() || 'http://127.0.0.1:3000';
 
 const childEnv = {
   UHHU_TOKEN: token,

@@ -246,8 +246,16 @@ export async function runAuthLogin(args: string[], globals: GlobalOptions): Prom
     }
     throw err;
   });
-  const baseUrl =
-    globals.baseUrl ?? process.env['UHHU_API_URL'] ?? loaded?.baseUrl ?? 'http://127.0.0.1:3000';
+  // M-02: trim por paridade com o MCP — env/flag com whitespace nao vira base
+  // com espaco (falha de rede confusa).
+  const flagBase =
+    typeof globals.baseUrl === 'string' && globals.baseUrl.trim().length > 0
+      ? globals.baseUrl.trim()
+      : undefined;
+  const envApiRaw = process.env['UHHU_API_URL'];
+  const envApi =
+    typeof envApiRaw === 'string' && envApiRaw.trim().length > 0 ? envApiRaw.trim() : undefined;
+  const baseUrl = flagBase ?? envApi ?? loaded?.baseUrl ?? 'http://127.0.0.1:3000';
   const { data, status } = await apiFetch<PersonalAccessTokenCreated>('/api/v1/auth/token', {
     baseUrl,
     token: '',

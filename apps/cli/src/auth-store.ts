@@ -50,7 +50,8 @@ async function readStoredBaseUrl(): Promise<string | undefined> {
       return undefined;
     }
     const stored: unknown = parsed['baseUrl'];
-    return typeof stored === 'string' && stored.length > 0 ? stored : undefined;
+    // M-02: trim por paridade com o MCP (env com newline/espaco).
+    return typeof stored === 'string' && stored.trim().length > 0 ? stored.trim() : undefined;
   } catch {
     return undefined;
   }
@@ -74,21 +75,28 @@ export async function saveToken(baseUrl: string, token: string): Promise<string>
 
 // Token: `UHHU_TOKEN` precede o arquivo. BaseUrl: `UHHU_API_URL` > `--api`
 // (explicito do caller) > baseUrl salva no arquivo > default localhost:3000.
+// Env com newline/espaco (ex.: `export UHHU_TOKEN=$(cat file)`) e aparado por
+// paridade com o MCP (M-02) — sem trim o Bearer ia com whitespace e o servidor
+// rejeitava com 401 confuso.
 export async function loadToken(explicitBaseUrl?: string): Promise<LoadedCredentials> {
-  const envToken = process.env['UHHU_TOKEN'];
-  const envApi = process.env['UHHU_API_URL'];
-  const trimmedEnv = typeof envToken === 'string' && envToken.length > 0 ? envToken : undefined;
+  const envTokenRaw = process.env['UHHU_TOKEN'];
+  const envApiRaw = process.env['UHHU_API_URL'];
+  const trimmedEnv =
+    typeof envTokenRaw === 'string' && envTokenRaw.trim().length > 0
+      ? envTokenRaw.trim()
+      : undefined;
+  const trimmedEnvApi =
+    typeof envApiRaw === 'string' && envApiRaw.trim().length > 0 ? envApiRaw.trim() : undefined;
+  const trimmedExplicit =
+    typeof explicitBaseUrl === 'string' && explicitBaseUrl.trim().length > 0
+      ? explicitBaseUrl.trim()
+      : undefined;
   if (trimmedEnv !== undefined) {
     // H-02: mesmo com token do env, a base salva participa da precedencia
     // (envApi > explicito > salva > default) — antes caia direto no default
     // e falava com o servidor errado.
     const stored = await readStoredBaseUrl();
-    const baseUrl =
-      typeof envApi === 'string' && envApi.length > 0
-        ? envApi
-        : typeof explicitBaseUrl === 'string' && explicitBaseUrl.length > 0
-          ? explicitBaseUrl
-          : (stored ?? DEFAULT_API_URL);
+    const baseUrl = trimmedEnvApi ?? trimmedExplicit ?? stored ?? DEFAULT_API_URL;
     return { baseUrl, token: trimmedEnv, from: 'env' };
   }
   const file = credentialsPath();
@@ -131,13 +139,10 @@ export async function loadToken(explicitBaseUrl?: string): Promise<LoadedCredent
     );
   }
   const fileBaseUrl =
-    typeof storedBaseUrl === 'string' && storedBaseUrl.length > 0 ? storedBaseUrl : DEFAULT_API_URL;
-  const baseUrl =
-    typeof envApi === 'string' && envApi.length > 0
-      ? envApi
-      : typeof explicitBaseUrl === 'string' && explicitBaseUrl.length > 0
-        ? explicitBaseUrl
-        : fileBaseUrl;
+    typeof storedBaseUrl === 'string' && storedBaseUrl.trim().length > 0
+      ? storedBaseUrl.trim()
+      : DEFAULT_API_URL;
+  const baseUrl = trimmedEnvApi ?? trimmedExplicit ?? fileBaseUrl;
   return { baseUrl, token: storedToken, from: 'file' };
 }
 
