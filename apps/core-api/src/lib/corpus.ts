@@ -13,7 +13,7 @@
 
 import { and, asc, desc, eq, inArray, lt, or } from 'drizzle-orm';
 import { z } from 'zod';
-import type { CorpusEntryDTO, DedupGroupDTO, ExecutableSource, PageInfo } from '@uhhu/contracts';
+import type { CompareDTO, CorpusEntryDTO, DedupGroupDTO, ExecutableSource, PageInfo } from '@uhhu/contracts';
 import { decodeCursor, encodeCursor } from '@uhhu/contracts';
 import type { ActorContext } from '@uhhu/core';
 import {
@@ -34,6 +34,7 @@ import {
   type LabResult,
 } from '@uhhu/db';
 import { getProjectForActor } from './projects.js';
+import { getSearchForActor } from './searches.js';
 import {
   canonicalKey,
   completenessScore,
@@ -912,4 +913,200 @@ export async function getCorpusForActor(
       hasMore,
     },
   };
+}
+
+// ---------------------------------------------------------------------------
+// Comparacao 4 blocos sobre runs fixos (LAB-10, D-47..D-49):
+// compareSearchesForActor + toCompareDTO.
+// ---------------------------------------------------------------------------
+
+export const COMPARE_MAX_WITH = 10;
+
+export function toCompareDTO(
+  searches: string[],
+  totals: Record<string, number>,
+  yearHistogram: Record<string, number>,
+  bySource: Record<string, Record<'bdtd' | 'capes', number>>,
+  pairwiseOverlap: Record<string, number>,
+): CompareDTO {
+  return { searches, totals, yearHistogram, bySource, pairwiseOverlap };
+}
+
+export async function compareSearchesForActor(
+  db: Db,
+  actor: ActorContext,
+  baseSearchId: string,
+  withSearchIds: string[],
+): Promise<CompareDTO | null> {
+  if (!uuidSchema.safeParse(baseSearchId).success) {
+    return null;
+  }
+  const deduped = [...new Set(withSearchIds)].filter((id) => id !== baseSearchId);
+  if (deduped.length < 1 || deduped.length > COMPARE_MAX_WITH) {
+    return null;
+  }
+  for (const id of deduped) {
+    if (!uuidSchema.safeParse(id).success) {
+      return null;
+    }
+  }
+  // Escopo ANTES de agregar (anti-enumeracao): busca alheia → null → 404.
+  const searches = [baseSearchId, ...deduped];
+  const projectIds: string[] = [];
+  for (const id of searches) {
+    const search = await getSearchForActor(db, actor, id);
+    if (search === null) {
+      return null;
+    }
+    projectIds.push(search.projectId);
+  }
+  // Ultimo run CONCLUIDO fixo (D-48): succeeded|partial latest executedAt.
+  // failed/sem run contribui zeros (nunca queued/running/cancelled).
+  const runBySearch = new Map<string, string | null>();
+  for (const id of searches) {
+    const runs = await db
+      .select()
+      .from(labSearchRuns)
+      .where(
+        and(
+          eq(labSearchRuns.searchId, id),
+          inArray(labSearchRuns.status, ['succeeded', 'partial']),
+        ),
+      )
+      .orderBy(desc(labSearchRuns.executedAt), desc(labSearchRuns.id))
+      .limit(1);
+    const run = runs[0];
+    runBySearch.set(id, run === undefined ? null : run.id);
+  }
+  const runIds = [...runBySearch.values()].filter((v): v is string => v !== null);
+  const results =
+    runIds.length === 0
+      ? []
+      : await db.select().from(labResults).where(inArray(labResults.runId, runIds));
+  const runByResult = new Map<string, string>();
+  const searchByRun = new Map<string, string>();
+  for (const [searchId, runId] of runBySearch) {
+    if (runId !== null) {
+      searchByRun.set(runId, searchId);
+    }
+  }
+  for (const r of results) {
+    const searchId = searchByRun.get(r.runId);
+    if (searchId !== undefined) {
+      runByResult.set(r.id, searchId);
+    }
+  }
+  const keysBySearch = new Map<string, Set<string>>();
+  const totals: Record<string, number> = {};
+  const yearHistogram: Record<string, number> = {};
+  const bySource: Record<string, Record<'bdtd' | 'capes', number>> = {};
+  for (const id of searches) {
+    keysBySearch.set(id, new Set());
+    totals[id] = 0;
+    bySource[id] = { bdtd: 0, capes: 0 };
+  }
+  for (const r of results) {
+    const searchId = searchByRun.get(r.runId);
+    if (searchId === undefined) {
+      continue;
+    }
+    totals[searchId] = (totals[searchId] ?? 0) + 1;
+    const keys = keysBySearch.get(searchId);
+    if (keys !== undefined) {
+      keys.add(resultKey(r));
+    }
+    const year = parseNullableYear(r.year);
+    const bucket = year === null ? 'desconhecido' : String(year);
+    yearHistogram[bucket] = (yearHistogram[bucket] ?? 0) + 1;
+    if (isExecutableSource(r.source)) {
+      const slot = bySource[searchId];
+      if (slot !== undefined) {
+        slot[r.source] += 1;
+      }
+    }
+  }
+  // Overlap dedup-aware (D-47): chaves exatas compartilhadas + grupos fuzzy
+  // confirmados com membros nos dois runs.
+  const memberGroup = new Map<string, string>();
+  const confirmedGroups = new Set<string>();
+  const canonicalByGroup = new Map<string, string>();
+  if (results.length > 0) {
+    const resultIds = results.map((r) => r.id);
+    const members = await db
+      .select()
+      .from(labDedupMembers)
+      .where(inArray(labDedupMembers.resultId, resultIds));
+    const groupIds = [...new Set(members.map((m) => m.groupId))];
+    if (groupIds.length > 0) {
+      const uniqueProjects = [...new Set(projectIds)];
+      const groups = await db
+        .select()
+        .from(labDedupGroups)
+        .where(
+          and(
+            inArray(labDedupGroups.id, groupIds),
+            inArray(labDedupGroups.projectId, uniqueProjects),
+          ),
+        );
+      for (const g of groups) {
+        if (g.status === 'confirmed') {
+          confirmedGroups.add(g.id);
+          canonicalByGroup.set(g.id, g.canonicalKey);
+        }
+      }
+      for (const m of members) {
+        if (confirmedGroups.has(m.groupId)) {
+          memberGroup.set(m.resultId, m.groupId);
+        }
+      }
+    }
+  }
+  const pairwiseOverlap: Record<string, number> = {};
+  for (let i = 0; i < searches.length; i++) {
+    for (let j = i + 1; j < searches.length; j++) {
+      const a = searches[i];
+      const b = searches[j];
+      if (a === undefined || b === undefined) {
+        continue;
+      }
+      const keysA = keysBySearch.get(a) ?? new Set<string>();
+      const keysB = keysBySearch.get(b) ?? new Set<string>();
+      let overlap = 0;
+      for (const k of keysA) {
+        if (keysB.has(k)) {
+          overlap += 1;
+        }
+      }
+      // Extra fuzzy: grupo confirmado com membros nos dois runs cuja chave
+      // canonica NAO esta na intersecao exata (evita dupla contagem; grupos
+      // exact spanning runs sempre tem a chave na intersecao).
+      const groupsInA = new Set<string>();
+      const groupsInB = new Set<string>();
+      for (const r of results) {
+        const owner = searchByRun.get(r.runId);
+        const g = memberGroup.get(r.id);
+        if (g === undefined) {
+          continue;
+        }
+        if (owner === a) {
+          groupsInA.add(g);
+        } else if (owner === b) {
+          groupsInB.add(g);
+        }
+      }
+      for (const g of groupsInA) {
+        if (!groupsInB.has(g)) {
+          continue;
+        }
+        const canon = canonicalByGroup.get(g);
+        if (canon !== undefined && !keysA.has(canon)) {
+          overlap += 1;
+        } else if (canon !== undefined && !keysB.has(canon)) {
+          overlap += 1;
+        }
+      }
+      pairwiseOverlap[`${a}|${b}`] = overlap;
+    }
+  }
+  return toCompareDTO(searches, totals, yearHistogram, bySource, pairwiseOverlap);
 }
