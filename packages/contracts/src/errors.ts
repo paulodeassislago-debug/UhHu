@@ -15,6 +15,9 @@ export type ErrorCode =
   | 'VALIDATION_ERROR'
   | 'CONFIRMATION_REQUIRED'
   | 'RATE_LIMITED'
+  | 'SOURCE_DISABLED'
+  | 'SOURCE_UNAVAILABLE'
+  | 'IDEMPOTENCY_CONFLICT'
   | 'PASSWORD_RESET_SENT'
   | 'INTERNAL_ERROR';
 
@@ -30,6 +33,9 @@ export const ERROR_CATALOG: Record<ErrorCode, string> = {
   VALIDATION_ERROR: 'Dados inválidos.',
   CONFIRMATION_REQUIRED: 'Confirme a exclusão passando ?confirm=true.',
   RATE_LIMITED: 'Muitas tentativas. Tente novamente em instantes.',
+  SOURCE_DISABLED: 'Fonte desabilitada nesta instalação.',
+  SOURCE_UNAVAILABLE: 'Fonte temporariamente indisponível. Resultados parciais foram preservados.',
+  IDEMPOTENCY_CONFLICT: 'Chave de idempotência reutilizada com corpo diferente.',
   PASSWORD_RESET_SENT: 'Se o e-mail estiver cadastrado, enviamos o link.',
   INTERNAL_ERROR: 'Erro interno. Tente novamente.',
 };
