@@ -652,7 +652,7 @@ export async function createTagForActor(
   db: Db,
   actor: ActorContext,
   projectId: string,
-  input: { name: string; color?: string | null },
+  input: { name: string; color?: string | null | undefined },
 ): Promise<ProjectTag | null> {
   if (!uuidSchema.safeParse(projectId).success) {
     return null;
@@ -737,7 +737,7 @@ export async function setGroupDecisionForActor(
   db: Db,
   actor: ActorContext,
   groupId: string,
-  input: { decision: 'eligible' | 'ineligible' | 'undecided'; reason?: string },
+  input: { decision: 'eligible' | 'ineligible' | 'undecided'; reason?: string | undefined },
 ): Promise<DedupGroupDTO | null> {
   const group = await scopedGroup(db, actor, groupId);
   if (group === null) {

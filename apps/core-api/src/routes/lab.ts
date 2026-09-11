@@ -24,9 +24,16 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import {
   buildEnvelope,
+  compareQuerySchema,
+  corpusQuerySchema,
   createSearchSchema,
+  createTagSchema,
+  decisionInputSchema,
+  divergenceInputSchema,
+  exportQuerySchema,
   labSourceSchema,
   paginationQuerySchema,
+  pinInputSchema,
   resultsQuerySchema,
   updateSearchSchema,
   type JobDTO,
@@ -55,6 +62,22 @@ import {
   SourceDisabledError,
   type ExecuteSearchRunResult,
 } from '../lib/searchRuns.js';
+import {
+  attachTagForActor,
+  clearPinForActor,
+  compareSearchesForActor,
+  computeDedupGroupsForActor,
+  confirmGroupForActor,
+  createTagForActor,
+  detachTagForActor,
+  ensureDefaultTags,
+  getCorpusForActor,
+  listTagsForActor,
+  rejectGroupForActor,
+  setDivergenceForActor,
+  setGroupDecisionForActor,
+  setPinForActor,
+} from '../lib/corpus.js';
 
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9_.:~-]{1,128}$/;
 
@@ -134,6 +157,23 @@ const jobIdParamsSchema = z.object({
 
 const resultIdParamsSchema = z.object({
   resultId: z.string().uuid(),
+});
+
+const groupIdParamsSchema = z.object({
+  groupId: z.string().uuid(),
+});
+
+const projectIdParamsSchema = z.object({
+  projectId: z.string().uuid(),
+});
+
+const groupTagParamsSchema = z.object({
+  groupId: z.string().uuid(),
+  tagId: z.string().uuid(),
+});
+
+const attachTagBodySchema = z.object({
+  tagId: z.string().uuid(),
 });
 
 const sourceNameParamsSchema = z.object({
@@ -643,6 +683,446 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
         return;
       }
       await reply.code(200).send(outcome.run);
+    },
+  );
+
+  // -- Revisao/corpus (D-40..D-49): molde Zod + requireAuth + 404 identico. --
+
+  app.get(
+    '/api/v1/lab/projects/:projectId/groups',
+    { preHandler: requireAuth(db) },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const requestId = resolveRequestId(request);
+      reply.header('x-request-id', requestId);
+      const actor = request.actor;
+      if (actor === undefined) {
+        await reply.code(401).send(buildEnvelope('UNAUTHENTICATED', requestId, {}));
+        return;
+      }
+      const params = projectIdParamsSchema.safeParse(request.params);
+      if (!params.success) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      const parsed = corpusQuerySchema.safeParse(withClampedLimit(request.query));
+      if (!parsed.success) {
+        await reply
+          .code(400)
+          .send(buildEnvelope('VALIDATION_ERROR', requestId, parsed.error.flatten()));
+        return;
+      }
+      const project = await getProjectForActor(db, actor, params.data.projectId);
+      if (project === null) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      const groups = await computeDedupGroupsForActor(db, actor, params.data.projectId);
+      const filtered =
+        parsed.data.status === undefined
+          ? groups
+          : groups.filter((g) => g.status === parsed.data.status);
+      const limit = parsed.data.limit;
+      let start = 0;
+      if (parsed.data.cursor !== undefined && parsed.data.cursor.length > 0) {
+        try {
+          const decoded = Buffer.from(parsed.data.cursor, 'base64url').toString('utf8');
+          const idx = filtered.findIndex((g) => g.id === decoded);
+          start = idx < 0 ? 0 : idx + 1;
+        } catch {
+          start = 0;
+        }
+      }
+      const slice = filtered.slice(start, start + limit + 1);
+      const hasMore = slice.length > limit;
+      const pageRows = hasMore ? slice.slice(0, limit) : slice;
+      const last = pageRows[pageRows.length - 1];
+      await reply.code(200).send({
+        items: pageRows,
+        page: {
+          limit,
+          nextCursor:
+            hasMore && last !== undefined
+              ? Buffer.from(last.id, 'utf8').toString('base64url')
+              : null,
+          hasMore,
+        },
+      });
+    },
+  );
+
+  app.post(
+    '/api/v1/lab/groups/:groupId/confirm',
+    { preHandler: requireAuth(db) },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const requestId = resolveRequestId(request);
+      reply.header('x-request-id', requestId);
+      const actor = request.actor;
+      if (actor === undefined) {
+        await reply.code(401).send(buildEnvelope('UNAUTHENTICATED', requestId, {}));
+        return;
+      }
+      const parsed = groupIdParamsSchema.safeParse(request.params);
+      if (!parsed.success) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      const dto = await confirmGroupForActor(db, actor, parsed.data.groupId);
+      if (dto === null) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      await reply.code(200).send(dto);
+    },
+  );
+
+  app.post(
+    '/api/v1/lab/groups/:groupId/reject',
+    { preHandler: requireAuth(db) },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const requestId = resolveRequestId(request);
+      reply.header('x-request-id', requestId);
+      const actor = request.actor;
+      if (actor === undefined) {
+        await reply.code(401).send(buildEnvelope('UNAUTHENTICATED', requestId, {}));
+        return;
+      }
+      const parsed = groupIdParamsSchema.safeParse(request.params);
+      if (!parsed.success) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      const singles = await rejectGroupForActor(db, actor, parsed.data.groupId);
+      if (singles === null) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      await reply.code(200).send({ singles });
+    },
+  );
+
+  app.put(
+    '/api/v1/lab/groups/:groupId/decision',
+    { preHandler: requireAuth(db) },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const requestId = resolveRequestId(request);
+      reply.header('x-request-id', requestId);
+      const actor = request.actor;
+      if (actor === undefined) {
+        await reply.code(401).send(buildEnvelope('UNAUTHENTICATED', requestId, {}));
+        return;
+      }
+      const params = groupIdParamsSchema.safeParse(request.params);
+      if (!params.success) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      const body = decisionInputSchema.safeParse(request.body);
+      if (!body.success) {
+        await reply
+          .code(400)
+          .send(buildEnvelope('VALIDATION_ERROR', requestId, body.error.flatten()));
+        return;
+      }
+      const dto = await setGroupDecisionForActor(db, actor, params.data.groupId, body.data);
+      if (dto === null) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      await reply.code(200).send(dto);
+    },
+  );
+
+  app.get(
+    '/api/v1/lab/projects/:projectId/tags',
+    { preHandler: requireAuth(db) },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const requestId = resolveRequestId(request);
+      reply.header('x-request-id', requestId);
+      const actor = request.actor;
+      if (actor === undefined) {
+        await reply.code(401).send(buildEnvelope('UNAUTHENTICATED', requestId, {}));
+        return;
+      }
+      const parsed = projectIdParamsSchema.safeParse(request.params);
+      if (!parsed.success) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      const ensured = await ensureDefaultTags(db, actor, parsed.data.projectId);
+      if (ensured === null) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      const tags = await listTagsForActor(db, actor, parsed.data.projectId);
+      if (tags === null) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      await reply.code(200).send(tags);
+    },
+  );
+
+  app.post(
+    '/api/v1/lab/projects/:projectId/tags',
+    { preHandler: requireAuth(db) },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const requestId = resolveRequestId(request);
+      reply.header('x-request-id', requestId);
+      const actor = request.actor;
+      if (actor === undefined) {
+        await reply.code(401).send(buildEnvelope('UNAUTHENTICATED', requestId, {}));
+        return;
+      }
+      const params = projectIdParamsSchema.safeParse(request.params);
+      if (!params.success) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      const body = createTagSchema.safeParse(request.body);
+      if (!body.success) {
+        await reply
+          .code(400)
+          .send(buildEnvelope('VALIDATION_ERROR', requestId, body.error.flatten()));
+        return;
+      }
+      const ensured = await ensureDefaultTags(db, actor, params.data.projectId);
+      if (ensured === null) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      const tag = await createTagForActor(db, actor, params.data.projectId, body.data);
+      if (tag === null) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      await reply.code(201).send(tag);
+    },
+  );
+
+  app.post(
+    '/api/v1/lab/groups/:groupId/tags',
+    { preHandler: requireAuth(db) },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const requestId = resolveRequestId(request);
+      reply.header('x-request-id', requestId);
+      const actor = request.actor;
+      if (actor === undefined) {
+        await reply.code(401).send(buildEnvelope('UNAUTHENTICATED', requestId, {}));
+        return;
+      }
+      const params = groupIdParamsSchema.safeParse(request.params);
+      if (!params.success) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      const body = attachTagBodySchema.safeParse(request.body);
+      if (!body.success) {
+        await reply
+          .code(400)
+          .send(buildEnvelope('VALIDATION_ERROR', requestId, body.error.flatten()));
+        return;
+      }
+      const dto = await attachTagForActor(db, actor, params.data.groupId, body.data.tagId);
+      if (dto === null) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      await reply.code(200).send(dto);
+    },
+  );
+
+  app.delete(
+    '/api/v1/lab/groups/:groupId/tags/:tagId',
+    { preHandler: requireAuth(db) },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const requestId = resolveRequestId(request);
+      reply.header('x-request-id', requestId);
+      const actor = request.actor;
+      if (actor === undefined) {
+        await reply.code(401).send(buildEnvelope('UNAUTHENTICATED', requestId, {}));
+        return;
+      }
+      const parsed = groupTagParamsSchema.safeParse(request.params);
+      if (!parsed.success) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      const removed = await detachTagForActor(db, actor, parsed.data.groupId, parsed.data.tagId);
+      if (!removed) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      await reply.code(204).send();
+    },
+  );
+
+  app.put(
+    '/api/v1/lab/groups/:groupId/divergence',
+    { preHandler: requireAuth(db) },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const requestId = resolveRequestId(request);
+      reply.header('x-request-id', requestId);
+      const actor = request.actor;
+      if (actor === undefined) {
+        await reply.code(401).send(buildEnvelope('UNAUTHENTICATED', requestId, {}));
+        return;
+      }
+      const params = groupIdParamsSchema.safeParse(request.params);
+      if (!params.success) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      const body = divergenceInputSchema.safeParse(request.body);
+      if (!body.success) {
+        await reply
+          .code(400)
+          .send(buildEnvelope('VALIDATION_ERROR', requestId, body.error.flatten()));
+        return;
+      }
+      const dto = await setDivergenceForActor(db, actor, params.data.groupId, body.data);
+      if (dto === null) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      await reply.code(200).send(dto);
+    },
+  );
+
+  app.put(
+    '/api/v1/lab/groups/:groupId/pin',
+    { preHandler: requireAuth(db) },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const requestId = resolveRequestId(request);
+      reply.header('x-request-id', requestId);
+      const actor = request.actor;
+      if (actor === undefined) {
+        await reply.code(401).send(buildEnvelope('UNAUTHENTICATED', requestId, {}));
+        return;
+      }
+      const params = groupIdParamsSchema.safeParse(request.params);
+      if (!params.success) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      const body = pinInputSchema.safeParse(request.body);
+      if (!body.success) {
+        await reply
+          .code(400)
+          .send(buildEnvelope('VALIDATION_ERROR', requestId, body.error.flatten()));
+        return;
+      }
+      const dto = await setPinForActor(db, actor, params.data.groupId, body.data);
+      if (dto === null) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      await reply.code(200).send(dto);
+    },
+  );
+
+  app.delete(
+    '/api/v1/lab/groups/:groupId/pin',
+    { preHandler: requireAuth(db) },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const requestId = resolveRequestId(request);
+      reply.header('x-request-id', requestId);
+      const actor = request.actor;
+      if (actor === undefined) {
+        await reply.code(401).send(buildEnvelope('UNAUTHENTICATED', requestId, {}));
+        return;
+      }
+      const parsed = groupIdParamsSchema.safeParse(request.params);
+      if (!parsed.success) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      const dto = await clearPinForActor(db, actor, parsed.data.groupId);
+      if (dto === null) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      await reply.code(204).send();
+    },
+  );
+
+  app.get(
+    '/api/v1/lab/projects/:projectId/corpus',
+    { preHandler: requireAuth(db) },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const requestId = resolveRequestId(request);
+      reply.header('x-request-id', requestId);
+      const actor = request.actor;
+      if (actor === undefined) {
+        await reply.code(401).send(buildEnvelope('UNAUTHENTICATED', requestId, {}));
+        return;
+      }
+      const params = projectIdParamsSchema.safeParse(request.params);
+      if (!params.success) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      const parsed = corpusQuerySchema.safeParse(withClampedLimit(request.query));
+      if (!parsed.success) {
+        await reply
+          .code(400)
+          .send(buildEnvelope('VALIDATION_ERROR', requestId, parsed.error.flatten()));
+        return;
+      }
+      const project = await getProjectForActor(db, actor, params.data.projectId);
+      if (project === null) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      const result = await getCorpusForActor(db, actor, params.data.projectId, {
+        limit: parsed.data.limit,
+        cursor: parsed.data.cursor,
+      });
+      await reply.code(200).send({ items: result.items, page: result.page });
+    },
+  );
+
+  app.get(
+    '/api/v1/lab/searches/:searchId/compare',
+    { preHandler: requireAuth(db) },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const requestId = resolveRequestId(request);
+      reply.header('x-request-id', requestId);
+      const actor = request.actor;
+      if (actor === undefined) {
+        await reply.code(401).send(buildEnvelope('UNAUTHENTICATED', requestId, {}));
+        return;
+      }
+      const params = searchIdParamsSchema.safeParse(request.params);
+      if (!params.success) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      const parsed = compareQuerySchema.safeParse(request.query);
+      if (!parsed.success) {
+        await reply
+          .code(400)
+          .send(buildEnvelope('VALIDATION_ERROR', requestId, parsed.error.flatten()));
+        return;
+      }
+      const withIds = parsed.data.with
+        .split(',')
+        .map((part) => part.trim())
+        .filter((part) => part.length > 0);
+      const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (
+        withIds.length < 1 ||
+        withIds.length > 10 ||
+        withIds.some((id) => !uuidPattern.test(id))
+      ) {
+        await reply.code(400).send(buildEnvelope('VALIDATION_ERROR', requestId, {}));
+        return;
+      }
+      const dto = await compareSearchesForActor(db, actor, params.data.searchId, withIds);
+      if (dto === null) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      await reply.code(200).send(dto);
     },
   );
 }
