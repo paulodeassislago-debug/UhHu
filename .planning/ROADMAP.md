@@ -35,7 +35,7 @@
 
 Plans:
 - [x] 06-01: Suporte CORE — referenceSearchId + isNew + CORS (Wave 1) — done 2026-09-11 (a2f12d5, dbd02b5, b293c3c)
-- [ ] 06-02: Scaffold Expo + client tipado + navegação esqueleto (Wave 1)
+- [x] 06-02: Scaffold Expo + client tipado + navegação esqueleto (Wave 1) — done 2026-09-11 (bef85d9, aad160f)
 - [ ] 06-03: Auth web cookie + PAT nativo + convite + expiração (Wave 2, blocked on 06-02)
 - [ ] 06-04: Estados §11 + gates + prova beta com dados reais (Wave 3, blocked on 06-03)
 
@@ -93,7 +93,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 3. Buscas e adapters | v1.0 | 6/6 | Complete | 2026-09-11 |
 | 4. Corpus e exportação | v1.0 | 5/5 | Complete | 2026-09-11 |
 | 5. Prova headless | v1.0 | 5/5 | Complete | 2026-09-11 |
-| 6. Fundação do app + auth + suporte CORE | v1.1 | 0/TBD | Not started | - |
+| 6. Fundação do app + auth + suporte CORE | v1.1 | 2/4 | Executing | - |
 | 7. Projetos, buscas e execução | v1.1 | 0/TBD | Not started | - |
 | 8. Resultados e triagem | v1.1 | 0/TBD | Not started | - |
 | 9. Corpus, exportação e comparação | v1.1 | 0/TBD | Not started | - |

@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Lab UI v1
-status: "planning — defining requirements"
-stopped_at: 06-01 done, ready for 06-02
-last_updated: "2026-09-11T18:43:26Z"
-last_activity: "2026-09-11 — 06-01 done (referenceSearchId + isNew + CORS; UI-30/31/32; 3 task commits + SUMMARY)"
+status: "executing — phase 6"
+stopped_at: 06-02 done, ready for 06-03
+last_updated: "2026-09-11T19:04:52Z"
+last_activity: "2026-09-11 — 06-02 done (scaffold Expo SDK57 + client tipado; UI-01/UI-02; 2 task commits + SUMMARY)"
 progress:
   total_phases: 4
   completed_phases: 0
@@ -25,13 +25,13 @@ See: .planning/PROJECT.md (updated 2026-09-11)
 
 ## Current Position
 
-Phase: 6 of 9 (Executing — Wave 1/3: 06-01 done, 06-02 next sequential, no worktree isolation in this runtime)
-Plan: 06-02 of 4
+Phase: 6 of 9 (Executing — Wave 1/3 done: 06-01 + 06-02 done, 06-03 next sequential, no worktree isolation in this runtime)
+Plan: 06-03 of 4
 Status: Executing Phase 6
-Last activity: 2026-09-11 — 06-01 done (referenceSearchId + isNew + CORS, 3 commits, SUMMARY written)
-Resume file: .planning/phases/06-fundacao-app-auth-suporte-core/06-02-PLAN.md
+Last activity: 2026-09-11 — 06-02 done (scaffold Expo SDK57 + client tipado, 2 commits bef85d9+aad160f, SUMMARY written)
+Resume file: .planning/phases/06-fundacao-app-auth-suporte-core/06-03-PLAN.md
 
-Progress: [██░░░░░░░░] 1/4 plans complete (Phase 6 executing)
+Progress: [████░░░░░░] 2/4 plans complete (Phase 6 executing)
 
 ## Performance Metrics
 
@@ -79,6 +79,7 @@ Recent decisions affecting current work:
 - 05-04: MCP @uhhu/mcp headless (CORE-02/05 lado MCP): sdk 1.30.0 pinado exato (sem fallback, rede ok, zod v4 suportado); client mcpFetch (Bearer PAT via env+X-Request-Id+Idempotency-Key, raw byte-exato) + mcpWaitForJob 600s; 11 tools verbatim com inputSchema=.shape da rota + confirm:z.literal(true) nas 5 (pre-check confirm_required PT-BR sem E/S; SDK valida antes do handler no transporte); execute retorna run em qualquer desfecho; export={filename,contentType,sizeBytes,contentJson|contentText}; McpConfigError vira unauthenticated acionavel; withMcpEnv stripa *DATABASE* com restore; 2º usuário usa cookie admin p/ convite; mcp-tools 29/29 + mcp-headless 7/7; suite 170/170 PG real; auditoria 0 crit/0 high (traversal `..` e Bearer vazio corrigidos)
 - 05-05: prova headless 3 canais + gate Etapa 2 APPROVED 2026-09-11 (CORE-02/05 evidenciados): helper MCP stdio via imports relativos dist/esm + alias StdioTransport (pnpm isolado nao resolve bare specifier de scripts/); script prova-headless.sh 4 fases ALL PASS (REST cookie → CLI PAT env filtrado → MCP via helper → 7 negativas 401/404/confirm) com IDEMP por busca (prova-<data>-<search8>, mesma key+corpo distinto = 422 por D-58) e CSV data rows via awk NR-1 (attachment sem newline final); matriz IDOR 10/10 nas 8 superficies novas (tokens/export/corpus/compare/results/decision/run/job); auditoria adversarial 05-01–05-05 0 crit/0 high; Gitleaks historico 94 commits 0 leaks (tree so 2 achados em gitignored fora do repo); SAST 0 ERROR; pnpm audit 0 vulns; suite 180/180 (smoke 81 + integration 99) com sanidade 81/81 revalidada pos-approval
 - 06-01: suporte CORE §14+CORS (UI-30/31/32, a2f12d5+dbd02b5+b293c3c): reference_search_id uuid nullable SEM FK (ciclo projects↔lab_searches evitado; pertencimento application-level mesmo projectId+owner, 404 IDOR; null limpa) + migration 0005 aplicada no PG DEV; isNew on-read via anti-join D-35 (seenKeysForSearch, um Set/request, toResultDTO(row,isNew) obrigatório; teste PG real 2/2 + newCount consistente); CORS @fastify/cors 11.3.0 allowlist exata CORS_ALLOWED_ORIGINS fail-closed (curl válida ACAO+credentials / adulterada sem ACAO / preflight 204); ZodError do lib→400 em toHttpError + corsAllowedOrigins no barrel (Rule 2); gates literais com falso-positivo documentados (TODO em TODOS, references( em comentário, origin:true em comentário); suite 7/7 (projects 5 + isnew 2); eslint 10 arquivos exit 0; pnpm audit só 3 moderate pré-existentes (vitest); gitleaks/sast sem binário local — CI cobre
+- 06-02: scaffold Expo SDK57 + client tipado (UI-01/UI-02, bef85d9+aad160f): montagem manual (não template) com pins template 57 (react 19.2.3 + RN 0.86.3, não latest 19.3.0/0.87.1 que quebra rn-get-polyfills) + screens/safe-area/linking/constants do router; 7 rotas placeholder (Stack typedRoutes, export web 1.1MB ok, Expo Go tailnet sem EAS); apiFetch (cookie include + Bearer injetado, x-request-id, envelope PT-BR, raw export, unknown+narrowing) + auth/projects/lab via import type + Zod fronteira, zero any; exactOptional body spread + eslint-disable node em babel/metro + .expo gitignore (Rules 1/3); gate localStorage em comentário + grep -c insatisfatível documentados; eslint exit 0; audit só toolchain Expo (5 mod + 2 high sem patch); auditoria 0 crit/0 high
 
 ### Pending Todos
 
@@ -101,6 +102,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-11T18:43:26Z
-Stopped at: Phase 6 executing — 06-01 done, ready for 06-02
-Resume file: .planning/phases/06-fundacao-app-auth-suporte-core/06-02-PLAN.md (REQUIREMENTS.md UI-30/31/32 marked done)
+Last session: 2026-09-11T19:04:52Z
+Stopped at: Phase 6 executing — 06-02 done, ready for 06-03
+Resume file: .planning/phases/06-fundacao-app-auth-suporte-core/06-03-PLAN.md (REQUIREMENTS.md UI-01/UI-02 marked done)

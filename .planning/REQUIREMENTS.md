@@ -9,8 +9,8 @@ Requirements for this milestone. Each maps to roadmap phases 6–9.
 
 ### App shell e client do CORE
 
-- [ ] **UI-01**: User abre o app em `apps/lab` (Expo + TypeScript strict) na web e no tablet e navega entre as 7 telas do esqueleto sem erro de build
-- [ ] **UI-02**: App consome SOMENTE o CORE via client tipado derivado dos schemas compartilhados (`packages/contracts`), sem cópia local de tipos de domínio
+- [x] **UI-01**: User abre o app em `apps/lab` (Expo + TypeScript strict) na web e no tablet e navega entre as 7 telas do esqueleto sem erro de build — done 06-02 (export web ok + Expo Go tailnet, sem EAS)
+- [x] **UI-02**: App consome SOMENTE o CORE via client tipado derivado dos schemas compartilhados (`packages/contracts`), sem cópia local de tipos de domínio — done 06-02 (lado client; prova com dados reais em 06-04)
 - [ ] **UI-03**: User vê estados vazio / carregando (skeleton) / erro com ação / parcial em todas as telas, conforme §11 do esqueleto
 - [ ] **UI-04**: Gates verdes para o app: typecheck strict, lint, testes, `any` proibido, bundle web sem segredos (Gitleaks + SAST + `pnpm audit`)
 
@@ -103,8 +103,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| UI-01 | Phase 6 | Pending |
-| UI-02 | Phase 6 | Pending |
+| UI-01 | Phase 6 | Done (06-02) |
+| UI-02 | Phase 6 | Done (06-02, lado client) |
 | UI-03 | Phase 6 | Pending |
 | UI-04 | Phase 6 | Pending |
 | UI-05 | Phase 6 | Pending |
