@@ -187,6 +187,11 @@ export interface ResultDTO {
   title: string;
   authors: string[];
   year: number | null;
+  // UI-31 (§14-5, regra D-35): derivado on-read — true quando
+  // (source,sourceId) está ausente em TODOS os runs anteriores da mesma
+  // search (anti-join). NUNCA persistido (sem coluna): estado que envelhece.
+  // Consistência obrigatória: newCount === count(isNew===true) no run.
+  isNew: boolean;
   docType: DocType | null;
   institution: string | null;
   program: string | null;

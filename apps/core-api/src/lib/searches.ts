@@ -12,7 +12,7 @@
 // - results: `source|rank|id` base64url (D-36), ordenação
 //   `source ASC, rank ASC, id ASC`, default 20 max 100.
 
-import { and, asc, desc, eq, gt, lt, or } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, lt, ne, or } from 'drizzle-orm';
 import { z } from 'zod';
 import {
   decodeCursor,
@@ -279,7 +279,7 @@ export function toRunDTO(row: LabSearchRun): SearchRunDTO {
   };
 }
 
-export function toResultDTO(row: LabResult): ResultDTO {
+export function toResultDTO(row: LabResult, isNew: boolean): ResultDTO {
   const source = isExecutableSource(row.source) ? row.source : 'bdtd';
   return {
     id: row.id,
@@ -289,6 +289,8 @@ export function toResultDTO(row: LabResult): ResultDTO {
     title: row.title,
     authors: parseAuthors(row.authors),
     year: parseNullableYear(row.year),
+    // UI-31 (§14-5, D-35): isNew derivado on-read, nunca persistido.
+    isNew,
     docType: parseDocType(row.docType),
     institution: parseNullableString(row.institution),
     program: parseNullableString(row.program),
@@ -552,6 +554,31 @@ export interface ListResultsResult {
   total: number;
 }
 
+// UI-31 (§14-5, D-35 canônica de searchRuns.ts): "novos" = (source,sourceId)
+// ausentes em TODOS os runs anteriores da mesma search (anti-join). Um Set
+// por request, sem N+1; mesma semântica do newCount para que
+// newCount === count(isNew===true).
+async function seenKeysForSearch(
+  db: Db,
+  searchId: string,
+  excludeRunId: string,
+): Promise<Set<string>> {
+  const priorRows = await db
+    .select({ source: labResults.source, sourceId: labResults.sourceId })
+    .from(labResults)
+    .innerJoin(labSearchRuns, eq(labResults.runId, labSearchRuns.id))
+    .where(and(eq(labSearchRuns.searchId, searchId), ne(labSearchRuns.id, excludeRunId)));
+  return new Set(priorRows.map((row) => `${row.source}|${row.sourceId}`));
+}
+
+function resultIsNew(
+  seen: Set<string>,
+  source: string,
+  sourceId: string,
+): boolean {
+  return !seen.has(`${source}|${sourceId}`);
+}
+
 export async function listResultsForActor(
   db: Db,
   actor: ActorContext,
@@ -604,8 +631,15 @@ export async function listResultsForActor(
     .innerJoin(labSearches, eq(labSearchRuns.searchId, labSearches.id))
     .innerJoin(projects, eq(labSearches.projectId, projects.id))
     .where(and(eq(labResults.runId, runId), eq(projects.ownerId, actor.userId)));
+  // UI-31: deriva isNew on-read via anti-join D-35 (sem coluna nova).
+  const seen = await seenKeysForSearch(db, run.searchId, runId);
   return {
-    items: pageRows.map((entry) => toResultDTO(entry.result)),
+    items: pageRows.map((entry) =>
+      toResultDTO(
+        entry.result,
+        resultIsNew(seen, entry.result.source, entry.result.sourceId),
+      ),
+    ),
     page: { limit, nextCursor, hasMore },
     total: totalRows.length,
   };
@@ -620,7 +654,7 @@ export async function getResultForActor(
     return null;
   }
   const rows = await db
-    .select({ result: labResults })
+    .select({ result: labResults, searchId: labSearches.id, runId: labSearchRuns.id })
     .from(labResults)
     .innerJoin(labSearchRuns, eq(labResults.runId, labSearchRuns.id))
     .innerJoin(labSearches, eq(labSearchRuns.searchId, labSearches.id))
@@ -631,5 +665,7 @@ export async function getResultForActor(
   if (row === undefined) {
     return null;
   }
-  return toResultDTO(row.result);
+  // UI-31: mesmo anti-join D-35 do list (busca o run pai para achar searchId).
+  const seen = await seenKeysForSearch(db, row.searchId, row.runId);
+  return toResultDTO(row.result, resultIsNew(seen, row.result.source, row.result.sourceId));
 }
