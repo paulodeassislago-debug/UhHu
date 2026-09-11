@@ -59,9 +59,9 @@ Requirements for this milestone. Each maps to roadmap phases 6–9.
 
 ### Suporte no CORE (§14 + auth + CORS)
 
-- [ ] **UI-30**: `referenceSearchId` nullable no Project via migration versionada (leitura/escrita isolada por owner, GET expõe, PATCH persiste a escolha da comparação)
-- [ ] **UI-31**: GET results expõe `isNew` derivado on-read (ausente em TODOS os runs anteriores da busca, regra D-35), sem coluna nova
-- [ ] **UI-32**: Web beta carrega dados via CORS da API a partir da origem beta aprovada (sem enfraquecer auth; PAT/CORS testados via `curl`)
+- [x] **UI-30**: `referenceSearchId` nullable no Project via migration versionada (leitura/escrita isolada por owner, GET expõe, PATCH persiste a escolha da comparação) — done 06-01
+- [x] **UI-31**: GET results expõe `isNew` derivado on-read (ausente em TODOS os runs anteriores da busca, regra D-35), sem coluna nova — done 06-01
+- [x] **UI-32**: Web beta carrega dados via CORS da API a partir da origem beta aprovada (sem enfraquecer auth; PAT/CORS testados via `curl`) — done 06-01 (lado servidor; prova beta com dados reais em 06-04)
 
 ## v1.2 Requirements
 
@@ -111,9 +111,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | UI-06 | Phase 6 | Pending |
 | UI-07 | Phase 6 | Pending |
 | UI-08 | Phase 6 | Pending |
-| UI-30 | Phase 6 | Pending |
-| UI-31 | Phase 6 | Pending |
-| UI-32 | Phase 6 | Pending |
+| UI-30 | Phase 6 | Done (06-01) |
+| UI-31 | Phase 6 | Done (06-01) |
+| UI-32 | Phase 6 | Done (06-01, lado servidor) |
 | UI-09 | Phase 7 | Pending |
 | UI-10 | Phase 7 | Pending |
 | UI-11 | Phase 7 | Pending |

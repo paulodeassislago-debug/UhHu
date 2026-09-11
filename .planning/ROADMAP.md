@@ -34,7 +34,7 @@
 **Plans**: 4 plans in 3 waves
 
 Plans:
-- [ ] 06-01: Suporte CORE — referenceSearchId + isNew + CORS (Wave 1)
+- [x] 06-01: Suporte CORE — referenceSearchId + isNew + CORS (Wave 1) — done 2026-09-11 (a2f12d5, dbd02b5, b293c3c)
 - [ ] 06-02: Scaffold Expo + client tipado + navegação esqueleto (Wave 1)
 - [ ] 06-03: Auth web cookie + PAT nativo + convite + expiração (Wave 2, blocked on 06-02)
 - [ ] 06-04: Estados §11 + gates + prova beta com dados reais (Wave 3, blocked on 06-03)
