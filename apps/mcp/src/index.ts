@@ -11,7 +11,7 @@
 // o transporte usado é o stdio oficial do SDK.
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport as StdioTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { McpToolError } from './mcp-client.js';
+import { McpConfigError, McpToolError } from './mcp-client.js';
 import { TOOL_DEFINITIONS, callTool } from './tools.js';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -21,6 +21,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function toErrorPayload(err: unknown): { code: string; message: string; requestId: string } {
   if (err instanceof McpToolError) {
     return { code: err.code, message: err.message, requestId: err.requestId };
+  }
+  // Erro de configuração local (ex.: UHHU_TOKEN ausente): mensagem segura e
+  // acionável — carrega só o nome da variável, nunca o segredo.
+  if (err instanceof McpConfigError) {
+    return { code: 'unauthenticated', message: err.message, requestId: '' };
   }
   if (err instanceof Error) {
     return { code: 'INTERNAL_ERROR', message: 'Erro interno. Tente novamente.', requestId: '' };
