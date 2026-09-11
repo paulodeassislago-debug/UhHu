@@ -11,19 +11,23 @@
 // existente por chave exata (mantem status+pin+decisao), (3) fuzzy novo →
 // pending. Sem HTTP/envelope na lib — so DTOs e null.
 
-import { and, asc, desc, eq, inArray } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, lt, or } from 'drizzle-orm';
 import { z } from 'zod';
-import type { DedupGroupDTO, ExecutableSource } from '@uhhu/contracts';
+import type { CorpusEntryDTO, DedupGroupDTO, ExecutableSource, PageInfo } from '@uhhu/contracts';
+import { decodeCursor, encodeCursor } from '@uhhu/contracts';
 import type { ActorContext } from '@uhhu/core';
 import {
   labCanonicalPins,
   labDedupGroups,
   labDedupMembers,
+  labDivergences,
   labGroupDecisions,
+  labGroupTags,
   labRejectedPairs,
   labResults,
   labSearches,
   labSearchRuns,
+  labTags,
   projects,
   type Db,
   type LabDedupGroup,
@@ -591,4 +595,321 @@ export async function clearPinForActor(
     return null;
   }
   return toGroupDTO(bundle);
+}
+
+// ---------------------------------------------------------------------------
+// Decisao/tags/divergencia/corpus view (D-46, LAB-08/09).
+// ---------------------------------------------------------------------------
+
+export const DEFAULT_TAGS = ['incluir', 'excluir', 'duplicado', 'indisponível', 'revisar'] as const;
+
+export interface ProjectTag {
+  id: string;
+  name: string;
+  color: string | null;
+}
+
+export async function ensureDefaultTags(
+  db: Db,
+  actor: ActorContext,
+  projectId: string,
+): Promise<ProjectTag[] | null> {
+  if (!uuidSchema.safeParse(projectId).success) {
+    return null;
+  }
+  const project = await getProjectForActor(db, actor, projectId);
+  if (project === null) {
+    return null;
+  }
+  for (const name of DEFAULT_TAGS) {
+    await db
+      .insert(labTags)
+      .values({ projectId, name, color: null })
+      .onConflictDoNothing();
+  }
+  const rows = await db.select().from(labTags).where(eq(labTags.projectId, projectId));
+  return rows.map((t) => ({ id: t.id, name: t.name, color: t.color }));
+}
+
+export async function listTagsForActor(
+  db: Db,
+  actor: ActorContext,
+  projectId: string,
+): Promise<ProjectTag[] | null> {
+  if (!uuidSchema.safeParse(projectId).success) {
+    return null;
+  }
+  const project = await getProjectForActor(db, actor, projectId);
+  if (project === null) {
+    return null;
+  }
+  const rows = await db.select().from(labTags).where(eq(labTags.projectId, projectId));
+  return rows.map((t) => ({ id: t.id, name: t.name, color: t.color }));
+}
+
+export async function createTagForActor(
+  db: Db,
+  actor: ActorContext,
+  projectId: string,
+  input: { name: string; color?: string | null },
+): Promise<ProjectTag | null> {
+  if (!uuidSchema.safeParse(projectId).success) {
+    return null;
+  }
+  const project = await getProjectForActor(db, actor, projectId);
+  if (project === null) {
+    return null;
+  }
+  await db
+    .insert(labTags)
+    .values({ projectId, name: input.name, color: input.color ?? null })
+    .onConflictDoNothing();
+  const rows = await db
+    .select()
+    .from(labTags)
+    .where(and(eq(labTags.projectId, projectId), eq(labTags.name, input.name)))
+    .limit(1);
+  const row = rows[0];
+  if (row === undefined) {
+    return null;
+  }
+  return { id: row.id, name: row.name, color: row.color };
+}
+
+export async function attachTagForActor(
+  db: Db,
+  actor: ActorContext,
+  groupId: string,
+  tagId: string,
+): Promise<DedupGroupDTO | null> {
+  if (!uuidSchema.safeParse(tagId).success) {
+    return null;
+  }
+  const group = await scopedGroup(db, actor, groupId);
+  if (group === null) {
+    return null;
+  }
+  const tagRows = await db
+    .select({ tag: labTags })
+    .from(labTags)
+    .innerJoin(projects, eq(labTags.projectId, projects.id))
+    .where(
+      and(
+        eq(labTags.id, tagId),
+        eq(labTags.projectId, group.projectId),
+        eq(projects.ownerId, actor.userId),
+      ),
+    )
+    .limit(1);
+  if (tagRows[0] === undefined) {
+    return null;
+  }
+  await db.insert(labGroupTags).values({ groupId, tagId }).onConflictDoNothing();
+  const bundles = await loadGroupBundles(db, group.projectId, [groupId]);
+  const bundle = bundles[0];
+  if (bundle === undefined) {
+    return null;
+  }
+  return toGroupDTO(bundle);
+}
+
+export async function detachTagForActor(
+  db: Db,
+  actor: ActorContext,
+  groupId: string,
+  tagId: string,
+): Promise<boolean> {
+  if (!uuidSchema.safeParse(tagId).success) {
+    return false;
+  }
+  const group = await scopedGroup(db, actor, groupId);
+  if (group === null) {
+    return false;
+  }
+  await db
+    .delete(labGroupTags)
+    .where(and(eq(labGroupTags.groupId, groupId), eq(labGroupTags.tagId, tagId)));
+  return true;
+}
+
+export async function setGroupDecisionForActor(
+  db: Db,
+  actor: ActorContext,
+  groupId: string,
+  input: { decision: 'eligible' | 'ineligible' | 'undecided'; reason?: string },
+): Promise<DedupGroupDTO | null> {
+  const group = await scopedGroup(db, actor, groupId);
+  if (group === null) {
+    return null;
+  }
+  const reason = input.reason === undefined ? null : input.reason.trim();
+  await db
+    .insert(labGroupDecisions)
+    .values({ groupId, decision: input.decision, reason })
+    .onConflictDoUpdate({
+      target: labGroupDecisions.groupId,
+      set: { decision: input.decision, reason },
+    });
+  const bundles = await loadGroupBundles(db, group.projectId, [groupId]);
+  const bundle = bundles[0];
+  if (bundle === undefined) {
+    return null;
+  }
+  return toGroupDTO(bundle);
+}
+
+export async function setDivergenceForActor(
+  db: Db,
+  actor: ActorContext,
+  groupId: string,
+  input: { source: 'bdtd' | 'capes'; note: string },
+): Promise<DedupGroupDTO | null> {
+  const group = await scopedGroup(db, actor, groupId);
+  if (group === null) {
+    return null;
+  }
+  const clean = input.note.replace(/<[^>]*>/g, '').trim();
+  await db
+    .insert(labDivergences)
+    .values({ groupId, source: input.source, note: clean })
+    .onConflictDoUpdate({
+      target: [labDivergences.groupId, labDivergences.source],
+      set: { note: clean },
+    });
+  const bundles = await loadGroupBundles(db, group.projectId, [groupId]);
+  const bundle = bundles[0];
+  if (bundle === undefined) {
+    return null;
+  }
+  return toGroupDTO(bundle);
+}
+
+// Predicado UNICO de elegibilidade (Pitfall 5): corpus + export-scope-corpus
+// usam esta funcao — nunca WHEREs divergentes.
+export function isCorpusEligible(g: { status: string; decision: string }): boolean {
+  return g.status === 'confirmed' && g.decision === 'eligible';
+}
+
+function parseDocType(value: unknown): 'masterThesis' | 'doctoralThesis' | null {
+  if (value === 'masterThesis' || value === 'doctoralThesis') {
+    return value;
+  }
+  return null;
+}
+
+export interface CorpusListOptions {
+  limit?: number | undefined;
+  cursor?: string | undefined;
+}
+
+export interface CorpusListResult {
+  items: CorpusEntryDTO[];
+  page: PageInfo;
+}
+
+export function toCorpusEntryDTO(
+  bundle: GroupBundle,
+  tagNames: string[],
+): CorpusEntryDTO | null {
+  const canonicalId = resolveCanonicalResult(bundle.members, bundle.pin);
+  const canonical = bundle.memberRows.find((r) => r.id === canonicalId);
+  if (canonical === undefined) {
+    return null;
+  }
+  const origins = [...new Set(bundle.members.map((m) => m.source).filter(isExecutableSource))].sort();
+  return {
+    groupId: bundle.group.id,
+    canonicalKey: bundle.group.canonicalKey,
+    title: canonical.title,
+    authors: parseAuthors(canonical.authors),
+    year: parseNullableYear(canonical.year),
+    docType: parseDocType(canonical.docType),
+    institution: parseNullableString(canonical.institution),
+    program: parseNullableString(canonical.program),
+    abstract: parseNullableString(canonical.abstract),
+    originUrl: parseNullableString(canonical.originUrl),
+    sourceUrl: parseNullableString(canonical.sourceUrl),
+    decision: bundle.decision,
+    tags: tagNames,
+    originCount: origins.length,
+    origins,
+    memberIds: bundle.memberIds,
+  };
+}
+
+export async function getCorpusForActor(
+  db: Db,
+  actor: ActorContext,
+  projectId: string,
+  opts: CorpusListOptions,
+): Promise<CorpusListResult> {
+  const limit = clampLimit(opts.limit);
+  const empty: CorpusListResult = { items: [], page: { limit, nextCursor: null, hasMore: false } };
+  if (!uuidSchema.safeParse(projectId).success) {
+    return empty;
+  }
+  const project = await getProjectForActor(db, actor, projectId);
+  if (project === null) {
+    return empty;
+  }
+  const bundles = await loadGroupBundles(db, projectId);
+  const eligible = bundles.filter((b) =>
+    isCorpusEligible({ status: b.group.status, decision: b.decision }),
+  );
+  const groupIds = eligible.map((b) => b.group.id);
+  const tagLinks =
+    groupIds.length === 0
+      ? []
+      : await db.select().from(labGroupTags).where(inArray(labGroupTags.groupId, groupIds));
+  const tagIds = [...new Set(tagLinks.map((l) => l.tagId))];
+  const tagRows =
+    tagIds.length === 0
+      ? []
+      : await db.select().from(labTags).where(inArray(labTags.id, tagIds));
+  const tagNameById = new Map(tagRows.map((t) => [t.id, t.name] as const));
+  const entries: Array<{ entry: CorpusEntryDTO; createdAt: Date; id: string }> = [];
+  for (const b of eligible) {
+    const names = tagLinks
+      .filter((l) => l.groupId === b.group.id)
+      .map((l) => tagNameById.get(l.tagId))
+      .filter((n): n is string => typeof n === 'string')
+      .sort();
+    const entry = toCorpusEntryDTO(b, names);
+    if (entry !== null) {
+      entries.push({ entry, createdAt: b.group.createdAt, id: b.group.id });
+    }
+  }
+  entries.sort((a, b2) =>
+    a.createdAt.getTime() !== b2.createdAt.getTime()
+      ? b2.createdAt.getTime() - a.createdAt.getTime()
+      : b2.id.localeCompare(a.id),
+  );
+  let start = 0;
+  if (opts.cursor !== undefined && opts.cursor.length > 0) {
+    const decoded = decodeCursor(opts.cursor);
+    if (decoded !== null && uuidSchema.safeParse(decoded.id).success) {
+      const cursorDate = new Date(decoded.createdAt);
+      if (!Number.isNaN(cursorDate.getTime())) {
+        const idx = entries.findIndex(
+          (e) =>
+            e.createdAt.getTime() < cursorDate.getTime() ||
+            (e.createdAt.getTime() === cursorDate.getTime() && e.id < decoded.id),
+        );
+        start = idx < 0 ? entries.length : idx;
+      }
+    }
+  }
+  const slice = entries.slice(start, start + limit + 1);
+  const hasMore = slice.length > limit;
+  const pageRows = hasMore ? slice.slice(0, limit) : slice;
+  const last = pageRows[pageRows.length - 1];
+  return {
+    items: pageRows.map((r) => r.entry),
+    page: {
+      limit,
+      nextCursor:
+        hasMore && last !== undefined ? encodeCursor(last.createdAt.toISOString(), last.id) : null,
+      hasMore,
+    },
+  };
 }
