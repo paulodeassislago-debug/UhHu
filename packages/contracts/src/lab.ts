@@ -29,7 +29,7 @@ export const searchTermSchema = z
   .trim()
   .min(1, 'Termo de busca é obrigatório.')
   .max(500, 'Termo deve ter no máximo 500 caracteres.')
-  .refine((value) => ((value.match(/"/g) ?? []).length % 2 === 0), {
+  .refine((value) => (value.match(/"/g) ?? []).length % 2 === 0, {
     message: 'Termo com aspas desbalanceadas.',
   });
 
@@ -185,6 +185,9 @@ export interface ResultDTO {
   abstract: string | null;
   originUrl: string | null;
   sourceUrl: string | null;
+  // Proveniência D-34 (03-05): metadados integrais da fonte, já higienizados
+  // pelos adapters (sem cookies/segredos — ver T-03-01-02/T-03-03-02).
+  rawMetadata: Record<string, unknown>;
   retrievedAt: string;
 }
 

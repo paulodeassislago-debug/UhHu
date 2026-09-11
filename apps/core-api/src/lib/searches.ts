@@ -138,7 +138,12 @@ function parseRunMetrics(value: unknown): RunMetrics {
   }
   const parseOne = (
     entry: Record<string, unknown>,
-  ): { status: 'ok' | 'failed' | 'skipped'; total: number; returned: number; durationMs: number } | null => {
+  ): {
+    status: 'ok' | 'failed' | 'skipped';
+    total: number;
+    returned: number;
+    durationMs: number;
+  } | null => {
     const status = entry['status'];
     const total = entry['total'];
     const returned = entry['returned'];
@@ -229,6 +234,13 @@ function parseNullableYear(value: unknown): number | null {
   return null;
 }
 
+const rawMetadataSchema = z.record(z.string(), z.unknown());
+
+function parseRawMetadata(value: unknown): Record<string, unknown> {
+  const parsed = rawMetadataSchema.safeParse(value);
+  return parsed.success ? parsed.data : {};
+}
+
 export function toSearchDTO(row: LabSearch): SearchDTO {
   return {
     id: row.id,
@@ -283,6 +295,7 @@ export function toResultDTO(row: LabResult): ResultDTO {
     abstract: parseNullableString(row.abstract),
     originUrl: parseNullableString(row.originUrl),
     sourceUrl: parseNullableString(row.sourceUrl),
+    rawMetadata: parseRawMetadata(row.rawMetadata),
     retrievedAt: row.retrievedAt.toISOString(),
   };
 }
@@ -372,11 +385,7 @@ export async function listSearchesForActor(
     .from(labSearches)
     .innerJoin(projects, eq(labSearches.projectId, projects.id))
     .where(
-      and(
-        eq(labSearches.projectId, projectId),
-        eq(projects.ownerId, actor.userId),
-        cursorFilter,
-      ),
+      and(eq(labSearches.projectId, projectId), eq(projects.ownerId, actor.userId), cursorFilter),
     )
     .orderBy(desc(labSearches.createdAt), desc(labSearches.id))
     .limit(limit + 1);
@@ -426,11 +435,7 @@ export async function updateSearchForActor(
   if (input.sources !== undefined) {
     set.sources = input.sources;
   }
-  const updated = await db
-    .update(labSearches)
-    .set(set)
-    .where(eq(labSearches.id, id))
-    .returning();
+  const updated = await db.update(labSearches).set(set).where(eq(labSearches.id, id)).returning();
   const row = updated[0];
   if (row === undefined) {
     return null;
@@ -519,11 +524,7 @@ export async function listRunsForActor(
     .innerJoin(labSearches, eq(labSearchRuns.searchId, labSearches.id))
     .innerJoin(projects, eq(labSearches.projectId, projects.id))
     .where(
-      and(
-        eq(labSearchRuns.searchId, searchId),
-        eq(projects.ownerId, actor.userId),
-        cursorFilter,
-      ),
+      and(eq(labSearchRuns.searchId, searchId), eq(projects.ownerId, actor.userId), cursorFilter),
     )
     .orderBy(desc(labSearchRuns.executedAt), desc(labSearchRuns.id))
     .limit(limit + 1);
@@ -586,9 +587,7 @@ export async function listResultsForActor(
     .innerJoin(labSearchRuns, eq(labResults.runId, labSearchRuns.id))
     .innerJoin(labSearches, eq(labSearchRuns.searchId, labSearches.id))
     .innerJoin(projects, eq(labSearches.projectId, projects.id))
-    .where(
-      and(eq(labResults.runId, runId), eq(projects.ownerId, actor.userId), cursorFilter),
-    )
+    .where(and(eq(labResults.runId, runId), eq(projects.ownerId, actor.userId), cursorFilter))
     .orderBy(asc(labResults.source), asc(labResults.rank), asc(labResults.id))
     .limit(limit + 1);
   const hasMore = rows.length > limit;
