@@ -1,0 +1,15 @@
+{
+  "name": "@uhhu/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "uhhu": "./bin/uhhu.mjs"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@uhhu/contracts": "workspace:*",
+    "tsx": "^4.23.13"
+  }
+}
