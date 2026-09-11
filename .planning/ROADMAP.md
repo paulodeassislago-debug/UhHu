@@ -37,7 +37,7 @@ Plans:
 - [x] 06-01: Suporte CORE — referenceSearchId + isNew + CORS (Wave 1) — done 2026-09-11 (a2f12d5, dbd02b5, b293c3c)
 - [x] 06-02: Scaffold Expo + client tipado + navegação esqueleto (Wave 1) — done 2026-09-11 (bef85d9, aad160f)
 - [x] 06-03: Auth web cookie + PAT nativo + convite + expiração (Wave 2, blocked on 06-02) — done 2026-09-11 (83527eb, d60f213)
-- [ ] 06-04: Estados §11 + gates + prova beta com dados reais (Wave 3, blocked on 06-03)
+- [x] 06-04: Estados §11 + gates + prova beta com dados reais (Wave 3, blocked on 06-03) — done 2026-09-11 (37ef874, 768135c)
 
 Cross-cutting constraints: CORS allowlist exata sem espelho (06-01, 06-04); `any` proibido + `import type` de contracts (todos); ownerId sempre do ator no servidor (06-01, 06-03).
 

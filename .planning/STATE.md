@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Lab UI v1
-status: "executing — phase 6"
-stopped_at: 06-03 done, ready for 06-04
-last_updated: "2026-09-11T19:18:41Z"
-last_activity: "2026-09-11 — 06-03 done (auth web cookie + PAT nativo + convite + expiração; UI-05/UI-06/UI-07/UI-08; 2 task commits + SUMMARY)"
+status: "executing — phase 6 complete, ready for phase 7"
+stopped_at: 06-04 done, phase 6 complete (4/4), ready for phase 7 planning
+last_updated: "2026-09-11T19:27:33Z"
+last_activity: "2026-09-11 — 06-04 done (estados §11 + gates app + prova beta; UI-03/UI-04; 2 task commits + SUMMARY)"
 progress:
   total_phases: 4
   completed_phases: 0
@@ -25,13 +25,13 @@ See: .planning/PROJECT.md (updated 2026-09-11)
 
 ## Current Position
 
-Phase: 6 of 9 (Executing — Wave 2/3 done: 06-01 + 06-02 + 06-03 done, 06-04 next sequential, no worktree isolation in this runtime)
+Phase: 6 of 9 (Phase 6 COMPLETE 4/4: 06-01 + 06-02 + 06-03 + 06-04 done sequential, no worktree isolation in this runtime)
 Plan: 06-04 of 4
-Status: Executing Phase 6
-Last activity: 2026-09-11 — 06-03 done (auth web+PAT, 2 commits 83527eb+d60f213, SUMMARY written)
-Resume file: .planning/phases/06-fundacao-app-auth-suporte-core/06-04-PLAN.md
+Status: Phase 6 complete — ready for Phase 7 planning
+Last activity: 2026-09-11 — 06-04 done (estados §11, 2 commits 37ef874+768135c, SUMMARY written)
+Resume file: .planning/phases/07-projetos-buscas-execucao/07-CONTEXT.md (next: /gsd-plan-phase 7)
 
-Progress: [█████░░░░░] 3/4 plans complete (Phase 6 executing)
+Progress: [██████░░░░] 4/4 plans complete (Phase 6 complete)
 
 ## Performance Metrics
 
@@ -81,6 +81,7 @@ Recent decisions affecting current work:
 - 06-01: suporte CORE §14+CORS (UI-30/31/32, a2f12d5+dbd02b5+b293c3c): reference_search_id uuid nullable SEM FK (ciclo projects↔lab_searches evitado; pertencimento application-level mesmo projectId+owner, 404 IDOR; null limpa) + migration 0005 aplicada no PG DEV; isNew on-read via anti-join D-35 (seenKeysForSearch, um Set/request, toResultDTO(row,isNew) obrigatório; teste PG real 2/2 + newCount consistente); CORS @fastify/cors 11.3.0 allowlist exata CORS_ALLOWED_ORIGINS fail-closed (curl válida ACAO+credentials / adulterada sem ACAO / preflight 204); ZodError do lib→400 em toHttpError + corsAllowedOrigins no barrel (Rule 2); gates literais com falso-positivo documentados (TODO em TODOS, references( em comentário, origin:true em comentário); suite 7/7 (projects 5 + isnew 2); eslint 10 arquivos exit 0; pnpm audit só 3 moderate pré-existentes (vitest); gitleaks/sast sem binário local — CI cobre
 - 06-02: scaffold Expo SDK57 + client tipado (UI-01/UI-02, bef85d9+aad160f): montagem manual (não template) com pins template 57 (react 19.2.3 + RN 0.86.3, não latest 19.3.0/0.87.1 que quebra rn-get-polyfills) + screens/safe-area/linking/constants do router; 7 rotas placeholder (Stack typedRoutes, export web 1.1MB ok, Expo Go tailnet sem EAS); apiFetch (cookie include + Bearer injetado, x-request-id, envelope PT-BR, raw export, unknown+narrowing) + auth/projects/lab via import type + Zod fronteira, zero any; exactOptional body spread + eslint-disable node em babel/metro + .expo gitignore (Rules 1/3); gate localStorage em comentário + grep -c insatisfatível documentados; eslint exit 0; audit só toolchain Expo (5 mod + 2 high sem patch); auditoria 0 crit/0 high
 - 06-03: auth web cookie + PAT nativo + convite + expiração (UI-05/UI-06/UI-07/UI-08, 83527eb+d60f213): AuthProvider memória (zero storage privilégio) com getToken por plataforma + isSafeNext; login MESMA tela Platform branch (web authApi.login cookie, nativo nativeLogin issuePat+SecureStore+refresh); register convite com prefill ?token= e erro verbatim; projects lista real com vazio/skeleton/retry + 401 expired; _layout gate UX com expired+next preservando /project/<id>; Metro resolve .js NodeNext dos contracts + imports extensionless no lab (Rules 3, export web 1.7MB); tsc+eslint verdes; pat-auth 15/15 + auth 6/6 PG real; auditoria 0 crit/0 high
+- 06-04: estados §11 + gates app + prova beta (UI-03/UI-04, 37ef874+768135c): Empty/CardSkeleton/ErrorBanner/PartialBanner verbatim (Partial ok→null, sem fingir dado); login/projetos/projeto migrados (projeto busca listById real; 401→expired+next); vitest 7/7 sem rede (Response real + SecureStore mock Map); typecheck+lint exit 0, any 0; export web 1.7MB + dist grep 0; Gitleaks histórico 126 commits 0 + lab 0 (tree só 2 pré-existentes fora de escopo); audit só toolchain Expo; beta porta 3009 me 200+ACAO/projects real/401 PT-BR/adulterada sem ACAO/preflight 204; auditoria 0 crit/0 high
 
 ### Pending Todos
 
@@ -103,6 +104,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-11T19:18:41Z
-Stopped at: Phase 6 executing — 06-03 done, ready for 06-04
-Resume file: .planning/phases/06-fundacao-app-auth-suporte-core/06-04-PLAN.md (REQUIREMENTS.md UI-05/UI-06/UI-07/UI-08 marked done)
+Last session: 2026-09-11T19:27:33Z
+Stopped at: Phase 6 COMPLETE — 06-04 done, ready for Phase 7 planning
+Resume file: .planning/phases/07-projetos-buscas-execucao/07-CONTEXT.md (REQUIREMENTS.md UI-01/UI-02/UI-03/UI-04/UI-05/UI-06/UI-07/UI-08/UI-30/UI-31/UI-32 all done)
