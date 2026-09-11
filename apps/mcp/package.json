@@ -1,0 +1,15 @@
+{
+  "name": "@uhhu/mcp",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "start": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.30.0",
+    "@uhhu/contracts": "workspace:*",
+    "tsx": "^4.23.13",
+    "zod": "^4.5.4"
+  }
+}
