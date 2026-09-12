@@ -51,10 +51,13 @@ Cross-cutting constraints: CORS allowlist exata sem espelho (06-01, 06-04); `any
   2. User salva estratégia (só salvar ou salvar-e-executar) com selo de filtro garantido pelo Core e status das fontes
   3. User executa busca, acompanha progresso por fonte (cancelável) e entende banners ok/parcial/falha/cancelled
   4. User exclui busca somente após diálogo listando a cascata; histórico de runs consultável
-**Plans**: TBD
+**Plans**: 4 plans in 3 waves
 
 Plans:
-- [ ] 07-01: TBD during `/gsd-plan-phase 7`
+- [ ] 07-01-PLAN.md — Projetos: modal criar + lista gerenciável + cabeçalho editável com abas (Wave 1)
+- [ ] 07-02-PLAN.md — Estratégias: cards + formulário §6 salvar/salvar-e-executar (Wave 1)
+- [ ] 07-03-PLAN.md — Execução: polling por fonte + cancelar + banners (Wave 2, blocked on 07-02)
+- [ ] 07-04-PLAN.md — Cascata de exclusão + histórico expansível no card (Wave 3, blocked on 07-02, 07-03)
 
 #### Phase 8: Resultados e triagem
 **Goal**: Pesquisador tria resultados item a item com decisão mutável, tags e transparência de dedup
@@ -95,6 +98,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 4. Corpus e exportação | v1.0 | 5/5 | Complete | 2026-09-11 |
 | 5. Prova headless | v1.0 | 5/5 | Complete | 2026-09-11 |
 | 6. Fundação do app + auth + suporte CORE | v1.1 | 5/5 | Complete | 2026-09-11 |
-| 7. Projetos, buscas e execução | v1.1 | 0/TBD | Not started | - |
+| 7. Projetos, buscas e execução | v1.1 | 0/4 | Not started | - |
 | 8. Resultados e triagem | v1.1 | 0/TBD | Not started | - |
 | 9. Corpus, exportação e comparação | v1.1 | 0/TBD | Not started | - |
