@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Lab UI v1
-status: "executing — phase 7 complete (07-04 done, 4/4 plans)"
-stopped_at: Phase 7 plan 07-04 complete
-last_updated: "2026-09-12T00:41:45Z"
-last_activity: "2026-09-12 — Phase 7 plan 07-04 executed (RunHistory + DeleteSearchDialog + card final; 89841a3, 4e114b1)"
+status: "executing — phase 7 complete + gap 07-05 done (5/5 plans)"
+stopped_at: Phase 7 plan 07-05 complete
+last_updated: "2026-09-12T12:47:00Z"
+last_activity: "2026-09-12 — Phase 7 gap plan 07-05 executed (wrapper UUID cross-platform + 3 toques migrados + tripwire; d84025d, eb6b2c2)"
 progress:
   total_phases: 4
   completed_phases: 0
@@ -25,13 +25,13 @@ See: .planning/PROJECT.md (updated 2026-09-11)
 
 ## Current Position
 
-Phase: 7 of 9 (Phase 7 COMPLETE 4/4 — next phase 8 planning)
-Plan: 07-04 of 4
-Status: Phase 7 complete
-Last activity: 2026-09-12 — Phase 7 plan 07-04 complete (sequential executor on main tree)
-Resume file: .planning/phases/08-resultados-triagem/08-CONTEXT.md (phase 8 planning; 07-04 SUMMARY em .planning/phases/07-projetos-buscas-execucao/07-04-SUMMARY.md)
+Phase: 7 of 9 (Phase 7 COMPLETE 4/4 + gap 07-05 done — next phase 8 planning)
+Plan: 07-05 of 5 (gap-closure UAT)
+Status: Phase 7 complete + UAT blocker do caminho Executar fechado no código
+Last activity: 2026-09-12 — Phase 7 gap plan 07-05 complete (sequential executor on main tree)
+Resume file: .planning/phases/08-resultados-triagem/08-CONTEXT.md (phase 8 planning; 07-05 SUMMARY em .planning/phases/07-projetos-buscas-execucao/07-05-SUMMARY.md)
 
-Progress: [████████████████] 4/4 plans complete (Phase 7 COMPLETE)
+Progress: [████████████████] 5/5 plans complete (Phase 7 COMPLETE + gap 07-05)
 
 Progress: [██████░░░░] 5/5 plans phase 6 + UAT approved (milestone v1.1 phase 6/9 done)
 
@@ -50,7 +50,7 @@ Progress: [██████░░░░] 5/5 plans phase 6 + UAT approved (mil
 | 1. Fundação executável | 2 | ~19min | ~10min |
 | 3. Buscas e adapters | 6 | ~74min+40min | ~19min |
 | 4. Corpus e exportação | 5 | ~150min (executor + checkpoint/fixes) | ~30min |
-| 7. Projetos, buscas e execução | 4 (07-01, 07-02, 07-03, 07-04) | ~18min | ~5min |
+| 7. Projetos, buscas e execução | 5 (07-01, 07-02, 07-03, 07-04, gap 07-05) | ~38min | ~8min |
 
 **Recent Trend:**
 
@@ -90,6 +90,7 @@ Recent decisions affecting current work:
 - 07-02: estratégias na UI (UI-12/UI-13, df7c5e1+76bdd54): searchTerm (linhas AND/OR/NOT → termo pass-through, split quote-aware) + SearchForm §6 (selo Core + saúde fontes + 2 CTAs, erro PT-BR sem API) + tela search-form (criar/editar + execute Idempotency-Key por toque + push run) + SearchCard §5 (runs/última reais, Executar/Duplicar, Comparar/Excluir disabled) + strategies FlatList + tripwire 5/5 + registro search-form no Stack; contrato intocado; vitest 25/25; typecheck+eslint exit 0, any 0; auditoria 0 crit/0 high
 - 07-03: execução com acompanhamento (UI-14, 637b0ca+e585c41): useRunPolling (getRun imediato + 2500ms + teto 240 + 3 erros seguidos → retry manual, cleanup só-timer D-08, 401 imediato, retry exposto) + helpers isTerminalStatus/runStatusLabel/formatDurationMs (testes 6/6) + tela run.tsx §7 (progresso por fonte explícito, Cancelar só em polling, banners ok/parcial/falha/cancelada + repetir Idempotency-Key, placeholder fase 8 honesto, uuid inválido sem request, expired/next com runId+searchId, guarda expired anti-clobber) + tripwire 6/6 + registro run no Stack; contrato intocado; vitest 32/32; typecheck+eslint exit 0, any 0; auditoria 0 crit/0 high
 - 07-04: cascata + histórico no card (UI-15/UI-16, 89841a3+4e114b1): runHistory.ts puro (formatRunWhen/summarizeRun, testes 8/8) + RunHistory expansível paginado (limit 20 + Ver mais, toque → string run?runId=) + DeleteSearchDialog (contagens honestas limit 100, Excluir explícito → 204 → onDeleted, erro verbatim sem fechar) + SearchCard final (histórico + excluir; Comparar disabled fase 9) + strategies remove card local; fase 7 FECHADA 4/4; vitest 40/40; typecheck+eslint exit 0, any 0; auditoria 0 crit/0 high
+- 07-05: gap-closure UAT EXECUTAR AGORA no beta HTTP (UI-14, d84025d+eb6b2c2): `newIdempotencyKey()` em src/utils/uuid.ts (expo-crypto 57.0.3 version-aligned, NÃO ~15.x; cadeia randomUUID→getRandomValues→global porque o randomUUID web do expo também delega ao global ausente; getRandomBytes evitado — cai em PRNG fraco em __DEV__ remoto) + 3 toques migrados (search-form/run/SearchCard, key por toque, sem retry) + uuid.test.ts 6/6 (formato/unicidade/1000 sem colisão/ausência global/atalho seguro/sem-expo) + tripwire anti-`crypto.randomUUID` nu (provado com plantio temporário) + client.ts newRequestId intocado (já degrada); vitest 47/47; typecheck+lint exit 0, any 0, dist reexportado 1.8MB grep 0; audit só toolchain pré-existente; auditoria 0 crit/0 high; re-teste humano UAT item 1 pendente
 
 ### Pending Todos
 
@@ -112,6 +113,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-12T00:41:45Z
-Stopped at: Phase 7 COMPLETE (4/4, 07-04 cascata + histórico) — next phase 8 planning. Nota: re-teste humano UAT 06-HUMAN-UAT (LISTA ROLA web+nativo) segue pendente em paralelo.
+Last session: 2026-09-12T12:47:00Z
+Stopped at: Phase 7 COMPLETE + gap 07-05 (wrapper UUID cross-platform, EXECUTAR AGORA funciona no beta HTTP) — next phase 8 planning. Nota: re-teste humano UAT 07-HUMAN-UAT item 1 (EXECUTAR AGORA via tailnet) segue pendente em paralelo, junto com 06-HUMAN-UAT.
 Resume file: .planning/phases/08-resultados-triagem/08-CONTEXT.md (phase 8 planning; 07-04 SUMMARY em .planning/phases/07-projetos-buscas-execucao/07-04-SUMMARY.md). Nota: re-teste humano UAT 06-HUMAN-UAT (LISTA ROLA web+nativo) segue pendente em paralelo.

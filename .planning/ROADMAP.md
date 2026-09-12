@@ -51,13 +51,14 @@ Cross-cutting constraints: CORS allowlist exata sem espelho (06-01, 06-04); `any
   2. User salva estratégia (só salvar ou salvar-e-executar) com selo de filtro garantido pelo Core e status das fontes
   3. User executa busca, acompanha progresso por fonte (cancelável) e entende banners ok/parcial/falha/cancelled
   4. User exclui busca somente após diálogo listando a cascata; histórico de runs consultável
-**Plans**: 4 plans in 3 waves
+**Plans**: 5 plans in 4 waves
 
 Plans:
 - [x] 07-01-PLAN.md — Projetos: modal criar + lista gerenciável + cabeçalho editável com abas (Wave 1) — done 2026-09-12 (1965da1, 4817ef0)
 - [x] 07-02-PLAN.md — Estratégias: cards + formulário §6 salvar/salvar-e-executar (Wave 1) — done 2026-09-12 (df7c5e1, 76bdd54)
 - [x] 07-03-PLAN.md — Execução: polling por fonte + cancelar + banners (Wave 2, blocked on 07-02) — done 2026-09-12 (637b0ca, e585c41)
 - [x] 07-04-PLAN.md — Cascata de exclusão + histórico expansível no card (Wave 3, blocked on 07-02, 07-03) — done 2026-09-12 (89841a3, 4e114b1)
+- [x] 07-05-PLAN.md — Gap-closure UAT: wrapper UUID cross-platform (expo-crypto + fallback) + migração dos 3 toques + tripwire (Wave 4, gap 07-HUMAN-UAT item 1) — done 2026-09-12 (d84025d, eb6b2c2)
 
 #### Phase 8: Resultados e triagem
 **Goal**: Pesquisador tria resultados item a item com decisão mutável, tags e transparência de dedup
