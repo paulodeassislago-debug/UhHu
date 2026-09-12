@@ -13,8 +13,9 @@
 //   (o que veio + o que faltou com o motivo); failed → ErrorBanner com o motivo
 //   verbatim + Repetir (novo executeSearch com Idempotency-Key + replace do runId);
 //   cancelled → "Execução cancelada" + Executar novamente (mesmo fluxo repetir).
-// - Rodapé terminal honesto: placeholder "Resultados — lista de itens na fase 8"
-//   (SEM fingir itens) + badge informativo de novos.
+// - Rodapé terminal com contagem de novos + botão Ver resultados para a
+//   lista real da fase 8 (destino /project/[id]/results?runId=<uuid>,
+//   succeeded/partial; failed/cancelled mantêm fluxos).
 // - Polling via useRunPolling (2500ms, teto 240, para em terminal/timeout/unmount;
 //   cleanup nunca encerra no servidor — D-08: sair no meio e voltar retoma).
 // - runId ausente ou fora do formato uuid → ErrorBanner "Execução inválida" +
@@ -195,6 +196,18 @@ export default function RunScreen(): JSX.Element {
 
   function handleBack(): void {
     router.back();
+  }
+
+  function handleOpenResults(): void {
+    const current: SearchRunDTO | null = cancelledRun ?? run;
+    if (current === null) {
+      return;
+    }
+    if (searchId.length > 0) {
+      router.push(`/project/${projectId}/results?runId=${current.id}&searchId=${searchId}`);
+    } else {
+      router.push(`/project/${projectId}/results?runId=${current.id}`);
+    }
   }
 
   if (authLoading) {
@@ -416,12 +429,13 @@ export default function RunScreen(): JSX.Element {
           ) : null}
         </View>
       ) : null}
-      {terminal ? (
+      {(terminal && effectiveRun.status === 'succeeded') ||
+      (terminal && effectiveRun.status === 'partial') ? (
         <View style={{ gap: 4 }}>
-          <Text>Resultados — lista de itens na fase 8</Text>
           <Text>
             {effectiveRun.metrics.newCount} NOVOS desde a última execução
           </Text>
+          <Button title="Ver resultados" onPress={handleOpenResults} />
         </View>
       ) : null}
     </ScrollView>

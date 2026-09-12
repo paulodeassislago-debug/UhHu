@@ -65,6 +65,7 @@ export default function RootLayout(): JSX.Element {
           <Stack.Screen name="project/[id]/strategies" options={{ title: 'Estratégias' }} />
           <Stack.Screen name="project/[id]/search-form" options={{ title: 'Buscar' }} />
           <Stack.Screen name="project/[id]/run" options={{ title: 'Execução' }} />
+          <Stack.Screen name="project/[id]/results" options={{ title: 'Resultados' }} />
           <Stack.Screen name="project/[id]/corpus" options={{ title: 'Corpus' }} />
         </Stack>
       </AuthGate>
