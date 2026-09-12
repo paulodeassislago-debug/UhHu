@@ -533,6 +533,9 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
         console.warn('[lab-results-isnew] PG inalcançavel — teste pulado (offline).');
         return;
       }
+      // Narrowing de `let` não sobrevive dentro de closures: captura em const
+      // para fetchPage/fetchSingle (TS2345 no typecheck raiz, gap 08-05).
+      const api = app;
       const owner = await bootstrapAdmin(app, 'Dona IsNew', 'isnew@example.com');
       const created = await apiRequest(app, 'POST', '/api/v1/projects', {
         body: { title: 'Projeto isNew' },
@@ -556,7 +559,7 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
       const seed = await seedThreeRuns(db, owner.userId, searchId);
 
       const fetchPage = async (runId: string): Promise<TestResultPage> => {
-        const res = await apiRequest(app, 'GET', `/api/v1/lab/runs/${runId}/results?limit=20`, {
+        const res = await apiRequest(api, 'GET', `/api/v1/lab/runs/${runId}/results?limit=20`, {
           cookieValue: owner.cookie,
         });
         expect(res.statusCode).toBe(200);
@@ -601,7 +604,7 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
 
       // GET unitário espelha a lista nos 3 runs.
       const fetchSingle = async (resultId: string): Promise<TestResult> => {
-        const res = await apiRequest(app, 'GET', `/api/v1/lab/results/${resultId}`, {
+        const res = await apiRequest(api, 'GET', `/api/v1/lab/results/${resultId}`, {
           cookieValue: owner.cookie,
         });
         expect(res.statusCode).toBe(200);
