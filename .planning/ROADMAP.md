@@ -56,7 +56,7 @@ Cross-cutting constraints: CORS allowlist exata sem espelho (06-01, 06-04); `any
 Plans:
 - [x] 07-01-PLAN.md — Projetos: modal criar + lista gerenciável + cabeçalho editável com abas (Wave 1) — done 2026-09-12 (1965da1, 4817ef0)
 - [x] 07-02-PLAN.md — Estratégias: cards + formulário §6 salvar/salvar-e-executar (Wave 1) — done 2026-09-12 (df7c5e1, 76bdd54)
-- [ ] 07-03-PLAN.md — Execução: polling por fonte + cancelar + banners (Wave 2, blocked on 07-02)
+- [x] 07-03-PLAN.md — Execução: polling por fonte + cancelar + banners (Wave 2, blocked on 07-02) — done 2026-09-12 (637b0ca, e585c41)
 - [ ] 07-04-PLAN.md — Cascata de exclusão + histórico expansível no card (Wave 3, blocked on 07-02, 07-03)
 
 #### Phase 8: Resultados e triagem
