@@ -8,7 +8,9 @@
 // dado de usuário) e asserta import+uso reais de FlatList/ScrollView.
 // Sem `any` (string + narrowing); sem segredo.
 
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 function readScreen(relativePath: string): string {
@@ -44,6 +46,20 @@ function mapLinesOutsideScrollable(source: string): string[] {
     .filter(
       (line: string): boolean => !line.includes('FlatList') && !line.includes('renderItem'),
     );
+}
+
+function collectTsFiles(dir: string, out: string[]): void {
+  for (const entry of readdirSync(dir)) {
+    const full: string = join(dir, entry);
+    if (statSync(full).isDirectory()) {
+      if (entry === '__tests__') {
+        continue;
+      }
+      collectTsFiles(full, out);
+    } else if (entry.endsWith('.ts') || entry.endsWith('.tsx')) {
+      out.push(full);
+    }
+  }
 }
 
 describe('scroll containers (tripwire UAT 11/09/2026)', () => {
@@ -106,5 +122,33 @@ describe('scroll containers (tripwire UAT 11/09/2026)', () => {
     const source: string = readScreen(RUN_PATH);
     assertImportsFromReactNative(source, 'ScrollView', 'run.tsx');
     assertUsesComponent(source, 'ScrollView', 'run.tsx');
+  });
+
+  it('nenhum crypto.randomUUID nu fora de utils/uuid.ts (tripwire UAT 12/09/2026, 07-05)', () => {
+    // O atalho do global só existe em contexto seguro; o beta HTTP (tailnet)
+    // quebrava o EXECUTAR AGORA com "is not a function". Toda geração de
+    // Idempotency-Key passa por `newIdempotencyKey()` (src/utils/uuid.ts);
+    // este teste falha se o padrão nu voltar a qualquer tela/componente.
+    // `client.ts` usa acesso defensivo (`holder['randomUUID']`, sem o ponto)
+    // com degradação para null — não conta como uso nu.
+    const roots: string[] = [
+      fileURLToPath(new URL('../../', import.meta.url)),
+      fileURLToPath(new URL('../../../app', import.meta.url)),
+    ];
+    const files: string[] = [];
+    for (const root of roots) {
+      collectTsFiles(root, files);
+    }
+    const offenders: string[] = [];
+    for (const file of files) {
+      if (file.endsWith('src/utils/uuid.ts')) {
+        continue;
+      }
+      const source: string = readFileSync(file, 'utf8');
+      if (source.includes('crypto.randomUUID')) {
+        offenders.push(file);
+      }
+    }
+    expect(offenders).toEqual([]);
   });
 });
