@@ -14,7 +14,7 @@ updated: 2026-09-12T01:00:00Z
 
 ### 1. Ponta a ponta no tablet via tailnet
 expected: criar projeto → criar estratégia → executar busca real BDTD/CAPES até banner terminal (ok/parcial) — sem erro de build, sem redbox
-result: [pending]
+result: [issue — 12/09/2026: EXECUTAR AGORA quebra na web ("crypto.randomUUID is not a function", beta HTTP tailnet); SALVAR funciona, 3 estratégias criadas no CORE. Causa: randomUUID nu em search-form/run/SearchCard. Gap plan 07-05 aberto.]
 
 ### 2. Sair e voltar no meio do run (D-08)
 expected: run sobrevive no servidor; voltar mostra estado atual; sem execução duplicada ao retornar
@@ -32,8 +32,8 @@ result: [pending]
 
 total: 4
 passed: 0
-issues: 0
-pending: 4
+issues: 1
+pending: 3
 skipped: 0
 blocked: 0
 
