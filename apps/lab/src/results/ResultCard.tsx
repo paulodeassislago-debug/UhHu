@@ -55,6 +55,8 @@ export function ResultCard({
       : `[${result.source.toUpperCase()}]`;
   const provenanceLine: string = formatProvenance(result);
 
+  // Ficha sob demanda 08-04 (D-18): destino project/[id]/result?resultId=<uuid>
+  // (tela dedicada, nunca modal; busca fresca getResult ao abrir).
   function handleOpenDetail(): void {
     router.push(`/project/${projectId}/result?resultId=${result.id}`);
   }
