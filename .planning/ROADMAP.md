@@ -42,7 +42,7 @@ Plans:
 
 Cross-cutting constraints: CORS allowlist exata sem espelho (06-01, 06-04); `any` proibido + `import type` de contracts (todos); ownerId sempre do ator no servidor (06-01, 06-03).
 
-#### Phase 7: Projetos, buscas e execução
+#### Phase 7: Projetos, buscas e execução — ✅ COMPLETE 2026-09-12 (UAT 4/4 tablet Paulo)
 **Goal**: Pesquisador organiza projetos, define estratégias e executa buscas com acompanhamento do run
 **Depends on**: Phase 6
 **Requirements**: UI-09, UI-10, UI-11, UI-12, UI-13, UI-14, UI-15, UI-16
@@ -100,6 +100,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 4. Corpus e exportação | v1.0 | 5/5 | Complete | 2026-09-11 |
 | 5. Prova headless | v1.0 | 5/5 | Complete | 2026-09-11 |
 | 6. Fundação do app + auth + suporte CORE | v1.1 | 5/5 | Complete | 2026-09-11 |
-| 7. Projetos, buscas e execução | v1.1 | 6/6 | In progress (phase open, UAT re-test pending) | - |
+| 7. Projetos, buscas e execução | v1.1 | 6/6 | Complete | 2026-09-12 |
 | 8. Resultados e triagem | v1.1 | 0/TBD | Not started | - |
 | 9. Corpus, exportação e comparação | v1.1 | 0/TBD | Not started | - |

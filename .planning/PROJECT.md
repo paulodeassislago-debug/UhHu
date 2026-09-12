@@ -34,6 +34,7 @@ Um pesquisador consegue executar uma busca real (BDTD/CAPES) pelo CORE, com isol
 - ✓ CLI/MCP mínimos + gates (typecheck, IDOR, Gitleaks, SAST, audit, PG) — v1.0
 - ✓ Fundação do app Lab UI (Expo scaffold + client tipado + auth web/PAT + estados §11 + lista rolável) — v1.1 Phase 6
 - ✓ Suporte CORE p/ UI (`referenceSearchId` migration + `isNew` on-read + CORS allowlist) — v1.1 Phase 6
+- ✓ Projetos/buscas/execução na UI (modal, form §6, polling, cascata, histórico, UUID fix, lápis ✎) — v1.1 Phase 7 (UAT 4/4 tablet 12/09)
 
 ### Active (v1.1 Lab UI v1)
 

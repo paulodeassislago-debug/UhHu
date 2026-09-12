@@ -25,13 +25,13 @@ See: .planning/PROJECT.md (updated 2026-09-11)
 
 ## Current Position
 
-Phase: 7 of 9 (Executed 6/6 incl. gap 07-05 + UX 07-06 — awaiting human RE-test of EXECUTAR AGORA flow, phase NOT closed)
-Plan: 07-06 of 6 done (UX Paulo 12/09)
-Status: Lapis inline no cabeçalho em código (título + pergunta via PATCH existente, 51/51 tests); awaiting human UAT re-test
-Last activity: 2026-09-12 — UX 07-06 done (Pressable ✎ + testes + adendo §4; e758388, c43ea39); UAT item 1 re-test pending
-Resume file: .planning/phases/07-projetos-buscas-execucao/07-HUMAN-UAT.md
+Phase: 8 of 9 (Not started — UAT approved, phase 7 closed 2026-09-12)
+Plan: —
+Status: Phase 7 complete — ready for Phase 8 discussion
+Last activity: 2026-09-12 — Phase 7 closed (UAT 4/4 tablet Paulo; 07-05 + 07-06 verified in code)
+Resume file: None (next: /gsd-discuss-phase 8)
 
-Progress: [██████░░░░] 6/6 plans executed (phase open, UAT re-test pending)
+Progress: [████████░░] 6/6 plans phase 7 + UAT approved (milestone v1.1 phases 6-7/9 done)
 
 ## Performance Metrics
 
