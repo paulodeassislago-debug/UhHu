@@ -37,11 +37,11 @@ Requirements for this milestone. Each maps to roadmap phases 6–9.
 
 ### Resultados e triagem
 
-- [ ] **UI-17**: User vê cards de resultado (título, autores, ano, tipo, instituição/programa, fontes, proveniência busca → run → data → fonte)
+- [x] **UI-17**: User vê cards de resultado (título, autores, ano, tipo, instituição/programa, fontes, proveniência busca → run → data → fonte) — done 08-02 (ResultCard base + lista infinita; decisão/tags/ficha em 08-03/08-04)
 - [ ] **UI-18**: User expande grupo deduplicado (origens, links, diferenças de metadados, "versão mais completa") e diverge por fonte quando precisar
 - [ ] **UI-19**: User decide elegibilidade por card (elegível / não elegível / indeciso), mutável a qualquer toque, com `decidido_em` atualizado
 - [ ] **UI-20**: User associa tag opcional com autocomplete (defaults incluir/excluir/duplicado/indisponível/revisar) e gerencia tags do projeto
-- [ ] **UI-21**: User identifica itens novos do run via badge "NOVO" (regra D-35)
+- [x] **UI-21**: User identifica itens novos do run via badge "NOVO" (regra D-35) — done 08-02 (badge no card + contador `N NOVOS`, isNew só-anteriores de 08-01)
 - [ ] **UI-22**: User abre a ficha completa do item sob demanda (sem pré-carregar a lista)
 
 ### Corpus e exportação
@@ -122,11 +122,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | UI-14 | Phase 7 | Done (07-03) |
 | UI-15 | Phase 7 | Done (07-04) |
 | UI-16 | Phase 7 | Done (07-04) |
-| UI-17 | Phase 8 | Pending |
+| UI-17 | Phase 8 | Done (08-02) |
 | UI-18 | Phase 8 | Pending |
 | UI-19 | Phase 8 | Pending |
 | UI-20 | Phase 8 | Pending |
-| UI-21 | Phase 8 | Pending |
+| UI-21 | Phase 8 | Done (08-02) |
 | UI-22 | Phase 8 | Pending |
 | UI-23 | Phase 9 | Pending |
 | UI-24 | Phase 9 | Pending |
