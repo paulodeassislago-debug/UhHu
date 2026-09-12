@@ -12,8 +12,9 @@
 // - Histórico expansível: `<RunHistory>` sempre montado abaixo das ações,
 //   colapsado por default (D-11: mora no card, sem aba nova).
 // - Ações: [Executar] (executeSearch + Idempotency-Key única por toque via
-//   `globalThis.crypto.randomUUID()` + push da rota do run como string; 429 →
-//   mensagem verbatim no card, sem retry), [Comparar] disabled com hint de
+//   `newIdempotencyKey()` de ../utils/uuid (gap UAT 12/09/2026, 07-05 — o
+//   atalho de UUID do global quebra no beta HTTP) + push da rota do run como
+//   string; 429 → mensagem verbatim no card, sem retry), [Comparar] disabled com hint de
 //   fase 9, menu [⋯] com [Editar] (push search-form?searchId=), [Duplicar]
 //   (createSearch com projectId/term/filters/sources verbatim, sem sufixo —
 //   Search não tem título) e [Excluir] abrindo o diálogo de cascata
@@ -33,6 +34,7 @@ import { labApi } from '../api/lab';
 import { useAuth } from '../auth/session';
 import { DeleteSearchDialog } from './DeleteSearchDialog';
 import { RunHistory } from './RunHistory';
+import { newIdempotencyKey } from '../utils/uuid';
 
 export interface SearchCardProps {
   search: SearchDTO;
@@ -162,7 +164,7 @@ export function SearchCard({ search, getToken, onChanged, onDeleted }: SearchCar
     try {
       const run = await labApi.executeSearch(search.id, {
         getToken,
-        idempotencyKey: globalThis.crypto.randomUUID(),
+        idempotencyKey: newIdempotencyKey(),
       });
       router.push(`/project/${search.projectId}/run?runId=${run.id}&searchId=${search.id}`);
     } catch (error: unknown) {

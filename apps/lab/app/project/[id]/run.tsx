@@ -34,6 +34,7 @@ import { formatDurationMs, isTerminalStatus, useRunPolling } from '../../../src/
 import { ErrorBanner } from '../../../src/ui/ErrorBanner';
 import { PartialBanner } from '../../../src/ui/PartialBanner';
 import { CardSkeleton } from '../../../src/ui/Skeleton';
+import { newIdempotencyKey } from '../../../src/utils/uuid';
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -173,7 +174,7 @@ export default function RunScreen(): JSX.Element {
     try {
       const dto: SearchRunDTO = await labApi.executeSearch(searchId, {
         getToken,
-        idempotencyKey: globalThis.crypto.randomUUID(),
+        idempotencyKey: newIdempotencyKey(),
       });
       router.replace(`/project/${projectId}/run?runId=${dto.id}&searchId=${searchId}`);
     } catch (unknownError: unknown) {

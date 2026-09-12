@@ -9,9 +9,10 @@
 // - Modo criar (sem ?searchId=) ou editar (?searchId=: getSearch + initial).
 // - Salvar → createSearch ou updateSearch + router.back().
 // - Executar agora → salva (cria/atualiza) e em seguida executeSearch com
-//   Idempotency-Key única por toque via `globalThis.crypto.randomUUID()`
-//   (aleatório seguro do runtime; replay idempotente vira 200 sem novo run;
-//   sem auto-retry em 429; T-07-02-02) +
+//   Idempotency-Key única por toque via `newIdempotencyKey()` (wrapper
+//   cross-platform em src/utils/uuid.ts — o atalho de UUID do global só
+//   existe em contexto seguro e quebra no beta HTTP; gap UAT 12/09/2026,
+//   07-05; replay idempotente vira 200 sem novo run; sem auto-retry em 429; T-07-02-02) +
 //   push `/project/[id]/run?runId=<id>&searchId=<sid>` como string literal
 //   (tela criada na 07-03; sem import).
 // - 429/422/400 → ErrorBanner verbatim + sem navegação; 401 → expired/next.
@@ -33,6 +34,7 @@ import { SearchForm } from '../../../src/search/SearchForm';
 import type { SearchFormInitial, SearchFormPayload, SourceHealthLabels } from '../../../src/search/SearchForm';
 import { ErrorBanner } from '../../../src/ui/ErrorBanner';
 import { CardSkeleton } from '../../../src/ui/Skeleton';
+import { newIdempotencyKey } from '../../../src/utils/uuid';
 
 type ScreenState = 'loading' | 'ready' | 'error';
 
@@ -217,7 +219,7 @@ export default function SearchFormScreen(): JSX.Element {
             );
       const run = await labApi.executeSearch(saved.id, {
         getToken,
-        idempotencyKey: globalThis.crypto.randomUUID(),
+        idempotencyKey: newIdempotencyKey(),
       });
       router.push(`/project/${projectId}/run?runId=${run.id}&searchId=${saved.id}`);
     } catch (error: unknown) {
