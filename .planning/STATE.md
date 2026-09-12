@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Lab UI v1
-status: "executing — phase 6 complete incl. gap-closure 06-05, ready for phase 7"
-stopped_at: Phase 7 context gathered
-last_updated: "2026-09-11T21:30:00Z"
-last_activity: "2026-09-11 — Phase 7 context gathered (4 areas; CONTEXT.md ready for planning)"
+status: "executing — phase 7 (07-01 done, 1/4 plans)"
+stopped_at: Phase 7 plan 07-01 complete
+last_updated: "2026-09-12T00:22:39Z"
+last_activity: "2026-09-12 — Phase 7 plan 07-01 executed (ProjectModal + lista gerenciável + cabeçalho editável com abas; 1965da1, 4817ef0)"
 progress:
   total_phases: 4
   completed_phases: 0
@@ -25,13 +25,13 @@ See: .planning/PROJECT.md (updated 2026-09-11)
 
 ## Current Position
 
-Phase: 7 of 9 (Executing — Wave 1/3: 07-01 + 07-02 sequential, no worktree isolation in this runtime)
-Plan: 07-01 of 4
+Phase: 7 of 9 (Executing — Wave 1/3: 07-01 done, 07-02 next sequential, no worktree isolation in this runtime)
+Plan: 07-02 of 4
 Status: Executing Phase 7
-Last activity: 2026-09-11 — Phase 7 execution started (sequential executors on main tree)
-Resume file: .planning/phases/07-projetos-buscas-execucao/07-01-PLAN.md
+Last activity: 2026-09-12 — Phase 7 plan 07-01 complete (sequential executor on main tree)
+Resume file: .planning/phases/07-projetos-buscas-execucao/07-02-PLAN.md
 
-Progress: [██████░░░░] 0/4 plans complete (Phase 7 executing)
+Progress: [██████░░░░] 1/4 plans complete (Phase 7 executing)
 
 Progress: [██████░░░░] 5/5 plans phase 6 + UAT approved (milestone v1.1 phase 6/9 done)
 
@@ -50,6 +50,7 @@ Progress: [██████░░░░] 5/5 plans phase 6 + UAT approved (mil
 | 1. Fundação executável | 2 | ~19min | ~10min |
 | 3. Buscas e adapters | 6 | ~74min+40min | ~19min |
 | 4. Corpus e exportação | 5 | ~150min (executor + checkpoint/fixes) | ~30min |
+| 7. Projetos, buscas e execução | 1 (07-01) | ~5min | ~5min |
 
 **Recent Trend:**
 
@@ -85,6 +86,7 @@ Recent decisions affecting current work:
 - 06-03: auth web cookie + PAT nativo + convite + expiração (UI-05/UI-06/UI-07/UI-08, 83527eb+d60f213): AuthProvider memória (zero storage privilégio) com getToken por plataforma + isSafeNext; login MESMA tela Platform branch (web authApi.login cookie, nativo nativeLogin issuePat+SecureStore+refresh); register convite com prefill ?token= e erro verbatim; projects lista real com vazio/skeleton/retry + 401 expired; _layout gate UX com expired+next preservando /project/<id>; Metro resolve .js NodeNext dos contracts + imports extensionless no lab (Rules 3, export web 1.7MB); tsc+eslint verdes; pat-auth 15/15 + auth 6/6 PG real; auditoria 0 crit/0 high
 - 06-04: estados §11 + gates app + prova beta (UI-03/UI-04, 37ef874+768135c): Empty/CardSkeleton/ErrorBanner/PartialBanner verbatim (Partial ok→null, sem fingir dado); login/projetos/projeto migrados (projeto busca listById real; 401→expired+next); vitest 7/7 sem rede (Response real + SecureStore mock Map); typecheck+lint exit 0, any 0; export web 1.7MB + dist grep 0; Gitleaks histórico 126 commits 0 + lab 0 (tree só 2 pré-existentes fora de escopo); audit só toolchain Expo; beta porta 3009 me 200+ACAO/projects real/401 PT-BR/adulterada sem ACAO/preflight 204; auditoria 0 crit/0 high
 - 06-05: gap-closure UAT rolagem (UI-05/UI-04, 4592cd3+ee663f1): projects View+map → FlatList virtualizada (keyExtractor id opaco, mesmo card, ListEmpty verbatim + branch vazio preservado); login/register/[id] raiz ScrollView (flexGrow+keyboardShouldPersistTaps; [id] nos 4 branches); tripwire scroll-containers 3/3 (import+uso reais, zero .map fora de FlatList/renderItem); typecheck+lint exit 0, vitest 10/10, any 0, dist reexportado 1.7MB grep 0; Gitleaks sem binário local (CI cobre); auditoria 0 crit/0 high; re-teste humano UAT pendente
+- 07-01: projetos na UI (UI-09/UI-10/UI-11, 1965da1+4817ef0): ProjectModal (createProjectSchema parse + flatten + ApiError verbatim) + lista FlatList com criar/arquivar/reativar + filtro Ativos/Arquivados + contagem leve via listSearches com cache por mount (elegíveis fora, UI-23); cabeçalho editável inline (vazia salva null) + TabBar 3 abas com Corpus vivo via getCorpus + formatCorpusCount; updateProjectSchema widened p/ researchQuestion/description null no update (alinhado a DTO + lib servidor, sem migration); vitest 13/13 (tripwire 3/3 + projetos-ui 3/3); typecheck lab+contracts+core-api + eslint exit 0, any 0; auditoria 0 crit/0 high
 
 ### Pending Todos
 
@@ -107,6 +109,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-11T22:20:36Z
-Stopped at: Phase 6 CODE-COMPLETE — 06-05 done (gap scroll fechado no código), UAT re-test humano pendente
-Resume file: .planning/phases/06-fundacao-app-auth-suporte-core/06-HUMAN-UAT.md (re-testar LISTA ROLA web+nativo) → depois .planning/phases/07-projetos-buscas-execucao/07-CONTEXT.md (REQUIREMENTS.md UI-01/UI-02/UI-03/UI-04/UI-05/UI-06/UI-07/UI-08/UI-30/UI-31/UI-32 all done)
+Last session: 2026-09-12T00:22:39Z
+Stopped at: Phase 7 plan 07-01 complete (1/4) — next 07-02 estratégias
+Resume file: .planning/phases/07-projetos-buscas-execucao/07-02-PLAN.md (07-01 SUMMARY em .planning/phases/07-projetos-buscas-execucao/07-01-SUMMARY.md) → depois 07-03/07-04. Nota: re-teste humano UAT 06-HUMAN-UAT (LISTA ROLA web+nativo) segue pendente em paralelo.

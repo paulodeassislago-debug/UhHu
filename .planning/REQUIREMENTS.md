@@ -23,9 +23,9 @@ Requirements for this milestone. Each maps to roadmap phases 6–9.
 
 ### Projetos
 
-- [ ] **UI-09**: User vê a lista de projetos (título + pergunta truncada + status + contagens leves) e o estado vazio orientador
-- [ ] **UI-10**: User cria projeto (título + pergunta), arquiva, reativa e edita a pergunta no cabeçalho
-- [ ] **UI-11**: User navega no projeto por abas (Estratégias / Comparação / Corpus com contador vivo) sem perder posição
+- [x] **UI-09**: User vê a lista de projetos (título + pergunta truncada + status + contagens leves) e o estado vazio orientador — done 07-01 (FlatList + `N busca(s)` por card + vazio verbatim)
+- [x] **UI-10**: User cria projeto (título + pergunta), arquiva, reativa e edita a pergunta no cabeçalho — done 07-01 (ProjectModal + PATCH status + inline vazia→null)
+- [x] **UI-11**: User navega no projeto por abas (Estratégias / Comparação / Corpus com contador vivo) sem perder posição — done 07-01 (TabBar + Corpus vivo via getCorpus; Comparação disabled fase 9)
 
 ### Buscas e execução
 
@@ -114,9 +114,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | UI-30 | Phase 6 | Done (06-01) |
 | UI-31 | Phase 6 | Done (06-01) |
 | UI-32 | Phase 6 | Done (06-01, lado servidor) |
-| UI-09 | Phase 7 | Pending |
-| UI-10 | Phase 7 | Pending |
-| UI-11 | Phase 7 | Pending |
+| UI-09 | Phase 7 | Done (07-01) |
+| UI-10 | Phase 7 | Done (07-01) |
+| UI-11 | Phase 7 | Done (07-01, Comparação disabled fase 9) |
 | UI-12 | Phase 7 | Pending |
 | UI-13 | Phase 7 | Pending |
 | UI-14 | Phase 7 | Pending |
