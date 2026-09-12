@@ -75,7 +75,7 @@ Plans:
 - [x] 08-01-PLAN.md — CORE: fix isNew só-anteriores + groups expõem tags/divergências/decidedAt + rename/delete de tags (Wave 1) — done 2026-09-12 (f13a482, d4c73c5)
 - [x] 08-02-PLAN.md — Client triagem + lista infinita com filtros + cards proveniência/NOVO + run linkado (Wave 2, blocked on 08-01) — done 2026-09-12 (e8da752, 940f4be)
 - [x] 08-03-PLAN.md — Decisão mutável + grupo expansível com divergência (Wave 3, blocked on 08-02) — done 2026-09-12 (62b9f47, 28c3cff)
-- [ ] 08-04-PLAN.md — Tags autocomplete + modal gestão + ficha sob demanda (Wave 4, blocked on 08-03)
+- [x] 08-04-PLAN.md — Tags autocomplete + modal gestão + ficha sob demanda (Wave 4, blocked on 08-03) — done 2026-09-12 (44443b3, 143a3a1, 223d68e)
 
 #### Phase 9: Corpus, exportação e comparação
 **Goal**: Pesquisador fecha o corpus derivado, exporta por grupo inteiro e escolhe a estratégia de referência
@@ -104,5 +104,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 5. Prova headless | v1.0 | 5/5 | Complete | 2026-09-11 |
 | 6. Fundação do app + auth + suporte CORE | v1.1 | 5/5 | Complete | 2026-09-11 |
 | 7. Projetos, buscas e execução | v1.1 | 6/6 | Complete | 2026-09-12 |
-| 8. Resultados e triagem | v1.1 | 0/TBD | Not started | - |
+| 8. Resultados e triagem | v1.1 | 4/4 | Complete | 2026-09-12 |
 | 9. Corpus, exportação e comparação | v1.1 | 0/TBD | Not started | - |

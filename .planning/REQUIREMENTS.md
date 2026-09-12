@@ -40,9 +40,9 @@ Requirements for this milestone. Each maps to roadmap phases 6–9.
 - [x] **UI-17**: User vê cards de resultado (título, autores, ano, tipo, instituição/programa, fontes, proveniência busca → run → data → fonte) — done 08-02 (ResultCard base + lista infinita; decisão/tags/ficha em 08-03/08-04)
 - [x] **UI-18**: User expande grupo deduplicado (origens, links, diferenças de metadados, "versão mais completa") e diverge por fonte quando precisar — done 08-03 (DedupGroupSection expansível + diffMembers + divergência sem mudar decisão, com groupOverrides/resultCache)
 - [x] **UI-19**: User decide elegibilidade por card (elegível / não elegível / indeciso), mutável a qualquer toque, com `decidido_em` atualizado — done 08-03 (DecisionBar por groupId sem confirmação + decidedAt visível + overrides sem refetch)
-- [ ] **UI-20**: User associa tag opcional com autocomplete (defaults incluir/excluir/duplicado/indisponível/revisar) e gerencia tags do projeto
+- [x] **UI-20**: User associa tag opcional com autocomplete (defaults incluir/excluir/duplicado/indisponível/revisar) e gerencia tags do projeto — done 08-04 (TagInput autocomplete+criar-na-hora no card/ficha + TagManagerModal criar/renomear/excluir com refresh canônico)
 - [x] **UI-21**: User identifica itens novos do run via badge "NOVO" (regra D-35) — done 08-02 (badge no card + contador `N NOVOS`, isNew só-anteriores de 08-01)
-- [ ] **UI-22**: User abre a ficha completa do item sob demanda (sem pré-carregar a lista)
+- [x] **UI-22**: User abre a ficha completa do item sob demanda (sem pré-carregar a lista) — done 08-04 (tela dedicada project/[id]/result com getResult fresco + skeleton/retry + decisão/tags ali)
 
 ### Corpus e exportação
 
@@ -125,9 +125,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | UI-17 | Phase 8 | Done (08-02) |
 | UI-18 | Phase 8 | Done (08-03) |
 | UI-19 | Phase 8 | Done (08-03) |
-| UI-20 | Phase 8 | Pending |
+| UI-20 | Phase 8 | Done (08-04) |
 | UI-21 | Phase 8 | Done (08-02) |
-| UI-22 | Phase 8 | Pending |
+| UI-22 | Phase 8 | Done (08-04) |
 | UI-23 | Phase 9 | Pending |
 | UI-24 | Phase 9 | Pending |
 | UI-25 | Phase 9 | Pending |

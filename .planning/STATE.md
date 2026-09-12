@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Lab UI v1
-status: "executing — phase 8 open (3/4 plans: 08-01 CORE + 08-02 client/lista + 08-03 decisão/grupo done, 08-04 unblocked)"
-stopped_at: Phase 8 plan 08-03 complete
-last_updated: "2026-09-12T20:49:41Z"
-last_activity: "2026-09-12 — Phase 8 plan 08-03 complete (decisão mutável + grupo expansível/divergência + overrides; 62b9f47, 28c3cff; 72/72 lab)"
+status: "executing — phase 8 complete (4/4 plans: 08-01 CORE + 08-02 client/lista + 08-03 decisão/grupo + 08-04 tags/ficha done, phase 9 unblocked)"
+stopped_at: Phase 8 plan 08-04 complete
+last_updated: "2026-09-12T21:00:23Z"
+last_activity: "2026-09-12 — Phase 8 plan 08-04 complete (tags autocomplete/modal + ficha sob demanda; 44443b3, 143a3a1, 223d68e; 82/82 lab)"
 progress:
   total_phases: 4
   completed_phases: 0
@@ -25,11 +25,13 @@ See: .planning/PROJECT.md (updated 2026-09-11)
 
 ## Current Position
 
-Phase: 8 of 9 (Executing — Wave 4/4: 08-04 tags/ficha, sequential, no worktree isolation)
+Phase: 8 of 9 (Phase 8 COMPLETE 4/4 — next: transition or plan Phase 9)
 Plan: 08-04 of 4
-Status: Executing Phase 8
-Last activity: 2026-09-12 — Phase 8 plan 08-03 complete (decisão mutável + grupo expansível/divergência + overrides sem refetch; 08-04 unblocked)
-Resume file: .planning/phases/08-resultados-triagem/08-04-PLAN.md
+Status: Phase 8 complete
+Last activity: 2026-09-12 — Phase 8 plan 08-04 complete (tags autocomplete/modal + ficha sob demanda; phase 9 unblocked)
+Resume file: none (Phase 8 complete 4/4; next `/gsd-plan-phase 9` or `/gsd-transition`)
+
+Progress: [██████████████████] 4/4 plans complete (Phase 8 COMPLETE)
 
 Progress: [████████████████░░] 3/4 plans complete (Phase 8 executing)
 
@@ -43,9 +45,9 @@ Progress: [████████░░] 6/6 plans phase 7 + UAT approved (mil
 
 **Velocity:**
 
-- Total plans completed: 9
+- Total plans completed: 10
 - Average duration: ~8min
-- Total execution time: ~50min
+- Total execution time: ~57min
 
 **By Phase:**
 
@@ -55,7 +57,7 @@ Progress: [████████░░] 6/6 plans phase 7 + UAT approved (mil
 | 3. Buscas e adapters | 6 | ~74min+40min | ~19min |
 | 4. Corpus e exportação | 5 | ~150min (executor + checkpoint/fixes) | ~30min |
 | 7. Projetos, buscas e execução | 6 (07-01, 07-02, 07-03, 07-04, gap 07-05, UX 07-06) | ~43min | ~7min |
-| 8. Resultados e triagem | 3 (08-01, 08-02, 08-03) | ~21min | ~7min |
+| 8. Resultados e triagem | 4 (08-01, 08-02, 08-03, 08-04) | ~28min | ~7min |
 
 **Recent Trend:**
 
@@ -100,6 +102,7 @@ Recent decisions affecting current work:
 - 08-01: CORE triagem servidor (UI-18/19/20/21 lado servidor, f13a482+d4c73c5): isNew só-anteriores D-15 (anti-join `lt(executedAt)` ancorado no run corrente, sem migration; seedThreeRuns run1 A/run2 A+B/run3 A+B+C prova histórico congelado — vermelho-no-antigo via stash, verde-no-novo); DedupGroupDTO += tags/divergences/decidedAt (loader batched, sem N+1); `lab.tag.rename/delete` + PATCH/DELETE tags/:tagId (colisão→400 VALIDATION_ERROR details livre, catálogo intocado; rota traduz via error.name — gate 05-02); ensureDefaultTags seed-if-empty (default excluído não ressuscita); decidedAt com updatedAt explícito no upsert (Rule 2); lab-groups-triage 3/3 + corpus 20/20 + isnew 2/2 (25/25 PG real); tsc+eslint verdes, any 0; auditoria 0 crit/0 high; UI-18/19/20/21 seguem Pending até a UI (08-02/03/04)
 - 08-02: client triagem + lista infinita na UI (UI-17/UI-21, e8da752+940f4be): labApi com 9 métodos contra rotas reais (PUT decision/divergence, tags CRUD, attach/detach; bodies via parse, ProjectTag espelhado local — contracts não exporta); triage.ts puro (index por memberIds, merge com null degradado, filtros AND D-17, formatProvenance/docTypeLabel/formatResultWhen fallback ISO) + 10 testes; useResultsList (results limit 30 + groups limit 100 até hasMore false, loadMore por nextCursor, refresh, erros com status); ResultCard base (proveniência+NOVO+grupo indisponível, sem Links/SSRF); results.tsx (FlatList onEndReached 0.5, 4 filtros incl. tags em FlatList horizontal sem .map, skeleton ×3, empty verbatim); run succeeded/partial com Ver resultados + Stack results registrado; vitest 61/61, tsc+eslint verdes, any 0; auditoria 0 crit/0 high
 - 08-03: decisão mutável + grupo expansível na UI (UI-18/UI-19, 62b9f47+28c3cff): DecisionBar por groupId (3 botões, decidedAt visível, sem confirmação, 401 markExpired) + helpers puros decision.ts (vitest isolation) + 11 testes; DedupGroupSection só originCount>1 (getResult sob demanda Promise.all com cache/skeleton/retry isolado, origens/links só-https, diffMembers puro, ★ canônica, divergências fonte:nota, form setDivergence com bloqueio <>) ; ResultCard integra ambos; results.tsx com groupOverrides + resultCache + filtros sobre efetivo sem tocar hook/triage (08-04 reusa); vitest 72/72, tsc+eslint verdes, any 0; auditoria 0 crit/0 high
+- 08-04: tags autocomplete + gestão + ficha sob demanda na UI (UI-20/UI-22, 44443b3+143a3a1+223d68e): tags.ts puro (suggestTags defaults-primeiro/teto-8 + resolveTagAction attach/create/invalid) + TagInput no card/ficha (chips × com detach 204 sintetizado, criar-e-associar com retry mantendo criada, verbatim, null degradado) + 10 testes; TagManagerModal (FlatList, rename 400 na linha, delete two-tap, criar com cor texto, dirty+refresh idempotente); results.tsx com botão Tags + refreshGroups canônico (descarta overrides + list.refresh) + projectTags no card; result.tsx ficha dedicada (getResult fresco + grupo por memberIds + overrides locais + skeleton/retry + links só-https + NOVO + DecisionBar/TagInput/Dedup cache-1) + Stack Ficha; vitest 82/82, tsc+eslint verdes, any 0; auditoria 0 crit/0 high; fase 8 FECHADA 4/4
 
 ### Pending Todos
 
@@ -122,6 +125,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-12T20:49:41Z
-Stopped at: Phase 8 plan 08-03 complete (decisão mutável + grupo expansível/divergência + overrides, 72/72 tests) — next 08-04 tags/ficha. Nota: re-teste humano UAT 07-HUMAN-UAT item 1 (EXECUTAR AGORA via tailnet) segue pendente em paralelo, junto com 06-HUMAN-UAT.
-Resume file: .planning/phases/08-resultados-triagem/08-04-PLAN.md (phase 8 executing; 08-03 SUMMARY em .planning/phases/08-resultados-triagem/08-03-SUMMARY.md). Nota: re-teste humano UAT 06-HUMAN-UAT (LISTA ROLA web+nativo) segue pendente em paralelo.
+Last session: 2026-09-12T21:00:23Z
+Stopped at: Phase 8 plan 08-04 complete (tags autocomplete/modal + ficha sob demanda, 82/82 tests) — Phase 8 FECHADA 4/4, next phase 9. Nota: re-teste humano UAT 07-HUMAN-UAT item 1 (EXECUTAR AGORA via tailnet) segue pendente em paralelo, junto com 06-HUMAN-UAT; UAT da fase 8 (autocomplete/criar/modal/ficha/retry) entra na fila.
+Resume file: none (Phase 8 complete; 08-04 SUMMARY em .planning/phases/08-resultados-triagem/08-04-SUMMARY.md). Nota: re-teste humano UAT 06-HUMAN-UAT (LISTA ROLA web+nativo) segue pendente em paralelo.
