@@ -6,7 +6,9 @@
 // - Vazio → Empty "Nenhuma estratégia"/"Defina a primeira busca" (texto §5).
 // - Carregando → CardSkeleton por card; erro → ErrorBanner + Repetir.
 // - 401 com sessão prévia → markExpired + redirect /login com next da aba.
-// - Duplicar no card chama onChanged → recarrega a lista (sem refetch manual).
+// - Duplicar no card chama onChanged → recarrega a lista (sem refetch manual);
+//   excluir confirmado no diálogo de cascata chama onDeleted → remove o card
+//   da lista local (sem refetch).
 // Guards são UX; autorização real continua no CORE (AGENTS.md). Text escapa por
 // padrão; sem WebView; sem eval.
 
@@ -92,6 +94,12 @@ export default function StrategiesScreen(): JSX.Element {
     void load();
   }, [load]);
 
+  const handleDeleted = useCallback((searchId: string): void => {
+    setItems((prev: SearchDTO[]): SearchDTO[] =>
+      prev.filter((item: SearchDTO): boolean => item.id !== searchId),
+    );
+  }, []);
+
   function handleNewStrategy(): void {
     router.push({ pathname: '/project/[id]/search-form', params: { id: projectId } });
   }
@@ -132,7 +140,12 @@ export default function StrategiesScreen(): JSX.Element {
       data={items}
       keyExtractor={(search: SearchDTO): string => search.id}
       renderItem={({ item: search }: ListRenderItemInfo<SearchDTO>): JSX.Element => (
-        <SearchCard search={search} getToken={getToken} onChanged={handleRefresh} />
+        <SearchCard
+          search={search}
+          getToken={getToken}
+          onChanged={handleRefresh}
+          onDeleted={handleDeleted}
+        />
       )}
       style={{ flex: 1 }}
       contentContainerStyle={{ padding: 24, gap: 12, flexGrow: 1 }}

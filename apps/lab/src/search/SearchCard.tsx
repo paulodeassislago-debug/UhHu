@@ -1,21 +1,23 @@
-// apps/lab — card de estratégia §5 (UI-12, 07-02 task 2).
+// apps/lab — card de estratégia §5 (UI-12/UI-15/UI-16, 07-02 task 2 + 07-04 task 2).
 //
-// `SearchCard({ search, getToken, onChanged })`: termos legíveis verbatim,
-// resumo de filtros, fontes, runs e última execução com dados reais — sem fingir
-// métrica.
+// `SearchCard({ search, getToken, onChanged, onDeleted })`: termos legíveis
+// verbatim, resumo de filtros, fontes, runs e última execução com dados
+// reais — sem fingir métrica.
 // - Bloco de runs: `listRuns(search.id, { limit: 100 }, { getToken })` →
 //   `runs: N` (+ "+" se hasMore) + última = items[0] (listRuns ordena
 //   desc(executedAt)): `hoje HH:MM` no mesmo dia senão `DD/MM` +
 //   `· <coverage.bdtd + coverage.capes> resultados` + rótulo de status
 //   (succeeded→"ok", demais verbatim). Erro no fetch → "histórico indisponível"
 //   e o card continua.
+// - Histórico expansível: `<RunHistory>` sempre montado abaixo das ações,
+//   colapsado por default (D-11: mora no card, sem aba nova).
 // - Ações: [Executar] (executeSearch + Idempotency-Key única por toque via
 //   `globalThis.crypto.randomUUID()` + push da rota do run como string; 429 →
 //   mensagem verbatim no card, sem retry), [Comparar] disabled com hint de
 //   fase 9, menu [⋯] com [Editar] (push search-form?searchId=), [Duplicar]
 //   (createSearch com projectId/term/filters/sources verbatim, sem sufixo —
-//   Search não tem título) e [Excluir] disabled com hint do diálogo de cascata
-//   da 07-04 (NÃO exclui aqui).
+//   Search não tem título) e [Excluir] abrindo o diálogo de cascata
+//   (DeleteSearchDialog; o card some via onDeleted da lista).
 // - 401 → markExpired + /login com next da lista de estratégias.
 // Guards são UX; autorização real continua no CORE (AGENTS.md). Text escapa por
 // padrão; sem WebView; sem eval.
@@ -29,11 +31,14 @@ import { ApiError } from '../api/client';
 import type { TokenProvider } from '../api/client';
 import { labApi } from '../api/lab';
 import { useAuth } from '../auth/session';
+import { DeleteSearchDialog } from './DeleteSearchDialog';
+import { RunHistory } from './RunHistory';
 
 export interface SearchCardProps {
   search: SearchDTO;
   getToken: TokenProvider;
   onChanged: () => void;
+  onDeleted: (searchId: string) => void;
 }
 
 type RunsState = 'loading' | 'ready' | 'unavailable';
@@ -99,13 +104,14 @@ function formatRunDate(iso: string): string {
   return `${dd}/${mo}`;
 }
 
-export function SearchCard({ search, getToken, onChanged }: SearchCardProps): JSX.Element {
+export function SearchCard({ search, getToken, onChanged, onDeleted }: SearchCardProps): JSX.Element {
   const router = useRouter();
   const { markExpired } = useAuth();
   const [runsState, setRunsState] = useState<RunsState>('loading');
   const [runsLine, setRunsLine] = useState<string>('carregando histórico…');
   const [lastLine, setLastLine] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
+  const [deleteOpen, setDeleteOpen] = useState<boolean>(false);
   const [busy, setBusy] = useState<boolean>(false);
   const [actionError, setActionError] = useState<{ message: string; requestId: string | null } | null>(
     null,
@@ -264,12 +270,17 @@ export function SearchCard({ search, getToken, onChanged }: SearchCardProps): JS
             onPress={() => void handleDuplicate()}
             disabled={busy}
           />
-          <View style={{ gap: 2 }}>
-            <Button title="Excluir" disabled />
-            <Text style={{ fontSize: 12 }}>diálogo de cascata na 07-04</Text>
-          </View>
+          <Button title="Excluir" onPress={() => setDeleteOpen(true)} disabled={busy} />
         </View>
       ) : null}
+      <RunHistory searchId={search.id} projectId={search.projectId} getToken={getToken} />
+      <DeleteSearchDialog
+        search={search}
+        visible={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onDeleted={onDeleted}
+        getToken={getToken}
+      />
     </View>
   );
 }
