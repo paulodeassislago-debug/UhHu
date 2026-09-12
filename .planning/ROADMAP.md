@@ -69,10 +69,13 @@ Plans:
   1. User lê cards com proveniência completa e expande grupos deduplicados (origens, links, diferenças, divergência por fonte)
   2. User decide elegível/não/indeciso com reversão imediata e associa tags com autocomplete + gestão de tags
   3. User identifica itens novos pelo badge "NOVO" e abre ficha completa sob demanda sem travar a lista
-**Plans**: TBD
+**Plans**: 4 plans in 4 waves
 
 Plans:
-- [ ] 08-01: TBD during `/gsd-plan-phase 8`
+- [ ] 08-01-PLAN.md — CORE: fix isNew só-anteriores + groups expõem tags/divergências/decidedAt + rename/delete de tags (Wave 1)
+- [ ] 08-02-PLAN.md — Client triagem + lista infinita com filtros + cards proveniência/NOVO + run linkado (Wave 2, blocked on 08-01)
+- [ ] 08-03-PLAN.md — Decisão mutável + grupo expansível com divergência (Wave 3, blocked on 08-02)
+- [ ] 08-04-PLAN.md — Tags autocomplete + modal gestão + ficha sob demanda (Wave 4, blocked on 08-03)
 
 #### Phase 9: Corpus, exportação e comparação
 **Goal**: Pesquisador fecha o corpus derivado, exporta por grupo inteiro e escolhe a estratégia de referência
