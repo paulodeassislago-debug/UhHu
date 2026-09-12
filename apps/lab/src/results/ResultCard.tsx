@@ -1,10 +1,12 @@
-// apps/lab — card de resultado com decisão + grupo expansível (08-03, UI-18/UI-19).
+// apps/lab — card de resultado com decisão + tags + grupo expansível (08-04, UI-18/UI-19/UI-20).
 //
-// `ResultCard({ item, getToken, projectId, resultCache, onGroupUpdated })`:
+// `ResultCard({ item, getToken, projectId, projectTags, resultCache, onGroupUpdated })`:
 // base 08-02 (título 2 linhas, autores/ano/tipo, instituição/programa, selo de
 // fonte, NOVO, proveniência, ver ficha →) + `<DecisionBar/>` abaixo da
 // proveniência (PUT por groupId, sem confirmação, decidedAt visível) +
-// `<DedupGroupSection/>` quando originCount>1 (origens/links/diferenças/
+// `<TagInput/>` abaixo da decisão (autocomplete com defaults + criar-na-hora +
+// chips com ×; props repassadas da tela que já carrega projectTags p/ o filtro)
+// + `<DedupGroupSection/>` quando originCount>1 (origens/links/diferenças/
 // canônica + divergência anotável sem mudar a decisão; membros sob demanda
 // via resultCache). Text escapa por padrão; sem WebView; sem eval. Sem `any`.
 
@@ -13,8 +15,10 @@ import type { JSX } from 'react';
 import { Button, Text, View } from 'react-native';
 import type { DedupGroupDTO, ResultDTO } from '@uhhu/contracts';
 import type { TokenProvider } from '../api/client';
+import type { ProjectTag } from '../api/lab';
 import { DecisionBar } from './DecisionBar';
 import { DedupGroupSection } from './DedupGroupSection';
+import { TagInput } from './TagInput';
 import { docTypeLabel, formatProvenance } from './triage';
 import type { TriagedItem } from './triage';
 
@@ -23,6 +27,7 @@ export interface ResultCardProps {
   getToken: TokenProvider;
   projectId: string;
   resultCache: Map<string, ResultDTO>;
+  projectTags?: ProjectTag[];
   onGroupUpdated?: (group: DedupGroupDTO) => void;
 }
 
@@ -33,6 +38,7 @@ export function ResultCard({
   getToken,
   projectId,
   resultCache,
+  projectTags,
   onGroupUpdated,
 }: ResultCardProps): JSX.Element {
   const router = useRouter();
@@ -65,6 +71,13 @@ export function ResultCard({
       {result.isNew ? <Text>NOVO</Text> : null}
       <Text>{provenanceLine}</Text>
       <DecisionBar group={group} getToken={getToken} onDecided={onGroupUpdated ?? handleNoopGroup} />
+      <TagInput
+        group={group}
+        projectId={projectId}
+        projectTags={projectTags ?? []}
+        getToken={getToken}
+        onGroupUpdated={onGroupUpdated ?? handleNoopGroup}
+      />
       {group !== null && group.originCount > 1 ? (
         <DedupGroupSection
           group={group}
