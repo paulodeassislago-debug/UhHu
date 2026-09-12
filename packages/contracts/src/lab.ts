@@ -341,6 +341,19 @@ export const createTagSchema = z.object({
 
 export type CreateTagInput = z.infer<typeof createTagSchema>;
 
+// UI-20 (08-01): rename/delete de tag do projeto. Reusa tagNameSchema
+// (1..100) — nunca schema novo de nome. Pelo menos um campo presente.
+export const updateTagSchema = z
+  .object({
+    name: tagNameSchema.optional(),
+    color: z.string().trim().max(20).nullable().optional(),
+  })
+  .refine((o) => o.name !== undefined || o.color !== undefined, {
+    message: 'Nada para atualizar.',
+  });
+
+export type UpdateTagInput = z.infer<typeof updateTagSchema>;
+
 /** D-46: anotacao por origem, sem mudar a decisao; sanitizacao baseline §2.5. */
 export const divergenceInputSchema = z.object({
   source: executableSourceSchema,
@@ -404,6 +417,13 @@ export interface DedupGroupDTO {
   decision: 'eligible' | 'ineligible' | 'undecided';
   originCount: number;
   origins: Array<'bdtd' | 'capes'>;
+  // UI-18/19/20 (08-01, lado servidor): tags do grupo (nomes, ordenados),
+  // divergências por origem e quando foi decidido (ISO de
+  // labGroupDecisions.updatedAt; null = nunca decidido = "não triado" do
+  // filtro D-17; distingue indeciso-explícito de não-triado).
+  tags: string[];
+  divergences: Array<{ source: ExecutableSource; note: string }>;
+  decidedAt: string | null;
 }
 
 /** LAB-08: entrada do corpus = registro canonico vigente do grupo eligible. */

@@ -40,6 +40,7 @@ import {
   pinInputSchema,
   resultsQuerySchema,
   updateSearchSchema,
+  updateTagSchema,
   type CompareDTO,
   type DedupGroupDTO,
   type JobDTO,
@@ -157,6 +158,11 @@ const projectIdParamsSchema = z.object({
 
 const groupTagParamsSchema = z.object({
   groupId: z.string().uuid(),
+  tagId: z.string().uuid(),
+});
+
+const projectTagParamsSchema = z.object({
+  projectId: z.string().uuid(),
   tagId: z.string().uuid(),
 });
 
@@ -1075,9 +1081,113 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
     },
   );
 
-  app.post(
-    '/api/v1/lab/groups/:groupId/tags',
+  // UI-20 (08-01): gestão de tags do projeto — rename + delete, molde das
+  // rotas de tag existentes (requireAuth + resolveRequestId + header
+  // x-request-id + 404 idêntico fora do escopo).
+  app.patch(
+    '/api/v1/lab/projects/:projectId/tags/:tagId',
     { preHandler: requireAuth(db) },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const requestId = resolveRequestId(request);
+      reply.header('x-request-id', requestId);
+      const actor = request.actor;
+      if (actor === undefined) {
+        await reply.code(401).send(buildEnvelope('UNAUTHENTICATED', requestId, {}));
+        return;
+      }
+      const params = projectTagParamsSchema.safeParse(request.params);
+      if (!params.success) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      const body = updateTagSchema.safeParse(request.body);
+      if (!body.success) {
+        await reply
+          .code(400)
+          .send(buildEnvelope('VALIDATION_ERROR', requestId, body.error.flatten()));
+        return;
+      }
+      // Colisão de nome: o lib lança TagNameConflictError. Rotas NÃO importam
+      // `lib/*` (gate 05-02), logo o estreitamento é por `error.name` (nome
+      // estável, documentado em corpus.ts). Catálogo intocado — detalhe livre
+      // como `parsed.error.flatten()`.
+      let got: { replied: true } | { replied: false; value: ProjectTag | null };
+      try {
+        got = await callCapability<ProjectTag | null>(
+          execute(
+            'lab.tag.rename',
+            {
+              projectId: params.data.projectId,
+              tagId: params.data.tagId,
+              input: body.data,
+            },
+            actor,
+          ),
+          reply,
+          requestId,
+        );
+      } catch (error) {
+        if (error instanceof Error && error.name === 'TagNameConflictError') {
+          await reply
+            .code(400)
+            .send(
+              buildEnvelope('VALIDATION_ERROR', requestId, {
+                name: 'Já existe uma tag com este nome.',
+              }),
+            );
+          return;
+        }
+        throw error;
+      }
+      if (got.replied) {
+        return;
+      }
+      if (got.value === null) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      await reply.code(200).send(got.value);
+    },
+  );
+
+  app.delete(
+    '/api/v1/lab/projects/:projectId/tags/:tagId',
+    { preHandler: requireAuth(db) },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const requestId = resolveRequestId(request);
+      reply.header('x-request-id', requestId);
+      const actor = request.actor;
+      if (actor === undefined) {
+        await reply.code(401).send(buildEnvelope('UNAUTHENTICATED', requestId, {}));
+        return;
+      }
+      const params = projectTagParamsSchema.safeParse(request.params);
+      if (!params.success) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      const got = await callCapability<boolean>(
+        execute(
+          'lab.tag.delete',
+          { projectId: params.data.projectId, tagId: params.data.tagId },
+          actor,
+        ),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
+      if (!got.value) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      await reply.code(204).send();
+    },
+  );
+
+  app.post(
+    '/api/v1/lab/groups/:groupId/tags',    { preHandler: requireAuth(db) },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const requestId = resolveRequestId(request);
       reply.header('x-request-id', requestId);

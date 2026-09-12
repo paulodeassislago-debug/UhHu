@@ -43,6 +43,7 @@ import {
   pinInputSchema,
   updateProjectSchema,
   updateSearchSchema,
+  updateTagSchema,
   type CorpusEntryDTO,
   type ErrorEnvelope,
   type ExportQuery,
@@ -89,6 +90,7 @@ import {
   computeDedupGroupsForActor,
   confirmGroupForActor,
   createTagForActor,
+  deleteTagForActor,
   detachTagForActor,
   ensureDefaultTags,
   EXPORT_MAX_GROUPS,
@@ -97,6 +99,7 @@ import {
   listExportMembersForActor,
   listTagsForActor,
   rejectGroupForActor,
+  renameTagForActor,
   resolveSelectionGroupsForActor,
   setDivergenceForActor,
   setGroupDecisionForActor,
@@ -214,6 +217,20 @@ const pinSetInputSchema = z.object({ groupId: z.string(), input: pinInputSchema 
 const tagCreateInputSchema = z.object({
   projectId: z.string(),
   input: createTagSchema,
+});
+
+// UI-20 (08-01): rename/delete de tag do projeto (owner-first no lib; a rota
+// traduz TagNameConflictError em 400 VALIDATION_ERROR via error.name — rotas
+// não importam `lib/*`, ver comentário na rota PATCH).
+const tagRenameInputSchema = z.object({
+  projectId: z.string(),
+  tagId: z.string(),
+  input: updateTagSchema,
+});
+
+const tagDeleteInputSchema = z.object({
+  projectId: z.string(),
+  tagId: z.string(),
 });
 
 const groupTagInputSchema = z.object({ groupId: z.string(), tagId: z.string() });
@@ -359,6 +376,8 @@ const EXTENDED_CAPABILITY_NAMES = [
   'lab.tag.ensure',
   'lab.tag.list',
   'lab.tag.create',
+  'lab.tag.rename',
+  'lab.tag.delete',
   'lab.group.tag.attach',
   'lab.group.tag.detach',
   'lab.group.pin.set',
@@ -412,6 +431,14 @@ function extendedHandlers(db: Db): Record<ExtendedCapabilityName, CapabilityHand
     'lab.tag.create': async (input, actor) => {
       const data = parseOrThrow(tagCreateInputSchema, input);
       return createTagForActor(db, actor, data.projectId, data.input);
+    },
+    'lab.tag.rename': async (input, actor) => {
+      const data = parseOrThrow(tagRenameInputSchema, input);
+      return renameTagForActor(db, actor, data.projectId, data.tagId, data.input);
+    },
+    'lab.tag.delete': async (input, actor) => {
+      const data = parseOrThrow(tagDeleteInputSchema, input);
+      return deleteTagForActor(db, actor, data.projectId, data.tagId);
     },
     'lab.group.tag.attach': async (input, actor) => {
       const data = parseOrThrow(groupTagInputSchema, input);
