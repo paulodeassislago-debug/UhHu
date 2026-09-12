@@ -364,6 +364,91 @@ async function seedTwoRuns(db: Db, ownerId: string, searchId: string): Promise<{
   };
 }
 
+// D-15/H-01 (decisão Paulo 12/09 "só-anteriores"): 3 runs com executedAt
+// explícito e ordenado (run1: A; run2: A+B; run3: A+C, metrics.newCount
+// 1/1/1). Prova o histórico congelado: o run3 posterior NUNCA apaga o badge
+// do run2, e count(isNew)===newCount nos 3 runs. Empate exato de executedAt
+// é tratado como posterior (não-visto → isNew true).
+async function seedThreeRuns(db: Db, ownerId: string, searchId: string): Promise<{
+  run1Id: string;
+  run2Id: string;
+  run3Id: string;
+  run1AId: string;
+  run2AId: string;
+  run2BId: string;
+  run3AId: string;
+  run3BId: string;
+  run3CId: string;
+}> {
+  const baseMetrics = (newCount: number): Record<string, unknown> => ({
+    perSource: {
+      bdtd: { status: 'ok', total: 2, returned: 2, durationMs: 5 },
+      capes: { status: 'skipped', total: 0, returned: 0, durationMs: 0 },
+    },
+    newCount,
+    coverage: { bdtd: 2, capes: 0 },
+  });
+  const base = Date.parse('2026-09-01T10:00:00.000Z');
+  const insertRun = async (executedAt: Date, newCount: number): Promise<string> => {
+    const rows = await db
+      .insert(labSearchRuns)
+      .values({
+        searchId,
+        createdBy: ownerId,
+        status: 'succeeded',
+        termSnapshot: '"isnew tres runs"',
+        filtersSnapshot: {},
+        sourcesSnapshot: ['bdtd'],
+        executedAt,
+        metrics: baseMetrics(newCount),
+        adapterVersions: {},
+      })
+      .returning({ id: labSearchRuns.id });
+    const run = rows[0];
+    if (run === undefined) {
+      throw new Error('insert run nao retornou linha');
+    }
+    return run.id;
+  };
+  const insertResult = async (
+    runId: string,
+    sourceId: string,
+    title: string,
+    rank: number,
+  ): Promise<string> => {
+    const rows = await db
+      .insert(labResults)
+      .values({
+        runId,
+        source: 'bdtd',
+        sourceId,
+        title,
+        authors: ['Autora Prova'],
+        rawMetadata: { id: sourceId },
+        rank,
+      })
+      .returning({ id: labResults.id });
+    const row = rows[0];
+    if (row === undefined) {
+      throw new Error('insert result nao retornou linha');
+    }
+    return row.id;
+  };
+  const run1Id = await insertRun(new Date(base), 1);
+  const run1AId = await insertResult(run1Id, 'isnew-3-a', 'Item A do primeiro run', 0);
+  const run2Id = await insertRun(new Date(base + 60_000), 1);
+  const run2AId = await insertResult(run2Id, 'isnew-3-a', 'Item A repetido no segundo run', 0);
+  const run2BId = await insertResult(run2Id, 'isnew-3-b', 'Item B inedito no segundo run', 1);
+  const run3Id = await insertRun(new Date(base + 120_000), 1);
+  const run3AId = await insertResult(run3Id, 'isnew-3-a', 'Item A repetido no terceiro run', 0);
+  // B repete no run3: com o anti-join antigo (todos os outros runs) isto
+  // apagaria o badge do run2 (B.isNew false com newCount 1) — o bug D-15.
+  // Com o fix só-anteriores, o run2 ignora o run3 e B segue NOVO nele.
+  const run3BId = await insertResult(run3Id, 'isnew-3-b', 'Item B repetido no terceiro run', 1);
+  const run3CId = await insertResult(run3Id, 'isnew-3-c', 'Item C inedito no terceiro run', 2);
+  return { run1Id, run2Id, run3Id, run1AId, run2AId, run2BId, run3AId, run3BId, run3CId };
+}
+
 // Prova que execFileSync foi importado do child_process (evita tree-shake
 // remover o import usado no beforeAll do migrate).
 void execFileSync;
@@ -443,7 +528,7 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
       await db.delete(users);
     });
 
-    it('repetido isNew false, inedito isNew true, newCount consistente', async () => {
+    it('D-15: run antigo mantem badge apos run posterior; badge ≡ contador nos 3 runs', async () => {
       if (!pgAvailable || app === undefined || db === undefined) {
         console.warn('[lab-results-isnew] PG inalcançavel — teste pulado (offline).');
         return;
@@ -468,42 +553,66 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
       expect(searchRes.statusCode).toBe(201);
       const searchId = (searchRes.json() as { id: string }).id;
 
-      const seed = await seedTwoRuns(db, owner.userId, searchId);
+      const seed = await seedThreeRuns(db, owner.userId, searchId);
 
-      const pageRes = await apiRequest(app, 'GET', `/api/v1/lab/runs/${seed.run2Id}/results?limit=20`, {
-        cookieValue: owner.cookie,
-      });
-      expect(pageRes.statusCode).toBe(200);
-      expect(headerValue(pageRes, 'x-request-id')).toBeTruthy();
-      const page = resultPageOf(pageRes.json());
-      expect(page.total).toBe(2);
-      expect(page.newCount).toBe(1);
-      const repeated = page.items.find((item) => item.sourceId === 'isnew-a');
-      const fresh = page.items.find((item) => item.sourceId === 'isnew-b');
-      expect(repeated).toBeDefined();
-      expect(fresh).toBeDefined();
-      if (repeated === undefined || fresh === undefined) {
-        throw new Error('pagina sem os dois itens esperados');
-      }
-      expect(repeated.isNew).toBe(false);
-      expect(fresh.isNew).toBe(true);
+      const fetchPage = async (runId: string): Promise<TestResultPage> => {
+        const res = await apiRequest(app, 'GET', `/api/v1/lab/runs/${runId}/results?limit=20`, {
+          cookieValue: owner.cookie,
+        });
+        expect(res.statusCode).toBe(200);
+        expect(headerValue(res, 'x-request-id')).toBeTruthy();
+        return resultPageOf(res.json());
+      };
+      const bySourceId = (page: TestResultPage, sourceId: string): TestResult => {
+        const item = page.items.find((entry) => entry.sourceId === sourceId);
+        expect(item).toBeDefined();
+        if (item === undefined) {
+          throw new Error(`pagina sem o item ${sourceId}`);
+        }
+        return item;
+      };
+
+      // run1: A estreou aqui → isNew true; badge ≡ contador.
+      const page1 = await fetchPage(seed.run1Id);
+      expect(page1.total).toBe(1);
+      expect(page1.newCount).toBe(1);
+      expect(bySourceId(page1, 'isnew-3-a').isNew).toBe(true);
+      expect(page1.items.filter((item) => item.isNew).length).toBe(page1.newCount);
+
+      // run2 LIDO DEPOIS do run3 existir: A continua false, B continua true
+      // (o run3 posterior NUNCA apaga o badge do run2 — histórico congelado).
+      const page2 = await fetchPage(seed.run2Id);
+      expect(page2.total).toBe(2);
+      expect(page2.newCount).toBe(1);
+      expect(bySourceId(page2, 'isnew-3-a').isNew).toBe(false);
+      expect(bySourceId(page2, 'isnew-3-b').isNew).toBe(true);
       // Consistência obrigatória: newCount === count(isNew===true).
-      expect(page.items.filter((item) => item.isNew).length).toBe(page.newCount);
+      expect(page2.items.filter((item) => item.isNew).length).toBe(page2.newCount);
 
-      const freshSingle = await apiRequest(app, 'GET', `/api/v1/lab/results/${seed.freshResultId}`, {
-        cookieValue: owner.cookie,
-      });
-      expect(freshSingle.statusCode).toBe(200);
-      expect(resultOf(freshSingle.json()).isNew).toBe(true);
+      // run3: A visto antes → false; B visto no run2 → false; C inédito →
+      // true; badge ≡ contador (só C é novo → newCount 1).
+      const page3 = await fetchPage(seed.run3Id);
+      expect(page3.total).toBe(3);
+      expect(page3.newCount).toBe(1);
+      expect(bySourceId(page3, 'isnew-3-a').isNew).toBe(false);
+      expect(bySourceId(page3, 'isnew-3-b').isNew).toBe(false);
+      expect(bySourceId(page3, 'isnew-3-c').isNew).toBe(true);
+      expect(page3.items.filter((item) => item.isNew).length).toBe(page3.newCount);
 
-      const repeatedSingle = await apiRequest(
-        app,
-        'GET',
-        `/api/v1/lab/results/${seed.repeatedResultId}`,
-        { cookieValue: owner.cookie },
-      );
-      expect(repeatedSingle.statusCode).toBe(200);
-      expect(resultOf(repeatedSingle.json()).isNew).toBe(false);
+      // GET unitário espelha a lista nos 3 runs.
+      const fetchSingle = async (resultId: string): Promise<TestResult> => {
+        const res = await apiRequest(app, 'GET', `/api/v1/lab/results/${resultId}`, {
+          cookieValue: owner.cookie,
+        });
+        expect(res.statusCode).toBe(200);
+        return resultOf(res.json());
+      };
+      expect((await fetchSingle(seed.run1AId)).isNew).toBe(true);
+      expect((await fetchSingle(seed.run2AId)).isNew).toBe(false);
+      expect((await fetchSingle(seed.run2BId)).isNew).toBe(true);
+      expect((await fetchSingle(seed.run3AId)).isNew).toBe(false);
+      expect((await fetchSingle(seed.run3BId)).isNew).toBe(false);
+      expect((await fetchSingle(seed.run3CId)).isNew).toBe(true);
     });
 
     it('IDOR: estranho e id adulterado recebem 404 identico', async () => {

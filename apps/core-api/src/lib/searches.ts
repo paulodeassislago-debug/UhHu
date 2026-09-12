@@ -554,20 +554,32 @@ export interface ListResultsResult {
   total: number;
 }
 
-// UI-31 (§14-5, D-35 canônica de searchRuns.ts): "novos" = (source,sourceId)
-// ausentes em TODOS os runs anteriores da mesma search (anti-join). Um Set
-// por request, sem N+1; mesma semântica do newCount para que
-// newCount === count(isNew===true).
+// UI-31 (§14-5, D-35 canônica de searchRuns.ts + D-15/H-01 "só-anteriores"):
+// "novos" = (source,sourceId) ausentes em TODOS os runs ANTERIORES da mesma
+// search (anti-join por executedAt). Um Set por request, sem N+1; mesma
+// semântica do newCount para que newCount === count(isNew===true).
+//
+// D-15 (decisão Paulo 12/09): o anti-join filtra SÓ runs com
+// `executedAt < executedAt do run corrente` — run posterior NUNCA apaga o
+// badge NOVO de itens antigos (histórico congelado). Empate exato de
+// executedAt é tratado como posterior (não-visto → isNew true).
 async function seenKeysForSearch(
   db: Db,
   searchId: string,
   excludeRunId: string,
+  currentExecutedAt: Date,
 ): Promise<Set<string>> {
   const priorRows = await db
     .select({ source: labResults.source, sourceId: labResults.sourceId })
     .from(labResults)
     .innerJoin(labSearchRuns, eq(labResults.runId, labSearchRuns.id))
-    .where(and(eq(labSearchRuns.searchId, searchId), ne(labSearchRuns.id, excludeRunId)));
+    .where(
+      and(
+        eq(labSearchRuns.searchId, searchId),
+        ne(labSearchRuns.id, excludeRunId),
+        lt(labSearchRuns.executedAt, currentExecutedAt),
+      ),
+    );
   return new Set(priorRows.map((row) => `${row.source}|${row.sourceId}`));
 }
 
@@ -631,8 +643,9 @@ export async function listResultsForActor(
     .innerJoin(labSearches, eq(labSearchRuns.searchId, labSearches.id))
     .innerJoin(projects, eq(labSearches.projectId, projects.id))
     .where(and(eq(labResults.runId, runId), eq(projects.ownerId, actor.userId)));
-  // UI-31: deriva isNew on-read via anti-join D-35 (sem coluna nova).
-  const seen = await seenKeysForSearch(db, run.searchId, runId);
+  // UI-31: deriva isNew on-read via anti-join D-15 (só-anteriores: o
+  // executedAt do run corrente ancora o filtro, sem coluna nova).
+  const seen = await seenKeysForSearch(db, run.searchId, runId, new Date(run.executedAt));
   return {
     items: pageRows.map((entry) =>
       toResultDTO(
@@ -654,7 +667,12 @@ export async function getResultForActor(
     return null;
   }
   const rows = await db
-    .select({ result: labResults, searchId: labSearches.id, runId: labSearchRuns.id })
+    .select({
+      result: labResults,
+      searchId: labSearches.id,
+      runId: labSearchRuns.id,
+      runExecutedAt: labSearchRuns.executedAt,
+    })
     .from(labResults)
     .innerJoin(labSearchRuns, eq(labResults.runId, labSearchRuns.id))
     .innerJoin(labSearches, eq(labSearchRuns.searchId, labSearches.id))
@@ -665,7 +683,8 @@ export async function getResultForActor(
   if (row === undefined) {
     return null;
   }
-  // UI-31: mesmo anti-join D-35 do list (busca o run pai para achar searchId).
-  const seen = await seenKeysForSearch(db, row.searchId, row.runId);
+  // UI-31: mesmo anti-join D-15 do list (busca o run pai para achar
+  // searchId + executedAt que ancora o filtro só-anteriores).
+  const seen = await seenKeysForSearch(db, row.searchId, row.runId, row.runExecutedAt);
   return toResultDTO(row.result, resultIsNew(seen, row.result.source, row.result.sourceId));
 }
