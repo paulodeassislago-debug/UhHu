@@ -25,15 +25,13 @@ See: .planning/PROJECT.md (updated 2026-09-11)
 
 ## Current Position
 
-Phase: 7 of 9 (Phase 7 COMPLETE 4/4 + gap 07-05 done — next phase 8 planning)
-Plan: 07-05 of 5 (gap-closure UAT)
-Status: Phase 7 complete + UAT blocker do caminho Executar fechado no código
-Last activity: 2026-09-12 — Phase 7 gap plan 07-05 complete (sequential executor on main tree)
-Resume file: .planning/phases/08-resultados-triagem/08-CONTEXT.md (phase 8 planning; 07-05 SUMMARY em .planning/phases/07-projetos-buscas-execucao/07-05-SUMMARY.md)
+Phase: 7 of 9 (Executed 5/5 incl. gap 07-05 — awaiting human RE-test of EXECUTAR AGORA flow, phase NOT closed)
+Plan: 07-05 of 5 done (gap fix)
+Status: Blocker fixed in code (3-level UUID wrapper + tripwire); awaiting human UAT re-test
+Last activity: 2026-09-12 — Gap 07-05 fixed in code (expo-crypto 57.0.3 + fallback, 47/47 tests, bundle re-exported); UAT item 1 re-test pending
+Resume file: .planning/phases/07-projetos-buscas-execucao/07-HUMAN-UAT.md
 
-Progress: [████████████████] 5/5 plans complete (Phase 7 COMPLETE + gap 07-05)
-
-Progress: [██████░░░░] 5/5 plans phase 6 + UAT approved (milestone v1.1 phase 6/9 done)
+Progress: [██████░░░░] 5/5 plans executed (phase open, UAT re-test pending)
 
 ## Performance Metrics
 
