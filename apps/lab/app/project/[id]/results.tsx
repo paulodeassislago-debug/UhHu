@@ -1,18 +1,27 @@
-// apps/lab — tela de Resultados com decisão/grupo expansível (08-03 task 2).
+// apps/lab — tela de Resultados com decisão/grupo/tags (08-04 task 2).
 //
 // Rota /project/[id]/results?runId=<uuid>&searchId=<uuid> (o run concluído
 // abre aqui via botão Ver resultados). Blocos:
 // - Cabeçalho com contadores: `N NOVOS desde a última execução` (newCount da
 //   primeira página) mais `mostrando X de Y` (visíveis após filtro sobre
-//   carregados, com overrides aplicados).
+//   carregados, com overrides aplicados) + botão `[Tags]` que abre o
+//   `TagManagerModal` sem sair da triagem (D-21).
 // - Barra de filtros combináveis client-side (D-17): estado com cinco
 //   opções, tag via lista horizontal do projeto mais todas, fonte com três
 //   opções, ano via campo numérico onde vazio vale todos. Filtros operam sobre
-//   o item efetivo (override ?? original), então decisão/divergência refletem
-//   sem refetch.
+//   o item efetivo (override ?? original), então decisão/divergência/tags
+//   refletem sem refetch.
 // - groupOverrides (Map groupId→DedupGroupDTO) local: item efetivo =
 //   groupOverrides.get(group.id) ?? original; onGroupUpdated escreve no mapa;
-//   sem tocar useResultsList/triage (dono 08-02); 08-04 reusa o mesmo mapa.
+//   sem tocar useResultsList/triage (dono 08-02); 08-04 reusa o mesmo mapa
+//   para decisão/divergência/tags.
+// - Regra canônica 08-04 (D-20/D-21): o servidor é canônico pós-PUT.
+//   `refreshGroups()` = descarta `groupOverrides` + `list.refresh()` — o hook
+//   (dono 08-02) refaz `listGroups` fresco até esgotar o cursor, reconstrói o
+//   índice e refaz `listProjectTags` do filtro; decisões/tags/divergências já
+//   persistidas via PUT voltam no GET fresco, sem reaplicar mapa. Chamado no
+//   `onTagsChanged` do modal (criar/renomear/excluir reflete nos cards e nos
+//   filtros sem refetch manual).
 // - resultCache (Map resultId→ResultDTO do run corrente) repassado ao card
 //   para o grupo expansível evitar refetch (membros sob demanda só ausentes).
 // - Lista virtualizada por cursor (D-16): FlatList com keyExtractor pelo id
@@ -36,6 +45,7 @@ import { ApiError } from '../../../src/api/client';
 import { useAuth } from '../../../src/auth/session';
 import { useResultsList } from '../../../src/results/useResultsList';
 import { ResultCard } from '../../../src/results/ResultCard';
+import { TagManagerModal } from '../../../src/results/TagManagerModal';
 import { applyResultFilters } from '../../../src/results/triage';
 import type { TriagedItem } from '../../../src/results/triage';
 import { Empty } from '../../../src/ui/Empty';
@@ -73,6 +83,7 @@ export default function ResultsScreen(): JSX.Element {
     getToken,
   });
   const [yearInput, setYearInput] = useState<string>('');
+  const [tagsModalVisible, setTagsModalVisible] = useState<boolean>(false);
   const [groupOverrides, setGroupOverrides] = useState<Map<string, DedupGroupDTO>>(
     () => new Map<string, DedupGroupDTO>(),
   );
@@ -160,6 +171,23 @@ export default function ResultsScreen(): JSX.Element {
     const next = new Map<string, DedupGroupDTO>(groupOverrides);
     next.set(novo.id, novo);
     setGroupOverrides(next);
+  }
+
+  function refreshGroups(): void {
+    setGroupOverrides(new Map<string, DedupGroupDTO>());
+    list.refresh();
+  }
+
+  function handleTagsChanged(): void {
+    refreshGroups();
+  }
+
+  function handleOpenTagsModal(): void {
+    setTagsModalVisible(true);
+  }
+
+  function handleCloseTagsModal(): void {
+    setTagsModalVisible(false);
   }
 
   if (authLoading) {
@@ -259,27 +287,32 @@ export default function ResultsScreen(): JSX.Element {
   const source = list.filters.source;
 
   return (
-    <FlatList
-      data={visibleItems}
-      keyExtractor={(item: TriagedItem): string => item.result.id}
-      renderItem={({ item }: ListRenderItemInfo<TriagedItem>): JSX.Element => (
-        <ResultCard
-          item={item}
-          getToken={getToken}
-          projectId={projectId}
-          resultCache={resultCache}
-          onGroupUpdated={handleGroupUpdated}
-        />
-      )}
-      style={{ flex: 1 }}
-      contentContainerStyle={{ padding: 24, gap: 12, flexGrow: 1 }}
-      onEndReached={handleEndReached}
-      onEndReachedThreshold={0.5}
-      refreshing={list.loading}
-      onRefresh={handleRefresh}
-      ListHeaderComponent={
-        <View style={{ gap: 12 }}>
-          <Text style={{ fontSize: 24, fontWeight: '600' }}>Resultados</Text>
+    <>
+      <FlatList
+        data={visibleItems}
+        keyExtractor={(item: TriagedItem): string => item.result.id}
+        renderItem={({ item }: ListRenderItemInfo<TriagedItem>): JSX.Element => (
+          <ResultCard
+            item={item}
+            getToken={getToken}
+            projectId={projectId}
+            projectTags={list.tags}
+            resultCache={resultCache}
+            onGroupUpdated={handleGroupUpdated}
+          />
+        )}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 24, gap: 12, flexGrow: 1 }}
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.5}
+        refreshing={list.loading}
+        onRefresh={handleRefresh}
+        ListHeaderComponent={
+          <View style={{ gap: 12 }}>
+            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+              <Text style={{ fontSize: 24, fontWeight: '600' }}>Resultados</Text>
+              <Button title="Tags" onPress={handleOpenTagsModal} />
+            </View>
           <Text>
             {list.newCount} NOVOS desde a última execução
           </Text>
@@ -376,6 +409,14 @@ export default function ResultsScreen(): JSX.Element {
           message="Nenhum resultado — ajuste os filtros ou execute a busca novamente."
         />
       }
-    />
+      />
+      <TagManagerModal
+        visible={tagsModalVisible}
+        projectId={projectId}
+        getToken={getToken}
+        onClose={handleCloseTagsModal}
+        onTagsChanged={handleTagsChanged}
+      />
+    </>
   );
 }
