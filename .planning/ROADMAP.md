@@ -76,6 +76,7 @@ Plans:
 - [x] 08-02-PLAN.md — Client triagem + lista infinita com filtros + cards proveniência/NOVO + run linkado (Wave 2, blocked on 08-01) — done 2026-09-12 (e8da752, 940f4be)
 - [x] 08-03-PLAN.md — Decisão mutável + grupo expansível com divergência (Wave 3, blocked on 08-02) — done 2026-09-12 (62b9f47, 28c3cff)
 - [x] 08-04-PLAN.md — Tags autocomplete + modal gestão + ficha sob demanda (Wave 4, blocked on 08-03) — done 2026-09-12 (44443b3, 143a3a1, 223d68e)
+- [x] 08-05-PLAN.md — Gap-closure auditoria: fix TS2345 closures isNew + typecheck raiz verde + revalidação 12/12 (Wave 5, gap audit) — done 2026-09-12 (92f806f)
 
 #### Phase 9: Corpus, exportação e comparação
 **Goal**: Pesquisador fecha o corpus derivado, exporta por grupo inteiro e escolhe a estratégia de referência

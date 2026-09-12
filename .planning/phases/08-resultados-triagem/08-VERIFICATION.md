@@ -182,6 +182,14 @@ Zero findings critical/high. Controles C-01..C-08 do REVIEW (authZ owner-scoped,
 
 Nenhum gap bloqueador. As 12 verdades observáveis dos 4 planos estão implementadas, com substância (sem stubs), wiring completo (12/12 key links) e dados fluindo de fontes reais (PG via CORE; DTOs frescos dos PUTs). Os achados M-01/M-02 do advisory review são riscos residuais documentados com fix proposto (follow-up, p.ex. teste do produtor `newCount` via `executeSearchRun` real e ancoragem de `searchRuns.ts` em `executedAt`), não falhas de must_have no caso normal. Fase pronta para UAT humana no tablet; sem necessidade de re-planejamento.
 
+### Revalidação 08-05 (typecheck raiz, 12/09/2026)
+
+Gap da auditoria externa: `pnpm typecheck` raiz falhava com TS2345 ×2 em `tests/integration/lab-results-isnew.test.ts` (closures `fetchPage`/`fetchSingle` capturando `let app`) — bloqueava o CI (gates.yml:40). Fix test-only (Opção A): `const api = app;` após o guard do teste D-15 + `api` nas 2 closures; comportamento do teste idêntico.
+- `pnpm exec tsc --noEmit -p tsconfig.json` → exit 0, output vazio (raiz verde)
+- `pnpm test` → 19 arquivos, 200/200 verdes
+- vitest `@uhhu/lab` → 11 arquivos, 82/82 verdes; typecheck + lint do lab exit 0
+- 12/12 must-haves revalidados: mudança confined a closures de teste, nenhum runtime/rota/auth tocado; teste D-15 (H-01) inalterado em comportamento. Status segue `human_needed` (UAT tablet pendente).
+
 ---
 
 _Verified: 2026-09-12T18:15:00Z_

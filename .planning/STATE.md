@@ -25,13 +25,13 @@ See: .planning/PROJECT.md (updated 2026-09-11)
 
 ## Current Position
 
-Phase: 8 of 9 (Phase 8 COMPLETE 4/4 — next: transition or plan Phase 9)
-Plan: 08-04 of 4
-Status: Phase 8 complete
-Last activity: 2026-09-12 — Phase 8 plan 08-04 complete (tags autocomplete/modal + ficha sob demanda; phase 9 unblocked)
-Resume file: none (Phase 8 complete 4/4; next `/gsd-plan-phase 9` or `/gsd-transition`)
+Phase: 8 of 9 (Executed 5/5 incl. gap 08-05 — typecheck raiz verde, 12/12 revalidados; awaiting UAT tablet + audit sign-off, phase NOT closed)
+Plan: 08-05 of 5 done (gap fix)
+Status: CI unblocked (root tsc 0, 200/200, lab 82/82); awaiting human UAT + Hermes audit approval
+Last activity: 2026-09-12 — Gap 08-05 fixed (const api nas closures, raiz verde, 12/12 revalidados)
+Resume file: .planning/phases/08-resultados-triagem/08-HUMAN-UAT.md
 
-Progress: [██████████████████] 4/4 plans complete (Phase 8 COMPLETE)
+Progress: [██████████████████] 5/5 plans executed (phase open, UAT + audit pending)
 
 Progress: [████████████████░░] 3/4 plans complete (Phase 8 executing)
 
