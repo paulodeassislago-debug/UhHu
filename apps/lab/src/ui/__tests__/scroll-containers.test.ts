@@ -21,6 +21,7 @@ const REGISTER_PATH = '../../../app/register.tsx';
 const DETAIL_PATH = '../../../app/project/[id].tsx';
 const STRATEGIES_PATH = '../../../app/project/[id]/strategies.tsx';
 const SEARCHFORM_PATH = '../../../app/project/[id]/search-form.tsx';
+const RUN_PATH = '../../../app/project/[id]/run.tsx';
 
 function assertImportsFromReactNative(source: string, name: string, file: string): void {
   const importPattern = new RegExp(
@@ -77,6 +78,7 @@ describe('scroll containers (tripwire UAT 11/09/2026)', () => {
       DETAIL_PATH,
       STRATEGIES_PATH,
       SEARCHFORM_PATH,
+      RUN_PATH,
     ];
     for (const screen of screens) {
       const source: string = readScreen(screen);
@@ -98,5 +100,11 @@ describe('scroll containers (tripwire UAT 11/09/2026)', () => {
     const source: string = readScreen(SEARCHFORM_PATH);
     assertImportsFromReactNative(source, 'ScrollView', 'search-form.tsx');
     assertUsesComponent(source, 'ScrollView', 'search-form.tsx');
+  });
+
+  it('run.tsx importa e usa ScrollView de react-native (07-03)', () => {
+    const source: string = readScreen(RUN_PATH);
+    assertImportsFromReactNative(source, 'ScrollView', 'run.tsx');
+    assertUsesComponent(source, 'ScrollView', 'run.tsx');
   });
 });
