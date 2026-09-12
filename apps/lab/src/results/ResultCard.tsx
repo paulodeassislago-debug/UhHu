@@ -1,19 +1,20 @@
-// apps/lab — card de resultado com decisão mutável (08-03 task 1, UI-19).
+// apps/lab — card de resultado com decisão + grupo expansível (08-03, UI-18/UI-19).
 //
-// `ResultCard({ item, getToken, projectId, onGroupUpdated })`: base 08-02
-// (título 2 linhas, autores/ano/tipo, instituição/programa, selo de fonte,
-// NOVO, proveniência, ver ficha →) + `<DecisionBar/>` abaixo da proveniência
-// (props group/onGroupUpdated repassadas do card; PUT por groupId, sem
-// confirmação, decidedAt visível). Grupo expansível com divergência chega na
-// task 2 sobre este card. Text escapa por padrão; sem WebView; sem eval.
-// Sem `any`.
+// `ResultCard({ item, getToken, projectId, resultCache, onGroupUpdated })`:
+// base 08-02 (título 2 linhas, autores/ano/tipo, instituição/programa, selo de
+// fonte, NOVO, proveniência, ver ficha →) + `<DecisionBar/>` abaixo da
+// proveniência (PUT por groupId, sem confirmação, decidedAt visível) +
+// `<DedupGroupSection/>` quando originCount>1 (origens/links/diferenças/
+// canônica + divergência anotável sem mudar a decisão; membros sob demanda
+// via resultCache). Text escapa por padrão; sem WebView; sem eval. Sem `any`.
 
 import { useRouter } from 'expo-router';
 import type { JSX } from 'react';
 import { Button, Text, View } from 'react-native';
-import type { DedupGroupDTO } from '@uhhu/contracts';
+import type { DedupGroupDTO, ResultDTO } from '@uhhu/contracts';
 import type { TokenProvider } from '../api/client';
 import { DecisionBar } from './DecisionBar';
+import { DedupGroupSection } from './DedupGroupSection';
 import { docTypeLabel, formatProvenance } from './triage';
 import type { TriagedItem } from './triage';
 
@@ -21,6 +22,7 @@ export interface ResultCardProps {
   item: TriagedItem;
   getToken: TokenProvider;
   projectId: string;
+  resultCache: Map<string, ResultDTO>;
   onGroupUpdated?: (group: DedupGroupDTO) => void;
 }
 
@@ -30,6 +32,7 @@ export function ResultCard({
   item,
   getToken,
   projectId,
+  resultCache,
   onGroupUpdated,
 }: ResultCardProps): JSX.Element {
   const router = useRouter();
@@ -62,6 +65,14 @@ export function ResultCard({
       {result.isNew ? <Text>NOVO</Text> : null}
       <Text>{provenanceLine}</Text>
       <DecisionBar group={group} getToken={getToken} onDecided={onGroupUpdated ?? handleNoopGroup} />
+      {group !== null && group.originCount > 1 ? (
+        <DedupGroupSection
+          group={group}
+          resultCache={resultCache}
+          getToken={getToken}
+          onGroupUpdated={onGroupUpdated ?? handleNoopGroup}
+        />
+      ) : null}
       {group === null ? <Text>grupo indisponível</Text> : null}
       <Button title="ver ficha →" onPress={handleOpenDetail} />
     </View>

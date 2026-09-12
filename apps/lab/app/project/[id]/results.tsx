@@ -1,13 +1,20 @@
-// apps/lab — tela de Resultados com scroll infinito mais filtros (08-02).
+// apps/lab — tela de Resultados com decisão/grupo expansível (08-03 task 2).
 //
 // Rota /project/[id]/results?runId=<uuid>&searchId=<uuid> (o run concluído
 // abre aqui via botão Ver resultados). Blocos:
 // - Cabeçalho com contadores: `N NOVOS desde a última execução` (newCount da
 //   primeira página) mais `mostrando X de Y` (visíveis após filtro sobre
-//   carregados).
+//   carregados, com overrides aplicados).
 // - Barra de filtros combináveis client-side (D-17): estado com cinco
 //   opções, tag via lista horizontal do projeto mais todas, fonte com três
-//   opções, ano via campo numérico onde vazio vale todos.
+//   opções, ano via campo numérico onde vazio vale todos. Filtros operam sobre
+//   o item efetivo (override ?? original), então decisão/divergência refletem
+//   sem refetch.
+// - groupOverrides (Map groupId→DedupGroupDTO) local: item efetivo =
+//   groupOverrides.get(group.id) ?? original; onGroupUpdated escreve no mapa;
+//   sem tocar useResultsList/triage (dono 08-02); 08-04 reusa o mesmo mapa.
+// - resultCache (Map resultId→ResultDTO do run corrente) repassado ao card
+//   para o grupo expansível evitar refetch (membros sob demanda só ausentes).
 // - Lista virtualizada por cursor (D-16): FlatList com keyExtractor pelo id
 //   do result, onEndReached com threshold 0.5 e guarda de loadingMore, sem
 //   botão de paginar e sem páginas numeradas.
@@ -20,14 +27,16 @@
 // Guards são UX; autorização real continua no CORE. Text escapa por padrão.
 
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { JSX } from 'react';
 import { Button, FlatList, ScrollView, Text, TextInput, View } from 'react-native';
 import type { ListRenderItemInfo } from 'react-native';
+import type { DedupGroupDTO, ResultDTO } from '@uhhu/contracts';
 import { ApiError } from '../../../src/api/client';
 import { useAuth } from '../../../src/auth/session';
 import { useResultsList } from '../../../src/results/useResultsList';
 import { ResultCard } from '../../../src/results/ResultCard';
+import { applyResultFilters } from '../../../src/results/triage';
 import type { TriagedItem } from '../../../src/results/triage';
 import { Empty } from '../../../src/ui/Empty';
 import { ErrorBanner } from '../../../src/ui/ErrorBanner';
@@ -64,6 +73,9 @@ export default function ResultsScreen(): JSX.Element {
     getToken,
   });
   const [yearInput, setYearInput] = useState<string>('');
+  const [groupOverrides, setGroupOverrides] = useState<Map<string, DedupGroupDTO>>(
+    () => new Map<string, DedupGroupDTO>(),
+  );
   const redirectedRef = useRef<boolean>(false);
 
   const nextAfterLogin =
@@ -116,6 +128,38 @@ export default function ResultsScreen(): JSX.Element {
     if (Number.isSafeInteger(parsed)) {
       list.patchFilters({ year: parsed });
     }
+  }
+
+  const effectiveAllItems: TriagedItem[] = useMemo<TriagedItem[]>(() => {
+    const out: TriagedItem[] = [];
+    for (const item of list.allItems) {
+      if (item.group === null) {
+        out.push(item);
+        continue;
+      }
+      const override: DedupGroupDTO | undefined = groupOverrides.get(item.group.id);
+      out.push(override !== undefined ? { result: item.result, group: override } : item);
+    }
+    return out;
+  }, [list.allItems, groupOverrides]);
+
+  const resultCache: Map<string, ResultDTO> = useMemo<Map<string, ResultDTO>>(() => {
+    const cache = new Map<string, ResultDTO>();
+    for (const item of list.allItems) {
+      cache.set(item.result.id, item.result);
+    }
+    return cache;
+  }, [list.allItems]);
+
+  const visibleItems: TriagedItem[] = useMemo<TriagedItem[]>(
+    () => applyResultFilters(effectiveAllItems, list.filters),
+    [effectiveAllItems, list.filters],
+  );
+
+  function handleGroupUpdated(novo: DedupGroupDTO): void {
+    const next = new Map<string, DedupGroupDTO>(groupOverrides);
+    next.set(novo.id, novo);
+    setGroupOverrides(next);
   }
 
   if (authLoading) {
@@ -216,10 +260,16 @@ export default function ResultsScreen(): JSX.Element {
 
   return (
     <FlatList
-      data={list.visibleItems}
+      data={visibleItems}
       keyExtractor={(item: TriagedItem): string => item.result.id}
       renderItem={({ item }: ListRenderItemInfo<TriagedItem>): JSX.Element => (
-        <ResultCard item={item} getToken={getToken} projectId={projectId} />
+        <ResultCard
+          item={item}
+          getToken={getToken}
+          projectId={projectId}
+          resultCache={resultCache}
+          onGroupUpdated={handleGroupUpdated}
+        />
       )}
       style={{ flex: 1 }}
       contentContainerStyle={{ padding: 24, gap: 12, flexGrow: 1 }}
@@ -234,7 +284,7 @@ export default function ResultsScreen(): JSX.Element {
             {list.newCount} NOVOS desde a última execução
           </Text>
           <Text>
-            mostrando {list.visibleItems.length} de {list.allItems.length}
+            mostrando {visibleItems.length} de {effectiveAllItems.length}
           </Text>
           <View style={{ gap: 8 }}>
             <Text style={{ fontWeight: '600' }}>Estado</Text>
