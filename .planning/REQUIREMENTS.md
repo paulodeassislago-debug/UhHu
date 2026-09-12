@@ -38,8 +38,8 @@ Requirements for this milestone. Each maps to roadmap phases 6–9.
 ### Resultados e triagem
 
 - [x] **UI-17**: User vê cards de resultado (título, autores, ano, tipo, instituição/programa, fontes, proveniência busca → run → data → fonte) — done 08-02 (ResultCard base + lista infinita; decisão/tags/ficha em 08-03/08-04)
-- [ ] **UI-18**: User expande grupo deduplicado (origens, links, diferenças de metadados, "versão mais completa") e diverge por fonte quando precisar
-- [ ] **UI-19**: User decide elegibilidade por card (elegível / não elegível / indeciso), mutável a qualquer toque, com `decidido_em` atualizado
+- [x] **UI-18**: User expande grupo deduplicado (origens, links, diferenças de metadados, "versão mais completa") e diverge por fonte quando precisar — done 08-03 (DedupGroupSection expansível + diffMembers + divergência sem mudar decisão, com groupOverrides/resultCache)
+- [x] **UI-19**: User decide elegibilidade por card (elegível / não elegível / indeciso), mutável a qualquer toque, com `decidido_em` atualizado — done 08-03 (DecisionBar por groupId sem confirmação + decidedAt visível + overrides sem refetch)
 - [ ] **UI-20**: User associa tag opcional com autocomplete (defaults incluir/excluir/duplicado/indisponível/revisar) e gerencia tags do projeto
 - [x] **UI-21**: User identifica itens novos do run via badge "NOVO" (regra D-35) — done 08-02 (badge no card + contador `N NOVOS`, isNew só-anteriores de 08-01)
 - [ ] **UI-22**: User abre a ficha completa do item sob demanda (sem pré-carregar a lista)
@@ -123,8 +123,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | UI-15 | Phase 7 | Done (07-04) |
 | UI-16 | Phase 7 | Done (07-04) |
 | UI-17 | Phase 8 | Done (08-02) |
-| UI-18 | Phase 8 | Pending |
-| UI-19 | Phase 8 | Pending |
+| UI-18 | Phase 8 | Done (08-03) |
+| UI-19 | Phase 8 | Done (08-03) |
 | UI-20 | Phase 8 | Pending |
 | UI-21 | Phase 8 | Done (08-02) |
 | UI-22 | Phase 8 | Pending |
