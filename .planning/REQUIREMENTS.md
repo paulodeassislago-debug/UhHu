@@ -115,8 +115,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | UI-31 | Phase 6 | Done (06-01) |
 | UI-32 | Phase 6 | Done (06-01, lado servidor) |
 | UI-09 | Phase 7 | Done (07-01) |
-| UI-10 | Phase 7 | Done (07-01) |
-| UI-11 | Phase 7 | Done (07-01, Comparação disabled fase 9) |
+| UI-10 | Phase 7 | Done (07-01 + UX 07-06 lápis ✎ título/pergunta) |
+| UI-11 | Phase 7 | Done (07-01, Comparação disabled fase 9; cabeçalho 07-06 intacto) |
 | UI-12 | Phase 7 | Done (07-02) |
 | UI-13 | Phase 7 | Done (07-02) |
 | UI-14 | Phase 7 | Done (07-03) |

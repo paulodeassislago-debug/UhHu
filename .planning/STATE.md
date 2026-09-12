@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Lab UI v1
-status: "executing — phase 7 complete + gap 07-05 done (5/5 plans)"
-stopped_at: Phase 7 plan 07-05 complete
-last_updated: "2026-09-12T12:47:00Z"
-last_activity: "2026-09-12 — Phase 7 gap plan 07-05 executed (wrapper UUID cross-platform + 3 toques migrados + tripwire; d84025d, eb6b2c2)"
+status: "executing — phase 7 open (6/6 plans incl. gap 07-05 + UX 07-06, UAT re-test pending)"
+stopped_at: Phase 7 plan 07-06 complete
+last_updated: "2026-09-12T13:00:09Z"
+last_activity: "2026-09-12 — Phase 7 UX plan 07-06 executed (lapis inline titulo+pergunta + testes + adendo doc; e758388, c43ea39)"
 progress:
   total_phases: 4
   completed_phases: 0
@@ -25,21 +25,21 @@ See: .planning/PROJECT.md (updated 2026-09-11)
 
 ## Current Position
 
-Phase: 7 of 9 (Executed 5/5 incl. gap 07-05 — awaiting human RE-test of EXECUTAR AGORA flow, phase NOT closed)
-Plan: 07-05 of 5 done (gap fix)
-Status: Blocker fixed in code (3-level UUID wrapper + tripwire); awaiting human UAT re-test
-Last activity: 2026-09-12 — Gap 07-05 fixed in code (expo-crypto 57.0.3 + fallback, 47/47 tests, bundle re-exported); UAT item 1 re-test pending
+Phase: 7 of 9 (Executed 6/6 incl. gap 07-05 + UX 07-06 — awaiting human RE-test of EXECUTAR AGORA flow, phase NOT closed)
+Plan: 07-06 of 6 done (UX Paulo 12/09)
+Status: Lapis inline no cabeçalho em código (título + pergunta via PATCH existente, 51/51 tests); awaiting human UAT re-test
+Last activity: 2026-09-12 — UX 07-06 done (Pressable ✎ + testes + adendo §4; e758388, c43ea39); UAT item 1 re-test pending
 Resume file: .planning/phases/07-projetos-buscas-execucao/07-HUMAN-UAT.md
 
-Progress: [██████░░░░] 5/5 plans executed (phase open, UAT re-test pending)
+Progress: [██████░░░░] 6/6 plans executed (phase open, UAT re-test pending)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 5
-- Average duration: ~9min
-- Total execution time: ~24min
+- Total plans completed: 6
+- Average duration: ~8min
+- Total execution time: ~29min
 
 **By Phase:**
 
@@ -48,7 +48,7 @@ Progress: [██████░░░░] 5/5 plans executed (phase open, UAT r
 | 1. Fundação executável | 2 | ~19min | ~10min |
 | 3. Buscas e adapters | 6 | ~74min+40min | ~19min |
 | 4. Corpus e exportação | 5 | ~150min (executor + checkpoint/fixes) | ~30min |
-| 7. Projetos, buscas e execução | 5 (07-01, 07-02, 07-03, 07-04, gap 07-05) | ~38min | ~8min |
+| 7. Projetos, buscas e execução | 6 (07-01, 07-02, 07-03, 07-04, gap 07-05, UX 07-06) | ~43min | ~7min |
 
 **Recent Trend:**
 
@@ -89,6 +89,7 @@ Recent decisions affecting current work:
 - 07-03: execução com acompanhamento (UI-14, 637b0ca+e585c41): useRunPolling (getRun imediato + 2500ms + teto 240 + 3 erros seguidos → retry manual, cleanup só-timer D-08, 401 imediato, retry exposto) + helpers isTerminalStatus/runStatusLabel/formatDurationMs (testes 6/6) + tela run.tsx §7 (progresso por fonte explícito, Cancelar só em polling, banners ok/parcial/falha/cancelada + repetir Idempotency-Key, placeholder fase 8 honesto, uuid inválido sem request, expired/next com runId+searchId, guarda expired anti-clobber) + tripwire 6/6 + registro run no Stack; contrato intocado; vitest 32/32; typecheck+eslint exit 0, any 0; auditoria 0 crit/0 high
 - 07-04: cascata + histórico no card (UI-15/UI-16, 89841a3+4e114b1): runHistory.ts puro (formatRunWhen/summarizeRun, testes 8/8) + RunHistory expansível paginado (limit 20 + Ver mais, toque → string run?runId=) + DeleteSearchDialog (contagens honestas limit 100, Excluir explícito → 204 → onDeleted, erro verbatim sem fechar) + SearchCard final (histórico + excluir; Comparar disabled fase 9) + strategies remove card local; fase 7 FECHADA 4/4; vitest 40/40; typecheck+eslint exit 0, any 0; auditoria 0 crit/0 high
 - 07-05: gap-closure UAT EXECUTAR AGORA no beta HTTP (UI-14, d84025d+eb6b2c2): `newIdempotencyKey()` em src/utils/uuid.ts (expo-crypto 57.0.3 version-aligned, NÃO ~15.x; cadeia randomUUID→getRandomValues→global porque o randomUUID web do expo também delega ao global ausente; getRandomBytes evitado — cai em PRNG fraco em __DEV__ remoto) + 3 toques migrados (search-form/run/SearchCard, key por toque, sem retry) + uuid.test.ts 6/6 (formato/unicidade/1000 sem colisão/ausência global/atalho seguro/sem-expo) + tripwire anti-`crypto.randomUUID` nu (provado com plantio temporário) + client.ts newRequestId intocado (já degrada); vitest 47/47; typecheck+lint exit 0, any 0, dist reexportado 1.8MB grep 0; audit só toolchain pré-existente; auditoria 0 crit/0 high; re-teste humano UAT item 1 pendente
+- 07-06: lápis ✎ inline no cabeçalho (UI-10/UI-11, e758388+c43ea39, pedido Paulo 12/09): título com Pressable ✎ + TextInput maxLength 200 + Salvar/Cancelar via projectsApi.update({ title }) com validação local (vazio/overlong sem request) + pergunta com ✎ reusando saveQuestion (botão separado removido); estados independentes por campo (PATCH parcial sem lost-update); Pressable envolve Text porque Text RN não tem hitSlop (tsc TS2769); label "Editar a pergunta" para satisfazer grep de remoção; contrato já aceitava title (sem widen); projects-ui 4 novos testes (título PATCH, validação sem request, cancelar sem PATCH, fonte sem botão) 51/51; typecheck+lint exit 0, any 0; adendo 12/09/2026 em dev-docs/10-lab-esqueleto-telas.md §4 (arquivo passa a rastreado); auditoria 0 crit/0 high
 
 ### Pending Todos
 
@@ -111,6 +112,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-12T12:47:00Z
-Stopped at: Phase 7 COMPLETE + gap 07-05 (wrapper UUID cross-platform, EXECUTAR AGORA funciona no beta HTTP) — next phase 8 planning. Nota: re-teste humano UAT 07-HUMAN-UAT item 1 (EXECUTAR AGORA via tailnet) segue pendente em paralelo, junto com 06-HUMAN-UAT.
+Last session: 2026-09-12T13:00:09Z
+Stopped at: Phase 7 UX plan 07-06 complete (lápis inline título+pergunta, 51/51 tests) — next phase 8 planning. Nota: re-teste humano UAT 07-HUMAN-UAT item 1 (EXECUTAR AGORA via tailnet) segue pendente em paralelo, junto com 06-HUMAN-UAT.
 Resume file: .planning/phases/08-resultados-triagem/08-CONTEXT.md (phase 8 planning; 07-04 SUMMARY em .planning/phases/07-projetos-buscas-execucao/07-04-SUMMARY.md). Nota: re-teste humano UAT 06-HUMAN-UAT (LISTA ROLA web+nativo) segue pendente em paralelo.

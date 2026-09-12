@@ -51,7 +51,7 @@ Cross-cutting constraints: CORS allowlist exata sem espelho (06-01, 06-04); `any
   2. User salva estratégia (só salvar ou salvar-e-executar) com selo de filtro garantido pelo Core e status das fontes
   3. User executa busca, acompanha progresso por fonte (cancelável) e entende banners ok/parcial/falha/cancelled
   4. User exclui busca somente após diálogo listando a cascata; histórico de runs consultável
-**Plans**: 5 plans in 4 waves
+**Plans**: 5 plans in 4 waves + 1 gap-closure (UAT) + 1 UX request (Paulo 12/09)
 
 Plans:
 - [x] 07-01-PLAN.md — Projetos: modal criar + lista gerenciável + cabeçalho editável com abas (Wave 1) — done 2026-09-12 (1965da1, 4817ef0)
@@ -59,6 +59,7 @@ Plans:
 - [x] 07-03-PLAN.md — Execução: polling por fonte + cancelar + banners (Wave 2, blocked on 07-02) — done 2026-09-12 (637b0ca, e585c41)
 - [x] 07-04-PLAN.md — Cascata de exclusão + histórico expansível no card (Wave 3, blocked on 07-02, 07-03) — done 2026-09-12 (89841a3, 4e114b1)
 - [x] 07-05-PLAN.md — Gap-closure UAT: wrapper UUID cross-platform (expo-crypto + fallback) + migração dos 3 toques + tripwire (Wave 4, gap 07-HUMAN-UAT item 1) — done 2026-09-12 (d84025d, eb6b2c2)
+- [x] 07-06-PLAN.md — UX Paulo 12/09: lápis ✎ inline no cabeçalho (título + pergunta, PATCH existente) (Wave 5, depends on 07-01) — done 2026-09-12 (e758388, c43ea39)
 
 #### Phase 8: Resultados e triagem
 **Goal**: Pesquisador tria resultados item a item com decisão mutável, tags e transparência de dedup
@@ -99,6 +100,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 4. Corpus e exportação | v1.0 | 5/5 | Complete | 2026-09-11 |
 | 5. Prova headless | v1.0 | 5/5 | Complete | 2026-09-11 |
 | 6. Fundação do app + auth + suporte CORE | v1.1 | 5/5 | Complete | 2026-09-11 |
-| 7. Projetos, buscas e execução | v1.1 | 2/4 | In progress | - |
+| 7. Projetos, buscas e execução | v1.1 | 6/6 | In progress (phase open, UAT re-test pending) | - |
 | 8. Resultados e triagem | v1.1 | 0/TBD | Not started | - |
 | 9. Corpus, exportação e comparação | v1.1 | 0/TBD | Not started | - |
