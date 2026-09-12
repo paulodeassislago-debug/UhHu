@@ -14,7 +14,13 @@ export const createProjectSchema = z.object({
 
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 
-export const updateProjectSchema = createProjectSchema.partial().extend({
+export const updateProjectSchema = z.object({
+  title: z.string().trim().min(1).max(200).optional(),
+  // 07-01 (Rule 1): researchQuestion/description aceitam null no update para
+  // limpar (DTO e lib já são string|null; partial puro rejeitava null e
+  // impedia "string vazia salva null" do cabeçalho editável).
+  researchQuestion: z.string().trim().max(2000).nullable().optional(),
+  description: z.string().trim().max(5000).nullable().optional(),
   status: z.enum(['active', 'archived']).optional(),
   // UI-30 (§14-4): referência manual da comparação (D-35 vizinho). Apenas no
   // update; create NÃO aceita. Nullable para limpar; validação de

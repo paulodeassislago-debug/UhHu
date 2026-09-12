@@ -1,37 +1,50 @@
-// apps/lab — Projeto: cabeçalho + abas com estados §11 (UI-03, 06-04 task 1).
+// apps/lab — Projeto: cabeçalho editável + TabBar com contador vivo (07-01 task 2).
 //
-// Cabeçalho: pergunta de pesquisa + status via GET /api/v1/projects/:id
-// (owner-scoped; 404 idêntico fora do escopo, IDOR §2.3). Abas: Estratégias /
-// Comparação / Corpus com contador placeholder "Corpus: 0" (contador vivo na
-// fase 9; sem decisão de elegibilidade aqui — fase 8).
+// Cabeçalho real (D-14, UI-10, UI-11): título (24/semibold), linha
+// "Pergunta: {researchQuestion ?? '—'}" com botão "Editar pergunta" que troca
+// para TextInput multiline + botões Salvar/Cancelar; Salvar chama
+// projectsApi.update(projectId, { researchQuestion: value.trim().length > 0
+// ? value.trim() : null }) — string vazia salva null (limpa a pergunta).
+// Menu do cabeçalho: botões Arquivar/Reativar (update status + setProject
+// local) — sem tela de configurações. Abaixo do cabeçalho, TabBar com 3 itens:
+// [Estratégias] (Link /project/[id]/strategies), [Comparação] (botão disabled
+// com hint de etapa futura), [Corpus: N] (Link /project/[id]/corpus) onde N é
+// o contador vivo via labApi.getCorpus(projectId, { limit: 100 }) — número
+// reflete o GET corpus; erro do contador mostra "Corpus" sem número (nunca
+// quebra o cabeçalho). Contagem é enriquecimento de leitura; nunca decide
+// elegibilidade no client. Tab ativa derivada da rota atual via prop opcional
+// activeTab (default 'none' nesta tela).
 // Estados transversais:
 // - Carregando → CardSkeleton por card (nunca spinner solitário).
 // - Erro → ErrorBanner com motivo verbatim + Repetir (refaz o listById real).
-// - Sem estratégias (placeholder fase 6) → Empty "Nenhuma estratégia —
-//   defina a primeira busca (fase 7)".
-// - Runs futuros → PartialBanner com status 'ok'|'partial'|'failed' (fase 6:
-//   'ok' renderiza null; wire real nas fases 8-9, sem fingir dado —
-//   T-06-04-03).
 // - 401 com sessão prévia → markExpired + redirect /login?expired=1&next=
 //   /project/<id> (projeto preservado, UI-08).
-// Guards são UX; autorização real continua no CORE (AGENTS.md).
+// - 404 fora do escopo vira "não encontrado" genérico (app nunca distingue
+//   "inexistente" de "alheio"; T-07-01-02).
+// Guards são UX; autorização real continua no CORE (AGENTS.md). React Native
+// escapa Text por padrão; sem WebView; sem eval (T-07-01-04).
 
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import type { JSX } from 'react';
-import { ScrollView, Text } from 'react-native';
+import { Button, ScrollView, Text, TextInput, View } from 'react-native';
 import type { ProjectDTO } from '@uhhu/contracts';
 import { ApiError } from '../../src/api/client';
 import { projectsApi } from '../../src/api/projects';
+import { labApi } from '../../src/api/lab';
 import { useAuth } from '../../src/auth/session';
-import { Empty } from '../../src/ui/Empty';
 import { ErrorBanner } from '../../src/ui/ErrorBanner';
-import { PartialBanner } from '../../src/ui/PartialBanner';
 import { CardSkeleton } from '../../src/ui/Skeleton';
+import { formatCorpusCount } from '../../src/projects/counts';
 
 type LoadState = 'loading' | 'ready' | 'error';
+type DetailTab = 'strategies' | 'compare' | 'corpus' | 'none';
 
-export default function ProjectDetailScreen(): JSX.Element {
+export interface ProjectDetailProps {
+  activeTab?: DetailTab;
+}
+
+export default function ProjectDetailScreen({ activeTab = 'none' }: ProjectDetailProps): JSX.Element {
   const router = useRouter();
   const params = useLocalSearchParams<{ id: string }>();
   const projectId = typeof params.id === 'string' ? params.id : '';
@@ -40,6 +53,14 @@ export default function ProjectDetailScreen(): JSX.Element {
   const [project, setProject] = useState<ProjectDTO | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [errorRequestId, setErrorRequestId] = useState<string | null>(null);
+  const [editing, setEditing] = useState<boolean>(false);
+  const [draft, setDraft] = useState<string>('');
+  const [saving, setSaving] = useState<boolean>(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveRequestId, setSaveRequestId] = useState<string | null>(null);
+  const [statusPending, setStatusPending] = useState<boolean>(false);
+  const [statusError, setStatusError] = useState<string | null>(null);
+  const [corpusCount, setCorpusCount] = useState<string | null>(null);
 
   const load = useCallback(async (): Promise<void> => {
     if (projectId.length === 0) {
@@ -90,6 +111,116 @@ export default function ProjectDetailScreen(): JSX.Element {
     void load();
   }, [authLoading, user, load, router, projectId]);
 
+  // Contador vivo da aba Corpus via getCorpus (items.length + "+" se hasMore).
+  useEffect(() => {
+    if (state !== 'ready' || project === null) {
+      return;
+    }
+    let cancelled = false;
+    async function fetchCorpusCount(): Promise<void> {
+      try {
+        const res = await labApi.getCorpus(projectId, { limit: 100 }, { getToken });
+        if (cancelled) {
+          return;
+        }
+        setCorpusCount(formatCorpusCount(res.items.length, res.page.hasMore));
+      } catch {
+        // Erro do contador mostra "Corpus" sem número; nunca quebra o cabeçalho.
+        if (!cancelled) {
+          setCorpusCount(null);
+        }
+      }
+    }
+    void fetchCorpusCount();
+    return (): void => {
+      cancelled = true;
+    };
+  }, [state, project, projectId, getToken]);
+
+  function handleStartEdit(): void {
+    setDraft(project?.researchQuestion ?? '');
+    setSaveError(null);
+    setSaveRequestId(null);
+    setEditing(true);
+  }
+
+  function handleCancelEdit(): void {
+    if (saving) {
+      return;
+    }
+    setEditing(false);
+    setSaveError(null);
+    setSaveRequestId(null);
+  }
+
+  async function handleSaveQuestion(): Promise<void> {
+    setSaveError(null);
+    setSaveRequestId(null);
+    setSaving(true);
+    try {
+      const updated = await projectsApi.update(
+        projectId,
+        { researchQuestion: draft.trim().length > 0 ? draft.trim() : null },
+        { getToken },
+      );
+      setProject(updated);
+      setEditing(false);
+    } catch (error: unknown) {
+      if (error instanceof ApiError && error.status === 401) {
+        markExpired();
+        router.replace({
+          pathname: '/login',
+          params: { expired: '1', next: `/project/${projectId}` },
+        });
+        return;
+      }
+      if (error instanceof ApiError) {
+        setSaveError(error.message);
+        setSaveRequestId(error.requestId !== '' ? error.requestId : null);
+      } else if (error instanceof Error) {
+        setSaveError(error.message);
+        setSaveRequestId(null);
+      } else {
+        setSaveError('Erro interno. Tente novamente.');
+        setSaveRequestId(null);
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleToggleStatus(): Promise<void> {
+    if (project === null) {
+      return;
+    }
+    const nextStatus = project.status === 'active' ? 'archived' : 'active';
+    setStatusError(null);
+    setStatusPending(true);
+    try {
+      const updated = await projectsApi.update(project.id, { status: nextStatus }, { getToken });
+      setProject(updated);
+    } catch (error: unknown) {
+      if (error instanceof ApiError && error.status === 401) {
+        markExpired();
+        router.replace({
+          pathname: '/login',
+          params: { expired: '1', next: `/project/${projectId}` },
+        });
+        return;
+      }
+      if (error instanceof ApiError) {
+        const detail = error.requestId !== '' ? `${error.message} (req ${error.requestId})` : error.message;
+        setStatusError(detail);
+      } else if (error instanceof Error) {
+        setStatusError(error.message);
+      } else {
+        setStatusError('Erro interno. Tente novamente.');
+      }
+    } finally {
+      setStatusPending(false);
+    }
+  }
+
   if (authLoading || (user !== null && state === 'loading')) {
     return (
       <ScrollView
@@ -135,6 +266,8 @@ export default function ProjectDetailScreen(): JSX.Element {
     );
   }
 
+  const corpusTabLabel = corpusCount !== null ? `Corpus: ${corpusCount}` : 'Corpus';
+
   return (
     <ScrollView
       style={{ flex: 1 }}
@@ -142,37 +275,59 @@ export default function ProjectDetailScreen(): JSX.Element {
       keyboardShouldPersistTaps="handled"
     >
       <Text style={{ fontSize: 24, fontWeight: '600' }}>{project?.title ?? 'Projeto'}</Text>
-      {project?.researchQuestion !== undefined &&
-      project.researchQuestion !== null &&
-      project.researchQuestion.length > 0 ? (
-        <Text>Pergunta: {project.researchQuestion}</Text>
-      ) : null}
+      {editing ? (
+        <View style={{ gap: 8 }}>
+          <TextInput
+            value={draft}
+            onChangeText={setDraft}
+            placeholder="Pergunta de pesquisa"
+            multiline
+            maxLength={2000}
+            editable={!saving}
+          />
+          {saveError !== null ? <Text style={{ color: '#dc2626' }}>{saveError}</Text> : null}
+          {saveRequestId !== null ? <Text style={{ fontSize: 12 }}>(req {saveRequestId})</Text> : null}
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Button title={saving ? 'Salvando…' : 'Salvar'} onPress={() => void handleSaveQuestion()} disabled={saving} />
+            <Button title="Cancelar" onPress={handleCancelEdit} disabled={saving} />
+          </View>
+        </View>
+      ) : (
+        <View style={{ gap: 8 }}>
+          <Text>Pergunta: {project?.researchQuestion ?? '—'}</Text>
+          <Button title="Editar pergunta" onPress={handleStartEdit} />
+        </View>
+      )}
       {project !== null ? <Text>Status: {project.status}</Text> : null}
-      <Text>Abas: Estratégias / Comparação / Corpus: 0 (contador vivo na fase 9).</Text>
-      <PartialBanner whatCame="cabeçalho do projeto" whatMissed="runs e corpus" status="ok" />
-      <Empty
-        title="Nenhuma estratégia"
-        message="Defina a primeira busca (fase 7) — as estratégias entram na fase 7."
-        actionLabel="Nova estratégia"
-        disabled
-        disabledHint="disponível na fase 7"
-      />
-      <Link
-        href={{
-          pathname: '/project/[id]/strategies',
-          params: { id: projectId },
-        }}
-      >
-        Aba Estratégias
-      </Link>
-      <Link
-        href={{
-          pathname: '/project/[id]/corpus',
-          params: { id: projectId },
-        }}
-      >
-        Aba Corpus
-      </Link>
+      {statusError !== null ? <Text style={{ color: '#dc2626' }}>{statusError}</Text> : null}
+      {project !== null && project.status === 'active' ? (
+        <Button title="Arquivar" onPress={() => void handleToggleStatus()} disabled={statusPending} />
+      ) : null}
+      {project !== null && project.status === 'archived' ? (
+        <Button title="Reativar" onPress={() => void handleToggleStatus()} disabled={statusPending} />
+      ) : null}
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <Link
+          href={{
+            pathname: '/project/[id]/strategies',
+            params: { id: projectId },
+          }}
+        >
+          <Text style={{ fontWeight: activeTab === 'strategies' ? '700' : '400' }}>Estratégias</Text>
+        </Link>
+        <View style={{ gap: 2 }}>
+          <Button title="Comparação" disabled />
+          <Text style={{ fontSize: 12 }}>disponível na fase 9</Text>
+        </View>
+        <Link
+          href={{
+            pathname: '/project/[id]/corpus',
+            params: { id: projectId },
+          }}
+        >
+          <Text style={{ fontWeight: activeTab === 'corpus' ? '700' : '400' }}>{corpusTabLabel}</Text>
+        </Link>
+      </View>
       <Link href="/projects">Voltar aos projetos</Link>
     </ScrollView>
   );
