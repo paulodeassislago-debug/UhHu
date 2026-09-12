@@ -5,11 +5,22 @@
 // negócio (filtro/dedup/isNew são garantidos pelo Core). DTOs em definição
 // única via `import type` de @uhhu/contracts; bodies via parse dos schemas.
 
-import { createSearchSchema, updateSearchSchema } from '@uhhu/contracts';
+import {
+  createSearchSchema,
+  createTagSchema,
+  decisionInputSchema,
+  divergenceInputSchema,
+  updateSearchSchema,
+  updateTagSchema,
+} from '@uhhu/contracts';
 import type {
   CompareDTO,
   CorpusEntryDTO,
   CreateSearchInput,
+  CreateTagInput,
+  DecisionInput,
+  DedupGroupDTO,
+  DivergenceInput,
   JobDTO,
   LabSource,
   PageInfo,
@@ -18,6 +29,7 @@ import type {
   SearchRunDTO,
   SourceHealthDTO,
   UpdateSearchInput,
+  UpdateTagInput,
 } from '@uhhu/contracts';
 import { apiFetch } from './client';
 import type { TokenProvider } from './client';
@@ -74,6 +86,26 @@ export interface LabSourceEntry {
 
 export type ExportFormat = 'csv' | 'bibtex' | 'json';
 export type ExportScope = 'corpus' | 'selection';
+
+// Tag do projeto (08-02): espelho do `ProjectTag` do servidor
+// (apps/core-api/src/lib/corpus.ts: { id, name, color }) — contracts não
+// exporta este tipo; definição única aqui, sem `any`.
+export interface ProjectTag {
+  id: string;
+  name: string;
+  color: string | null;
+}
+
+// Client de triagem (08-02, base de 08-03/08-04) — rotas REAIS do servidor:
+// - listGroups(projectId, ...)
+// - setGroupDecision(groupId, ...)
+// - listProjectTags(projectId)
+// - createProjectTag(projectId, ...)
+// - renameProjectTag(projectId, tagId, ...)
+// - deleteProjectTag(projectId, tagId)
+// - attachTag(groupId, tagId)
+// - detachTag(groupId, tagId)
+// - setDivergence(groupId, ...)
 
 export const labApi = {
   // -- Searches (fase 7) --
@@ -192,6 +224,102 @@ export const labApi = {
       ...toRequestOptions(opts),
       method: 'GET',
     });
+  },
+
+  // -- Triagem por grupo (fase 8; decisão UMA por grupo D-46, nunca resultId) --
+  async listGroups(
+    projectId: string,
+    query?: PagedQuery,
+    opts?: LabRequestOptions,
+  ): Promise<{ items: DedupGroupDTO[]; page: PageInfo }> {
+    return apiFetch<{ items: DedupGroupDTO[]; page: PageInfo }>(
+      withPaging(`/api/v1/lab/projects/${encodeURIComponent(projectId)}/groups`, query),
+      { ...toRequestOptions(opts), method: 'GET' },
+    );
+  },
+
+  async setGroupDecision(
+    groupId: string,
+    input: DecisionInput,
+    opts?: LabRequestOptions,
+  ): Promise<DedupGroupDTO> {
+    const body = decisionInputSchema.parse(input);
+    return apiFetch<DedupGroupDTO>(`/api/v1/lab/groups/${encodeURIComponent(groupId)}/decision`, {
+      ...toRequestOptions(opts),
+      method: 'PUT',
+      body,
+    });
+  },
+
+  async listProjectTags(projectId: string, opts?: LabRequestOptions): Promise<ProjectTag[]> {
+    return apiFetch<ProjectTag[]>(`/api/v1/lab/projects/${encodeURIComponent(projectId)}/tags`, {
+      ...toRequestOptions(opts),
+      method: 'GET',
+    });
+  },
+
+  async createProjectTag(
+    projectId: string,
+    input: CreateTagInput,
+    opts?: LabRequestOptions,
+  ): Promise<ProjectTag> {
+    const body = createTagSchema.parse(input);
+    return apiFetch<ProjectTag>(`/api/v1/lab/projects/${encodeURIComponent(projectId)}/tags`, {
+      ...toRequestOptions(opts),
+      method: 'POST',
+      body,
+    });
+  },
+
+  async renameProjectTag(
+    projectId: string,
+    tagId: string,
+    input: UpdateTagInput,
+    opts?: LabRequestOptions,
+  ): Promise<ProjectTag> {
+    const body = updateTagSchema.parse(input);
+    return apiFetch<ProjectTag>(
+      `/api/v1/lab/projects/${encodeURIComponent(projectId)}/tags/${encodeURIComponent(tagId)}`,
+      { ...toRequestOptions(opts), method: 'PATCH', body },
+    );
+  },
+
+  async deleteProjectTag(
+    projectId: string,
+    tagId: string,
+    opts?: LabRequestOptions,
+  ): Promise<void> {
+    await apiFetch<void>(
+      `/api/v1/lab/projects/${encodeURIComponent(projectId)}/tags/${encodeURIComponent(tagId)}`,
+      { ...toRequestOptions(opts), method: 'DELETE' },
+    );
+  },
+
+  async attachTag(groupId: string, tagId: string, opts?: LabRequestOptions): Promise<DedupGroupDTO> {
+    return apiFetch<DedupGroupDTO>(`/api/v1/lab/groups/${encodeURIComponent(groupId)}/tags`, {
+      ...toRequestOptions(opts),
+      method: 'POST',
+      body: { tagId },
+    });
+  },
+
+  async detachTag(groupId: string, tagId: string, opts?: LabRequestOptions): Promise<void> {
+    await apiFetch<void>(
+      `/api/v1/lab/groups/${encodeURIComponent(groupId)}/tags/${encodeURIComponent(tagId)}`,
+      { ...toRequestOptions(opts), method: 'DELETE' },
+    );
+  },
+
+  async setDivergence(
+    groupId: string,
+    input: DivergenceInput,
+    opts?: LabRequestOptions,
+  ): Promise<DedupGroupDTO> {
+    const body = divergenceInputSchema.parse(input);
+    return apiFetch<DedupGroupDTO>(
+      `/api/v1/lab/groups/${encodeURIComponent(groupId)}/divergence`,
+      { ...toRequestOptions(opts), method: 'PUT', body },
+    );
   },
 
   // -- Corpus (fase 9; view derivada dos elegíveis) --
