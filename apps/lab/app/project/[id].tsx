@@ -1,10 +1,13 @@
-// apps/lab — Projeto: cabeçalho editável + TabBar com contador vivo (07-01 task 2).
+// apps/lab — Projeto: cabeçalho editável + TabBar com contador vivo (07-01 task 2; 07-06 lápis inline).
 //
-// Cabeçalho real (D-14, UI-10, UI-11): título (24/semibold), linha
-// "Pergunta: {researchQuestion ?? '—'}" com botão "Editar pergunta" que troca
-// para TextInput multiline + botões Salvar/Cancelar; Salvar chama
-// projectsApi.update(projectId, { researchQuestion: value.trim().length > 0
-// ? value.trim() : null }) — string vazia salva null (limpa a pergunta).
+// Cabeçalho real (D-14, UI-10, UI-11): título com "✎" inline (pedido Paulo
+// 12/09/2026) que troca para TextInput + botões Salvar/Cancelar; Salvar chama
+// projectsApi.update(projectId, { title: value.trim() }) com validação local
+// (não-vazio + max 200 do contrato; erro local sem request) e atualiza o
+// estado local com o DTO retornado. Linha "Pergunta: ..." com "✎" inline que
+// reusa o fluxo saveQuestion existente — projectsApi.update(projectId,
+// { researchQuestion: value.trim().length > 0 ? value.trim() : null }) —
+// string vazia salva null (limpa a pergunta); sem botão separado de edição.
 // Menu do cabeçalho: botões Arquivar/Reativar (update status + setProject
 // local) — sem tela de configurações. Abaixo do cabeçalho, TabBar com 3 itens:
 // [Estratégias] (Link /project/[id]/strategies), [Comparação] (botão disabled
@@ -27,7 +30,7 @@
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import type { JSX } from 'react';
-import { Button, ScrollView, Text, TextInput, View } from 'react-native';
+import { Button, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import type { ProjectDTO } from '@uhhu/contracts';
 import { ApiError } from '../../src/api/client';
 import { projectsApi } from '../../src/api/projects';
@@ -58,6 +61,11 @@ export default function ProjectDetailScreen({ activeTab = 'none' }: ProjectDetai
   const [saving, setSaving] = useState<boolean>(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveRequestId, setSaveRequestId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState<boolean>(false);
+  const [titleDraft, setTitleDraft] = useState<string>('');
+  const [titleSaving, setTitleSaving] = useState<boolean>(false);
+  const [titleError, setTitleError] = useState<string | null>(null);
+  const [titleRequestId, setTitleRequestId] = useState<string | null>(null);
   const [statusPending, setStatusPending] = useState<boolean>(false);
   const [statusError, setStatusError] = useState<string | null>(null);
   const [corpusCount, setCorpusCount] = useState<string | null>(null);
@@ -136,6 +144,63 @@ export default function ProjectDetailScreen({ activeTab = 'none' }: ProjectDetai
       cancelled = true;
     };
   }, [state, project, projectId, getToken]);
+
+  function handleStartTitleEdit(): void {
+    setTitleDraft(project?.title ?? '');
+    setTitleError(null);
+    setTitleRequestId(null);
+    setEditingTitle(true);
+  }
+
+  function handleCancelTitleEdit(): void {
+    if (titleSaving) {
+      return;
+    }
+    setEditingTitle(false);
+    setTitleError(null);
+    setTitleRequestId(null);
+  }
+
+  async function handleSaveTitle(): Promise<void> {
+    const trimmed = titleDraft.trim();
+    if (trimmed.length === 0) {
+      setTitleError('Título não pode ficar vazio.');
+      return;
+    }
+    if (trimmed.length > 200) {
+      setTitleError('Título deve ter no máximo 200 caracteres.');
+      return;
+    }
+    setTitleError(null);
+    setTitleRequestId(null);
+    setTitleSaving(true);
+    try {
+      const updated = await projectsApi.update(projectId, { title: trimmed }, { getToken });
+      setProject(updated);
+      setEditingTitle(false);
+    } catch (error: unknown) {
+      if (error instanceof ApiError && error.status === 401) {
+        markExpired();
+        router.replace({
+          pathname: '/login',
+          params: { expired: '1', next: `/project/${projectId}` },
+        });
+        return;
+      }
+      if (error instanceof ApiError) {
+        setTitleError(error.message);
+        setTitleRequestId(error.requestId !== '' ? error.requestId : null);
+      } else if (error instanceof Error) {
+        setTitleError(error.message);
+        setTitleRequestId(null);
+      } else {
+        setTitleError('Erro interno. Tente novamente.');
+        setTitleRequestId(null);
+      }
+    } finally {
+      setTitleSaving(false);
+    }
+  }
 
   function handleStartEdit(): void {
     setDraft(project?.researchQuestion ?? '');
@@ -274,7 +339,35 @@ export default function ProjectDetailScreen({ activeTab = 'none' }: ProjectDetai
       contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={{ fontSize: 24, fontWeight: '600' }}>{project?.title ?? 'Projeto'}</Text>
+      {editingTitle ? (
+        <View style={{ gap: 8 }}>
+          <TextInput
+            value={titleDraft}
+            onChangeText={setTitleDraft}
+            placeholder="Título do projeto"
+            maxLength={200}
+            editable={!titleSaving}
+          />
+          {titleError !== null ? <Text style={{ color: '#dc2626' }}>{titleError}</Text> : null}
+          {titleRequestId !== null ? <Text style={{ fontSize: 12 }}>(req {titleRequestId})</Text> : null}
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Button title={titleSaving ? 'Salvando…' : 'Salvar'} onPress={() => void handleSaveTitle()} disabled={titleSaving} />
+            <Button title="Cancelar" onPress={handleCancelTitleEdit} disabled={titleSaving} />
+          </View>
+        </View>
+      ) : (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Text style={{ fontSize: 24, fontWeight: '600' }}>{project?.title ?? 'Projeto'}</Text>
+          <Pressable
+            onPress={handleStartTitleEdit}
+            accessibilityRole="button"
+            accessibilityLabel="Editar título"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text>✎</Text>
+          </Pressable>
+        </View>
+      )}
       {editing ? (
         <View style={{ gap: 8 }}>
           <TextInput
@@ -294,8 +387,17 @@ export default function ProjectDetailScreen({ activeTab = 'none' }: ProjectDetai
         </View>
       ) : (
         <View style={{ gap: 8 }}>
-          <Text>Pergunta: {project?.researchQuestion ?? '—'}</Text>
-          <Button title="Editar pergunta" onPress={handleStartEdit} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Text>Pergunta: {project?.researchQuestion ?? '—'}</Text>
+            <Pressable
+              onPress={handleStartEdit}
+              accessibilityRole="button"
+              accessibilityLabel="Editar a pergunta"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text>✎</Text>
+            </Pressable>
+          </View>
         </View>
       )}
       {project !== null ? <Text>Status: {project.status}</Text> : null}
