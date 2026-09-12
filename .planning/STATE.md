@@ -25,11 +25,11 @@ See: .planning/PROJECT.md (updated 2026-09-11)
 
 ## Current Position
 
-Phase: 8 of 9 (Context gathered — ready to plan)
+Phase: 8 of 9 (Planned — 4 plans in 4 sequential waves, ready to execute)
 Plan: —
-Status: Ready to plan Phase 8
-Last activity: 2026-09-12 — Phase 8 context gathered (H-01, infinito+filtros, ficha dedicada, tags modal)
-Resume file: .planning/phases/08-resultados-triagem/08-CONTEXT.md
+Status: Ready to execute Phase 8
+Last activity: 2026-09-12 — Phase 8 planned (08-01..08-04, D-15 isNew fix + triage; group-based routes verified)
+Resume file: .planning/phases/08-resultados-triagem/08-01-PLAN.md
 
 Progress: [████████░░] 6/6 plans phase 7 + UAT approved (milestone v1.1 phases 6-7/9 done)
 
