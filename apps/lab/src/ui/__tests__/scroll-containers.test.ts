@@ -19,6 +19,8 @@ const PROJECTS_PATH = '../../../app/projects.tsx';
 const LOGIN_PATH = '../../../app/login.tsx';
 const REGISTER_PATH = '../../../app/register.tsx';
 const DETAIL_PATH = '../../../app/project/[id].tsx';
+const STRATEGIES_PATH = '../../../app/project/[id]/strategies.tsx';
+const SEARCHFORM_PATH = '../../../app/project/[id]/search-form.tsx';
 
 function assertImportsFromReactNative(source: string, name: string, file: string): void {
   const importPattern = new RegExp(
@@ -68,10 +70,33 @@ describe('scroll containers (tripwire UAT 11/09/2026)', () => {
   });
 
   it('nenhum .map( de lista fora de FlatList/renderItem nas telas', () => {
-    const screens: string[] = [PROJECTS_PATH, LOGIN_PATH, REGISTER_PATH, DETAIL_PATH];
+    const screens: string[] = [
+      PROJECTS_PATH,
+      LOGIN_PATH,
+      REGISTER_PATH,
+      DETAIL_PATH,
+      STRATEGIES_PATH,
+      SEARCHFORM_PATH,
+    ];
     for (const screen of screens) {
       const source: string = readScreen(screen);
       expect(mapLinesOutsideScrollable(source)).toEqual([]);
     }
+  });
+
+  it('strategies.tsx importa e usa FlatList de react-native (07-02)', () => {
+    const source: string = readScreen(STRATEGIES_PATH);
+    assertImportsFromReactNative(source, 'FlatList', 'strategies.tsx');
+    assertUsesComponent(source, 'FlatList', 'strategies.tsx');
+    expect(source.includes('keyExtractor'), 'strategies.tsx deve ter keyExtractor (id opaco)').toBe(
+      true,
+    );
+    expect(source.includes('renderItem'), 'strategies.tsx deve ter renderItem').toBe(true);
+  });
+
+  it('search-form.tsx importa e usa ScrollView de react-native (07-02)', () => {
+    const source: string = readScreen(SEARCHFORM_PATH);
+    assertImportsFromReactNative(source, 'ScrollView', 'search-form.tsx');
+    assertUsesComponent(source, 'ScrollView', 'search-form.tsx');
   });
 });
