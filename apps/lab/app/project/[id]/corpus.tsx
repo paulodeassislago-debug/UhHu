@@ -6,8 +6,11 @@
 // - Busca `labApi.getCorpus(projectId, { limit: 100 }, { getToken })`.
 // - Filtros client-side via `filterCorpus` (AND puro, molde D-17).
 // - Seleção por GRUPO INTEIRO (`selected` de groupIds, um trabalho vale por
-//   referência D-14-2); a barra de exportar chega no 09-03, aqui só o estado
-//   mais `selectedIds` derivado.
+//   referência D-14-2) com `selectedIds` derivado para a barra de exportar.
+// - Barra de exportar (09-03, UI-25/UI-26, D-22/D-23): formato atual
+//   (CSV/BibTeX/JSON) + `Exportar seleção` (grupo inteiro) + `Exportar corpus
+//   completo`; entrega via `downloadExportFile` (Blob+anchor na web, Share no
+//   nativo); BibTeX sem seleção avisa sem request.
 // - Estados §11: skeleton triplo, erro verbatim com Repetir, vazios
 //   orientadores, 401 com expired mais next.
 // Guards são UX; autorização real continua no CORE. Texto escapa por padrão.
@@ -20,9 +23,12 @@ import type { ListRenderItemInfo } from 'react-native';
 import type { CorpusEntryDTO, PageInfo } from '@uhhu/contracts';
 import { ApiError } from '../../../src/api/client';
 import { labApi } from '../../../src/api/lab';
+import type { ExportFormat, ExportScope } from '../../../src/api/lab';
+import { projectsApi } from '../../../src/api/projects';
 import { useAuth } from '../../../src/auth/session';
 import { filterCorpus } from '../../../src/corpus/corpusFilters';
 import type { CorpusFilter } from '../../../src/corpus/corpusFilters';
+import { buildExportFilename, downloadExportFile, mimeForFormat } from '../../../src/export/exportDelivery';
 import { formatCorpusCount } from '../../../src/projects/counts';
 import { Empty } from '../../../src/ui/Empty';
 import { ErrorBanner } from '../../../src/ui/ErrorBanner';
@@ -59,6 +65,23 @@ function formatTags(tags: string[]): string {
   return tags.join(', ');
 }
 
+function extForFile(value: ExportFormat): 'csv' | 'bib' | 'json' {
+  if (value === 'bibtex') {
+    return 'bib';
+  }
+  if (value === 'json') {
+    return 'json';
+  }
+  return 'csv';
+}
+
+function todayYYYYMMDD(now: Date): string {
+  const year: string = String(now.getFullYear());
+  const month: string = String(now.getMonth() + 1).padStart(2, '0');
+  const day: string = String(now.getDate()).padStart(2, '0');
+  return `${year}${month}${day}`;
+}
+
 export default function CorpusScreen(): JSX.Element {
   const router = useRouter();
   const params = useLocalSearchParams<{ id: string }>();
@@ -73,6 +96,16 @@ export default function CorpusScreen(): JSX.Element {
   const [sourceFilter, setSourceFilter] = useState<'bdtd' | 'capes' | undefined>(undefined);
   const [yearInput, setYearInput] = useState<string>('');
   const [selected, setSelected] = useState<Set<string>>(() => new Set<string>());
+  const [format, setFormat] = useState<ExportFormat>('csv');
+  const [projectTitle, setProjectTitle] = useState<string | null>(null);
+  const [exportBusy, setExportBusy] = useState<boolean>(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [exportRequestId, setExportRequestId] = useState<string | null>(null);
+  const [exportNotice, setExportNotice] = useState<string | null>(null);
+  const [lastExport, setLastExport] = useState<{
+    scope: ExportScope;
+    selection: string | undefined;
+  } | null>(null);
 
   const load = useCallback(async (): Promise<void> => {
     if (projectId.length === 0) {
@@ -127,6 +160,28 @@ export default function CorpusScreen(): JSX.Element {
     void load();
   }, [authLoading, user, load, router, projectId]);
 
+  useEffect(() => {
+    if (authLoading || user === null || projectId.length === 0) {
+      return;
+    }
+    let cancelled = false;
+    void (async (): Promise<void> => {
+      try {
+        const project = await projectsApi.listById(projectId, { getToken });
+        if (!cancelled) {
+          setProjectTitle(project.title);
+        }
+      } catch {
+        if (!cancelled) {
+          setProjectTitle(null);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, user, projectId, getToken]);
+
   function handleRefresh(): void {
     void load();
   }
@@ -154,6 +209,71 @@ export default function CorpusScreen(): JSX.Element {
       }
       return next;
     });
+  }
+
+  async function runExport(scope: ExportScope, selection: string | undefined): Promise<void> {
+    if (projectId.length === 0 || exportBusy) {
+      return;
+    }
+    setLastExport({ scope, selection });
+    setExportBusy(true);
+    setExportError(null);
+    setExportRequestId(null);
+    try {
+      const content: string = await labApi.exportProject(projectId, format, scope, selection, {
+        getToken,
+      });
+      const filename: string = buildExportFilename(
+        projectTitle ?? 'projeto',
+        todayYYYYMMDD(new Date()),
+        extForFile(format),
+      );
+      await downloadExportFile(content, filename, mimeForFormat(format));
+    } catch (error: unknown) {
+      if (error instanceof ApiError && error.status === 401) {
+        markExpired();
+        router.replace({
+          pathname: '/login',
+          params: { expired: '1', next: `/project/${projectId}/corpus` },
+        });
+        return;
+      }
+      if (error instanceof ApiError) {
+        setExportError(error.message);
+        setExportRequestId(error.requestId !== '' ? error.requestId : null);
+      } else if (error instanceof Error) {
+        setExportError(error.message);
+        setExportRequestId(null);
+      } else {
+        setExportError('Erro interno. Tente novamente.');
+        setExportRequestId(null);
+      }
+    } finally {
+      setExportBusy(false);
+    }
+  }
+
+  function handleExportSelection(): void {
+    if (selectedIds.length === 0) {
+      if (format === 'bibtex') {
+        setExportNotice('Nada para exportar em BibTeX — selecione ao menos um item.');
+      }
+      return;
+    }
+    setExportNotice(null);
+    void runExport('selection', selectedIds.join(','));
+  }
+
+  function handleExportComplete(): void {
+    setExportNotice(null);
+    void runExport('corpus', undefined);
+  }
+
+  function handleRetryExport(): void {
+    if (lastExport === null || exportBusy) {
+      return;
+    }
+    void runExport(lastExport.scope, lastExport.selection);
   }
 
   const yearFilter: number | undefined = useMemo<number | undefined>(() => {
@@ -256,7 +376,6 @@ export default function CorpusScreen(): JSX.Element {
           <Text style={{ fontSize: 24, fontWeight: '600' }}>
             Corpus: {formatCorpusCount(items.length, page.hasMore)}
           </Text>
-          <Text>Selecionados: {selectedIds.length}</Text>
           <View style={{ gap: 8 }}>
             <Text style={{ fontWeight: '600' }}>Tag</Text>
             <TextInput
@@ -288,6 +407,44 @@ export default function CorpusScreen(): JSX.Element {
               keyboardType="numeric"
               style={{ borderWidth: 1, padding: 8 }}
             />
+          </View>
+          <View style={{ gap: 8 }}>
+            <Text style={{ fontWeight: '600' }}>Exportar</Text>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <Button
+                title={format === 'csv' ? '• CSV' : 'CSV'}
+                onPress={() => setFormat('csv')}
+              />
+              <Button
+                title={format === 'bibtex' ? '• BibTeX' : 'BibTeX'}
+                onPress={() => setFormat('bibtex')}
+              />
+              <Button
+                title={format === 'json' ? '• JSON' : 'JSON'}
+                onPress={() => setFormat('json')}
+              />
+            </View>
+            <Text>
+              Seleção: {selectedIds.length} de {items.length}
+            </Text>
+            <Button
+              title="Exportar seleção"
+              onPress={handleExportSelection}
+              disabled={exportBusy || selectedIds.length === 0}
+            />
+            <Button
+              title="Exportar corpus completo"
+              onPress={handleExportComplete}
+              disabled={exportBusy}
+            />
+            {exportNotice !== null ? <Text>{exportNotice}</Text> : null}
+            {exportError !== null ? (
+              <ErrorBanner
+                message={exportError}
+                requestId={exportRequestId}
+                onRetry={handleRetryExport}
+              />
+            ) : null}
           </View>
         </View>
       }
