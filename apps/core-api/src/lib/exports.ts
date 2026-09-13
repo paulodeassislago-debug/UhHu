@@ -125,6 +125,9 @@ export function toBibTeX(entries: CorpusEntryDTO[]): string {
         ...(e.year !== null ? [`  year={${String(e.year)}}`] : []),
         ...(e.institution !== null ? [`  school={${escapeBibtex(e.institution)}}`] : []),
         `  note={decision:${e.decision}}`,
+        ...(e.docType === 'professionalMaster'
+          ? [`  type={${escapeBibtex('Mestrado profissional')}}`]
+          : []),
         ...(url !== null ? [`  url={${escapeBibtex(url)}}`] : []),
       ];
       return `${entryType}{${key},\n${fields.join(',\n')}\n}`;
