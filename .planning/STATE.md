@@ -25,11 +25,11 @@ See: .planning/PROJECT.md (updated 2026-09-11)
 
 ## Current Position
 
-Phase: 9 of 9 (Not started — UAT approved, phase 8 closed 2026-09-13)
+Phase: 9 of 9 (Context gathered — ready to plan)
 Plan: —
-Status: Phase 8 complete — ready for Phase 9 discussion
-Last activity: 2026-09-13 — Phase 8 closed (UAT 3/3 tablet Paulo; 08-05…08-09 verified)
-Resume file: None (next: /gsd-discuss-phase 9)
+Status: Ready to plan Phase 9
+Last activity: 2026-09-13 — Phase 9 context gathered (download+Share, selo referência, BibTeX MP)
+Resume file: .planning/phases/09-corpus-exportacao-comparacao/09-CONTEXT.md
 
 Progress: [████████████████████░░] 9/9 plans phase 8 + UAT approved (milestone v1.1 phases 6-8/9 done)
 
