@@ -70,7 +70,7 @@ Plans:
   2. User decide elegível/não/indeciso com reversão imediata e associa tags com autocomplete + gestão de tags
   3. User identifica itens novos pelo badge "NOVO" e abre ficha completa sob demanda sem travar a lista
   4. Busca 100% alcançável por puxadas SEM run longo (decisão Paulo 12/09 REVISADA 08-07, substitui 08-06): run inicial em lote 100/fonte + BUSCAR MAIS sob demanda, UI acompanha e cancela
-**Plans**: 7 plans in 7 waves
+**Plans**: 8 plans in 8 waves
 
 Plans:
 - [x] 08-01-PLAN.md — CORE: fix isNew só-anteriores + groups expõem tags/divergências/decidedAt + rename/delete de tags (Wave 1) — done 2026-09-12 (f13a482, d4c73c5)
@@ -80,6 +80,7 @@ Plans:
 - [x] 08-05-PLAN.md — Gap-closure auditoria: fix TS2345 closures isNew + typecheck raiz verde + revalidação 12/12 (Wave 5, gap audit) — done 2026-09-12 (92f806f)
 - [x] 08-06-PLAN.md — Busca completa Paulo 12/09: loop 50/pág até o total + timeout 30min + progresso + UI 30min/cancela (Wave 6, depends on 08-01/08-03) — done 2026-09-13 (caf30b6, 09f8a90, 639bafb) — SUPERSEDED por 08-07 (decisão revisada)
 - [x] 08-07-PLAN.md — Lote incremental Paulo 12/09 REVISADA: run 1 lote 100/fonte + fetch-more/BUSCAR MAIS + newCount por lote + UI X de Y + polling 240 (Wave 7, depends on 08-01/08-02) — done 2026-09-13 (294d305, a9e792f, f8093e7)
+- [x] 08-08-PLAN.md — Gap-closure auditoria externa Hermes 12/09: payload CAPES sem combo Ano+Grau + year de dataDefesa + 6 casos de contrato (Wave 8, depends on 08-01) — done 2026-09-13 (d92b50f, e663c8b)
 
 #### Phase 9: Corpus, exportação e comparação
 **Goal**: Pesquisador fecha o corpus derivado, exporta por grupo inteiro e escolhe a estratégia de referência
@@ -108,5 +109,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 5. Prova headless | v1.0 | 5/5 | Complete | 2026-09-11 |
 | 6. Fundação do app + auth + suporte CORE | v1.1 | 5/5 | Complete | 2026-09-11 |
 | 7. Projetos, buscas e execução | v1.1 | 6/6 | Complete | 2026-09-12 |
-| 8. Resultados e triagem | v1.1 | 4/4 | Complete | 2026-09-12 |
+| 8. Resultados e triagem | v1.1 | 8/8 | Complete | 2026-09-13 |
 | 9. Corpus, exportação e comparação | v1.1 | 0/TBD | Not started | - |
