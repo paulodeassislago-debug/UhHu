@@ -100,7 +100,7 @@ Plans:
 - [x] 09-04-PLAN.md — Compare 2-4 lado a lado + helpers + ★ mais inclusiva + rota na TabBar (Wave 1) — done 2026-09-13 (865c0e3, 0488c2c, cc46067)
 **Wave 2** *(blocked on Wave 1 completion)*:
 - [x] 09-03-PLAN.md — Export UI: selecao/grupo-inteiro + completo nos 3 formatos, blob+anchor web e Share nativo, BibTeX vazio avisa (Wave 2, blocked on 09-02) — done 2026-09-13 (ce583cb, c36892d)
-- [ ] 09-05-PLAN.md — Referencia manual: selo no card + troca 1 toque + coluna destacada, sem efeito funcional (Wave 2, blocked on 09-04)
+- [x] 09-05-PLAN.md — Referencia manual: selo no card + troca 1 toque + coluna destacada, sem efeito funcional (Wave 2, blocked on 09-04) — done 2026-09-13 (3a98c1e, f3f27ff)
 **Wave 3** *(blocked on Wave 2 completion)*:
 - [ ] 09-06-PLAN.md — Gate do milestone: gates + prova beta slice vertical + IDOR 4x4 + auditoria + UAT humana (Wave 3, blocked on 09-01/09-03/09-05, has checkpoint)
 
@@ -121,4 +121,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 6. Fundação do app + auth + suporte CORE | v1.1 | 5/5 | Complete | 2026-09-11 |
 | 7. Projetos, buscas e execução | v1.1 | 6/6 | Complete | 2026-09-12 |
 | 8. Resultados e triagem | v1.1 | 8/8 | Complete | 2026-09-13 |
-| 9. Corpus, exportação e comparação | v1.1 | 4/6 | Executing (Wave 1 done + 09-03 done, 09-05 ready) | - |
+| 9. Corpus, exportação e comparação | v1.1 | 5/6 | Executing (Wave 1 done + Wave 2 done, 09-06 ready) | - |

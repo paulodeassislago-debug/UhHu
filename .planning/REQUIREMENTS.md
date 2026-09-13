@@ -55,7 +55,7 @@ Requirements for this milestone. Each maps to roadmap phases 6–9.
 
 - [ ] **UI-27**: User compara 2–4 estratégias lado a lado (total, por ano, por fonte, só-BDTD / só-CAPES / ambas, sobreposição)
 - [ ] **UI-28**: User vê o destaque automático de "mais inclusiva" (sem "menos ruído" no v1.1)
-- [ ] **UI-29**: User marca manualmente a estratégia de referência do projeto (persistida) e vê o estado vazio orientador
+- [x] **UI-29**: User marca manualmente a estratégia de referência do projeto (persistida) e vê o estado vazio orientador — done 09-05 (selo Referência + troca 1 toque + coluna destacada, sem efeito funcional)
 
 ### Suporte no CORE (§14 + auth + CORS)
 
@@ -134,7 +134,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | UI-26 | Phase 9 | Pending |
 | UI-27 | Phase 9 | Pending |
 | UI-28 | Phase 9 | Pending |
-| UI-29 | Phase 9 | Pending |
+| UI-29 | Phase 9 | Done (09-05) |
 
 **Coverage:**
 - v1.1 requirements: 32 total
