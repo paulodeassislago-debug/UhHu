@@ -25,13 +25,13 @@ See: .planning/PROJECT.md (updated 2026-09-11)
 
 ## Current Position
 
-Phase: 8 of 9 (Executed 10/10 incl. gaps 08-05/08-06 + revisão 08-07 + gap CAPES 08-08 + decisões definitivas 08-09 — phase NOT closed pending UAT tablet + audit sign-off)
-Plan: 08-09 of 9 done (decisões Paulo 12/09 DEFINITIVAS: MP separado + termo cru + Ano-only)
-Status: CI unblocked (root tsc 0, contrato CAPES 26/26, monorepo 214/214 com PG-skips offline; lab 100/100 + runs 9/9 + isnew 2/2 herdados sem regressão); awaiting human UAT + Hermes audit approval
-Last activity: 2026-09-13 — Plan 08-09 done (MP terceiro valor + termo cru + Ano-only sem Grande Área, 6 novos casos de contrato)
-Resume file: .planning/phases/08-resultados-triagem/08-HUMAN-UAT.md
+Phase: 9 of 9 (Not started — UAT approved, phase 8 closed 2026-09-13)
+Plan: —
+Status: Phase 8 complete — ready for Phase 9 discussion
+Last activity: 2026-09-13 — Phase 8 closed (UAT 3/3 tablet Paulo; 08-05…08-09 verified)
+Resume file: None (next: /gsd-discuss-phase 9)
 
-Progress: [██████████████████] 5/5 plans executed (phase open, UAT + audit pending)
+Progress: [████████████████████░░] 9/9 plans phase 8 + UAT approved (milestone v1.1 phases 6-8/9 done)
 
 Progress: [████████████████░░] 3/4 plans complete (Phase 8 executing)
 

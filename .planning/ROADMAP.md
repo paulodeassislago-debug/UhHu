@@ -61,7 +61,7 @@ Plans:
 - [x] 07-05-PLAN.md — Gap-closure UAT: wrapper UUID cross-platform (expo-crypto + fallback) + migração dos 3 toques + tripwire (Wave 4, gap 07-HUMAN-UAT item 1) — done 2026-09-12 (d84025d, eb6b2c2)
 - [x] 07-06-PLAN.md — UX Paulo 12/09: lápis ✎ inline no cabeçalho (título + pergunta, PATCH existente) (Wave 5, depends on 07-01) — done 2026-09-12 (e758388, c43ea39)
 
-#### Phase 8: Resultados e triagem
+#### Phase 8: Resultados e triagem — ✅ COMPLETE 2026-09-13 (UAT 3/3 tablet Paulo)
 **Goal**: Pesquisador tria resultados item a item com decisão mutável, tags e transparência de dedup
 **Depends on**: Phase 7
 **Requirements**: UI-17, UI-18, UI-19, UI-20, UI-21, UI-22, UI-14 (busca completa)

@@ -35,6 +35,9 @@ Um pesquisador consegue executar uma busca real (BDTD/CAPES) pelo CORE, com isol
 - ✓ Fundação do app Lab UI (Expo scaffold + client tipado + auth web/PAT + estados §11 + lista rolável) — v1.1 Phase 6
 - ✓ Suporte CORE p/ UI (`referenceSearchId` migration + `isNew` on-read + CORS allowlist) — v1.1 Phase 6
 - ✓ Projetos/buscas/execução na UI (modal, form §6, polling, cascata, histórico, UUID fix, lápis ✎) — v1.1 Phase 7 (UAT 4/4 tablet 12/09)
+- ✓ Resultados/triagem na UI (infinito+filtros, decisão mutável, dedup expansível, tags, ficha, isNew só-anteriores) — v1.1 Phase 8 (UAT 3/3 tablet 12/09)
+- ✓ Busca completa incremental (lote 100/fonte + BUSCAR MAIS + totalKnown) — v1.1 Phase 8 (decisão revisada Paulo 12/09)
+- ✓ Contorno CAPES (Ano-only, sem Grande Área, year dataDefesa) + decisões definitivas (termo cru fiel ao site; MP terceiro valor separado) — v1.1 Phase 8 (prova viva bate com o site)
 
 ### Active (v1.1 Lab UI v1)
 
@@ -47,6 +50,7 @@ Um pesquisador consegue executar uma busca real (BDTD/CAPES) pelo CORE, com isol
 - [ ] CORE: `referenceSearchId` migration (§14-4) + `isNew` on-read (§14-5) + diálogo hard-delete cascata (§14-3)
 - [ ] Gates: typecheck/lint/testes/IDOR (via CORE)/Gitleaks/SAST/pnpm audit/bundle sem segredos
 - [ ] Carry-over v1.0 (fora do caminho crítico UI; só se bloquear): adendo contrato §10 (14 extensões), wiring bin nu `uhhu`, review info I-01–I-05, re-teste CAPES ao vivo
+- [ ] Pendência Paulo 12/09: UI de seleção com autocomplete para filtros de área (Grande Área nunca vai à fonte — área cai no pós-filtro até existir seleção explícita)
 
 ### Out of Scope
 
