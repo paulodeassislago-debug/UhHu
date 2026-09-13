@@ -269,7 +269,7 @@ describe('contrato BDTD (fixture VuFind)', () => {
 });
 
 describe('contrato CAPES (fixture rest/busca)', () => {
-  it('POST com termo intacto, Ano expandido e filtros por campo', async () => {
+  it('período+tipo: payload SEM Ano e COM Grau (fonte zera Ano×Grau, 12/09/2026)', async () => {
     const { fetchFn, requests } = makeFakeFetch(() => jsonResponse(JSON.parse(CAPES_FIXTURE)));
     const def: SearchDef = {
       term: '"ensino de química"',
@@ -302,8 +302,10 @@ describe('contrato CAPES (fixture rest/busca)', () => {
     expect(payload.termo).toBe('"ensino de química"');
     expect(payload.pagina).toBe(1);
     expect(payload.registrosPorPagina).toBeGreaterThanOrEqual(5);
+    // Com Grau presente, NENHUM Ano é enviado — o período fica com o
+    // postFilter do Core (D-32). A fonte retorna 0 para Ano+Grau combinados.
     const anos = payload.filtros.filter((f) => f.campo === 'Ano').map((f) => f.valor);
-    expect(anos).toEqual(['2020', '2021', '2022']);
+    expect(anos).toEqual([]);
     expect(payload.filtros).toContainEqual({ campo: 'Grau Acadêmico', valor: 'Mestrado' });
     expect(payload.filtros).toContainEqual({ campo: 'Grande Área Conhecimento', valor: 'Ensino' });
     expect(payload.filtros).toContainEqual({ campo: 'Área Conhecimento', valor: 'Química' });
@@ -317,6 +319,102 @@ describe('contrato CAPES (fixture rest/busca)', () => {
     expect(item.year).toBe(2022);
     expect(item.authors).toEqual(['Carlos Mendes']);
     expect(item.sourceUrl).toBe('https://catalogodeteses.capes.gov.br/catalogo-teses/ficha/101');
+  });
+
+  it('só-período (sem tipo): payload COM Ano expandido', async () => {
+    const { fetchFn, requests } = makeFakeFetch(() => jsonResponse(JSON.parse(CAPES_FIXTURE)));
+    const def: SearchDef = {
+      term: '"ensino de química"',
+      yearFrom: 2020,
+      yearTo: 2022,
+    };
+    const page = await searchCapes(
+      new SourceClient('capes'),
+      def,
+      { page: 1, perPage: 20 },
+      testContext(fetchFn),
+    );
+
+    const called = first(requests);
+    if (called.body === null) {
+      throw new Error('POST rest/busca sem corpo');
+    }
+    const raw: unknown = JSON.parse(called.body);
+    const payload = raw as {
+      termo: string;
+      filtros: { campo: string; valor: string }[];
+      pagina: number;
+      registrosPorPagina: number;
+    };
+    // Sem Grau, Ano expande normal (só-Ano retorna na fonte).
+    const anos = payload.filtros.filter((f) => f.campo === 'Ano').map((f) => f.valor);
+    expect(anos).toEqual(['2020', '2021', '2022']);
+    expect(page.sourceStatus).toBe('ok');
+  });
+
+  it('record com dataDefesa ISO recebe year real (mapper dataDefesa-first)', async () => {
+    const envelope = {
+      pagina: 1,
+      total: 1,
+      tesesDissertacoes: [
+        {
+          id: 'capes-201',
+          titulo: 'Tese com data de defesa ISO',
+          autor: 'Ana Souza',
+          dataDefesa: '2024-01-26T00:00:00.000Z',
+          grauAcademico: 'Doutorado',
+          instituicao: 'Universidade Federal do Vale',
+          link: 'https://catalogodeteses.capes.gov.br/catalogo-teses/ficha/201',
+        },
+      ],
+    };
+    const { fetchFn } = makeFakeFetch(() => jsonResponse(envelope));
+    const page = await searchCapes(
+      new SourceClient('capes'),
+      { term: 'química' },
+      { page: 1, perPage: 20 },
+      testContext(fetchFn),
+    );
+    expect(page.sourceStatus).toBe('ok');
+    expect(page.items).toHaveLength(1);
+    const item = first(page.items);
+    expect(item.sourceId).toBe('capes-201');
+    // ISO "2024-01-26T..." → year 2024 via YEAR_PATTERN; volta a filtrar
+    // no postFilter do Core.
+    expect(item.year).toBe(2024);
+    const filtered = postFilter(page.items, { term: 'q', yearFrom: 2024, yearTo: 2026 });
+    expect(filtered.kept.map((kept) => kept.sourceId)).toEqual(['capes-201']);
+    const outOfRange = postFilter(page.items, { term: 'q', yearFrom: 2025, yearTo: 2026 });
+    expect(outOfRange.kept).toEqual([]);
+  });
+
+  it('record sem dataDefesa/ano mantém year null (comportamento preservado)', async () => {
+    const envelope = {
+      pagina: 1,
+      total: 1,
+      tesesDissertacoes: [
+        {
+          id: 'capes-202',
+          titulo: 'Tese sem ano algum',
+          autor: 'João Lima',
+          grauAcademico: 'Mestrado',
+          link: 'https://catalogodeteses.capes.gov.br/catalogo-teses/ficha/202',
+        },
+      ],
+    };
+    const { fetchFn } = makeFakeFetch(() => jsonResponse(envelope));
+    const page = await searchCapes(
+      new SourceClient('capes'),
+      { term: 'química' },
+      { page: 1, perPage: 20 },
+      testContext(fetchFn),
+    );
+    expect(page.sourceStatus).toBe('ok');
+    expect(page.items).toHaveLength(1);
+    expect(first(page.items).year).toBeNull();
+    // null passa como "não-provado" no postFilter (falta de dado ≠ mismatch).
+    const filtered = postFilter(page.items, { term: 'q', yearFrom: 2024, yearTo: 2026 });
+    expect(filtered.kept).toHaveLength(1);
   });
 
   it('sem-divulgação zera sourceUrl e marca flag (com divulgação tem link)', async () => {
@@ -345,6 +443,32 @@ describe('contrato CAPES (fixture rest/busca)', () => {
       searchCapes(
         new SourceClient('capes'),
         { term: 'química', yearFrom: 1900, yearTo: 2000 },
+        { page: 1, perPage: 20 },
+        testContext(fetchFn),
+      ),
+    ).rejects.toThrowError(RangeTooWideError);
+    expect(requests).toHaveLength(0);
+  });
+
+  it('range >30 anos lança mesmo com filtro de Grau (validação antes da rede)', async () => {
+    const { fetchFn, requests } = makeFakeFetch(() => jsonResponse(JSON.parse(CAPES_FIXTURE)));
+    await expect(
+      searchCapes(
+        new SourceClient('capes'),
+        { term: 'química', yearFrom: 1900, yearTo: 2000, docTypes: ['masterThesis'] },
+        { page: 1, perPage: 20 },
+        testContext(fetchFn),
+      ),
+    ).rejects.toThrowError(RangeTooWideError);
+    expect(requests).toHaveLength(0);
+  });
+
+  it('ano invertido lança mesmo com filtro de Grau (validação antes da rede)', async () => {
+    const { fetchFn, requests } = makeFakeFetch(() => jsonResponse(JSON.parse(CAPES_FIXTURE)));
+    await expect(
+      searchCapes(
+        new SourceClient('capes'),
+        { term: 'química', yearFrom: 2026, yearTo: 2024, docTypes: ['doctoralThesis'] },
         { page: 1, perPage: 20 },
         testContext(fetchFn),
       ),
