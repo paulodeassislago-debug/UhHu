@@ -383,7 +383,12 @@ async function setupCtx(app: FastifyInstance, db: Db, n: number): Promise<Triage
       year: 2021,
     },
   ]);
-  return { ownerCookie: owner.cookie, strangerCookie: stranger.cookie, projectId, ownerId: owner.userId };
+  return {
+    ownerCookie: owner.cookie,
+    strangerCookie: stranger.cookie,
+    projectId,
+    ownerId: owner.userId,
+  };
 }
 
 async function fetchGroups(
@@ -580,15 +585,10 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
       expect(regrouped?.tags).toContain('incluir');
 
       // Divergence: aparece em divergences do grupo.
-      const diverged = await apiRequest(
-        app,
-        'PUT',
-        `/api/v1/lab/groups/${first.id}/divergence`,
-        {
-          body: { source: 'bdtd', note: 'Metadados divergem no ano.' },
-          cookieValue: ctx.ownerCookie,
-        },
-      );
+      const diverged = await apiRequest(app, 'PUT', `/api/v1/lab/groups/${first.id}/divergence`, {
+        body: { source: 'bdtd', note: 'Metadados divergem no ano.' },
+        cookieValue: ctx.ownerCookie,
+      });
       expect(diverged.statusCode).toBe(200);
       expect(groupOf(diverged.json()).divergences).toEqual([
         { source: 'bdtd', note: 'Metadados divergem no ano.' },
@@ -727,7 +727,11 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
         throw new Error('seed sem tag');
       }
 
-      const foreign: Array<{ method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'; url: string; body?: Record<string, unknown> }> = [
+      const foreign: Array<{
+        method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
+        url: string;
+        body?: Record<string, unknown>;
+      }> = [
         { method: 'GET', url: `/api/v1/lab/projects/${ctx.projectId}/groups` },
         {
           method: 'PUT',
@@ -766,9 +770,17 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
         expect(errorOf(res.json()).code).toBe('NOT_FOUND');
       }
 
-      const ghost: Array<{ method: 'GET' | 'PUT' | 'PATCH' | 'DELETE'; url: string; body?: Record<string, unknown> }> = [
+      const ghost: Array<{
+        method: 'GET' | 'PUT' | 'PATCH' | 'DELETE';
+        url: string;
+        body?: Record<string, unknown>;
+      }> = [
         { method: 'GET', url: `/api/v1/lab/projects/${GHOST_UUID}/groups` },
-        { method: 'PUT', url: `/api/v1/lab/groups/${GHOST_UUID}/decision`, body: { decision: 'eligible' } },
+        {
+          method: 'PUT',
+          url: `/api/v1/lab/groups/${GHOST_UUID}/decision`,
+          body: { decision: 'eligible' },
+        },
         { method: 'GET', url: `/api/v1/lab/projects/${GHOST_UUID}/tags` },
         {
           method: 'PATCH',

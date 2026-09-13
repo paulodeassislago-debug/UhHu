@@ -133,7 +133,12 @@ export function DeleteSearchDialog({
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
       <View
-        style={{ flex: 1, justifyContent: 'center', padding: 24, backgroundColor: 'rgba(0,0,0,0.4)' }}
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          padding: 24,
+          backgroundColor: 'rgba(0,0,0,0.4)',
+        }}
       >
         <View style={{ backgroundColor: '#ffffff', padding: 16, gap: 12 }}>
           <Text style={{ fontSize: 20, fontWeight: '600' }}>Excluir estratégia?</Text>

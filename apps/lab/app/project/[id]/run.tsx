@@ -36,15 +36,18 @@ import type { SearchRunDTO } from '@uhhu/contracts';
 import { ApiError } from '../../../src/api/client';
 import { labApi } from '../../../src/api/lab';
 import { useAuth } from '../../../src/auth/session';
-import { formatDurationMs, isTerminalStatus, useRunPolling } from '../../../src/search/useRunPolling';
+import {
+  formatDurationMs,
+  isTerminalStatus,
+  useRunPolling,
+} from '../../../src/search/useRunPolling';
 import { sourceProgressLine } from '../../../src/search/pageProgress';
 import { ErrorBanner } from '../../../src/ui/ErrorBanner';
 import { PartialBanner } from '../../../src/ui/PartialBanner';
 import { CardSkeleton } from '../../../src/ui/Skeleton';
 import { newIdempotencyKey } from '../../../src/utils/uuid';
 
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function formatExecutedAt(iso: string): string {
   const date = new Date(iso);
@@ -279,9 +282,7 @@ export default function RunScreen(): JSX.Element {
           contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
           keyboardShouldPersistTaps="handled"
         >
-          <Text style={{ fontSize: 24, fontWeight: '600' }}>
-            Execução #{runId.slice(0, 8)}
-          </Text>
+          <Text style={{ fontSize: 24, fontWeight: '600' }}>Execução #{runId.slice(0, 8)}</Text>
           <CardSkeleton count={2} />
         </ScrollView>
       );
@@ -293,9 +294,7 @@ export default function RunScreen(): JSX.Element {
           contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
           keyboardShouldPersistTaps="handled"
         >
-          <Text style={{ fontSize: 24, fontWeight: '600' }}>
-            Execução #{runId.slice(0, 8)}
-          </Text>
+          <Text style={{ fontSize: 24, fontWeight: '600' }}>Execução #{runId.slice(0, 8)}</Text>
           <ErrorBanner
             message="Acompanhamento excedido — reabra a tela."
             onRetry={retry}
@@ -437,9 +436,7 @@ export default function RunScreen(): JSX.Element {
       {(terminal && effectiveRun.status === 'succeeded') ||
       (terminal && effectiveRun.status === 'partial') ? (
         <View style={{ gap: 4 }}>
-          <Text>
-            {effectiveRun.metrics.newCount} NOVOS desde a última execução
-          </Text>
+          <Text>{effectiveRun.metrics.newCount} NOVOS desde a última execução</Text>
           <Button title="Ver resultados" onPress={handleOpenResults} />
         </View>
       ) : null}

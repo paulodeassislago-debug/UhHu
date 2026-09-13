@@ -682,7 +682,11 @@ export async function ensureDefaultTags(
   // UI-20 (08-01): seed-if-empty — só semeia os DEFAULT_TAGS quando o projeto
   // ainda não tem NENHUMA tag. Sem isto a tag padrão excluída ressuscitaria a
   // cada GET .../tags (a rota dá ensure antes de list).
-  const existing = await db.select({ id: labTags.id }).from(labTags).where(eq(labTags.projectId, projectId)).limit(1);
+  const existing = await db
+    .select({ id: labTags.id })
+    .from(labTags)
+    .where(eq(labTags.projectId, projectId))
+    .limit(1);
   if (existing.length === 0) {
     for (const name of DEFAULT_TAGS) {
       await db.insert(labTags).values({ projectId, name, color: null }).onConflictDoNothing();
@@ -775,7 +779,7 @@ export async function renameTagForActor(
   if (current === undefined) {
     return null;
   }
-  const set: { name?: string; color?: string | null; } = {};
+  const set: { name?: string; color?: string | null } = {};
   if (input.name !== undefined && input.name !== current.name) {
     const clash = await db
       .select({ id: labTags.id })
@@ -949,7 +953,9 @@ export function isCorpusEligible(g: { status: string; decision: string }): boole
   return g.status === 'confirmed' && g.decision === 'eligible';
 }
 
-function parseDocType(value: unknown): 'masterThesis' | 'doctoralThesis' | 'professionalMaster' | null {
+function parseDocType(
+  value: unknown,
+): 'masterThesis' | 'doctoralThesis' | 'professionalMaster' | null {
   if (value === 'masterThesis' || value === 'doctoralThesis' || value === 'professionalMaster') {
     return value;
   }

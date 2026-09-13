@@ -132,9 +132,10 @@ export function SearchCard({
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const [deleteOpen, setDeleteOpen] = useState<boolean>(false);
   const [busy, setBusy] = useState<boolean>(false);
-  const [actionError, setActionError] = useState<{ message: string; requestId: string | null } | null>(
-    null,
-  );
+  const [actionError, setActionError] = useState<{
+    message: string;
+    requestId: string | null;
+  } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -294,11 +295,7 @@ export function SearchCard({
       {menuOpen ? (
         <View style={{ gap: 8 }}>
           <Button title="Editar" onPress={handleEdit} disabled={busy} />
-          <Button
-            title="Duplicar"
-            onPress={() => void handleDuplicate()}
-            disabled={busy}
-          />
+          <Button title="Duplicar" onPress={() => void handleDuplicate()} disabled={busy} />
           <Button title="Excluir" onPress={() => setDeleteOpen(true)} disabled={busy} />
         </View>
       ) : null}

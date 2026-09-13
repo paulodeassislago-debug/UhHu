@@ -163,7 +163,9 @@ describe('sourceProgressLine (progresso por fonte na tela, 08-06)', () => {
   });
 
   it('terminal com métricas → contagem + páginas; sem → só contagem', () => {
-    expect(sourceProgressLine('bdtd', testRun('succeeded', 3))).toBe('120 itens · 5ms · 3 página(s)');
+    expect(sourceProgressLine('bdtd', testRun('succeeded', 3))).toBe(
+      '120 itens · 5ms · 3 página(s)',
+    );
     expect(sourceProgressLine('bdtd', testRun('succeeded', undefined))).toBe('120 itens · 5ms');
   });
 });

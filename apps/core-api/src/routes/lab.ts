@@ -676,8 +676,7 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
         await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
         return;
       }
-      const body =
-        request.body === undefined || request.body === null ? {} : request.body;
+      const body = request.body === undefined || request.body === null ? {} : request.body;
       const parsed = fetchMoreRunsSchema.safeParse(body);
       if (!parsed.success) {
         await reply
@@ -688,7 +687,10 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
       const got = await callCapability<FetchMoreResult | null>(
         execute(
           'lab.run.fetchMore',
-          { id: params.data.runId, ...(parsed.data.sources === undefined ? {} : { sources: parsed.data.sources }) },
+          {
+            id: params.data.runId,
+            ...(parsed.data.sources === undefined ? {} : { sources: parsed.data.sources }),
+          },
           actor,
         ),
         reply,
@@ -706,7 +708,8 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
   );
 
   app.get(
-    '/api/v1/lab/results/:resultId',    { preHandler: requireAuth(db) },
+    '/api/v1/lab/results/:resultId',
+    { preHandler: requireAuth(db) },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const requestId = resolveRequestId(request);
       reply.header('x-request-id', requestId);
@@ -1179,13 +1182,11 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
         );
       } catch (error) {
         if (error instanceof Error && error.name === 'TagNameConflictError') {
-          await reply
-            .code(400)
-            .send(
-              buildEnvelope('VALIDATION_ERROR', requestId, {
-                name: 'Já existe uma tag com este nome.',
-              }),
-            );
+          await reply.code(400).send(
+            buildEnvelope('VALIDATION_ERROR', requestId, {
+              name: 'Já existe uma tag com este nome.',
+            }),
+          );
           return;
         }
         throw error;
@@ -1238,7 +1239,8 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
   );
 
   app.post(
-    '/api/v1/lab/groups/:groupId/tags',    { preHandler: requireAuth(db) },
+    '/api/v1/lab/groups/:groupId/tags',
+    { preHandler: requireAuth(db) },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const requestId = resolveRequestId(request);
       reply.header('x-request-id', requestId);

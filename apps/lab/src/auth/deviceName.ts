@@ -18,7 +18,8 @@ function currentDateSuffix(): string {
 
 export function getDeviceName(): string {
   const model: string | null = Device.modelName ?? Device.deviceName;
-  const base = typeof model === 'string' && model.trim().length > 0 ? model.trim() : DEVICE_FALLBACK_MODEL;
+  const base =
+    typeof model === 'string' && model.trim().length > 0 ? model.trim() : DEVICE_FALLBACK_MODEL;
   const candidate = `${base} ${currentDateSuffix()}`.slice(0, DEVICE_NAME_MAX);
   // Valida com a MESMA regra do servidor (1..100); se falhar, fallback seguro.
   const parsed = patDeviceNameSchema.safeParse(candidate);

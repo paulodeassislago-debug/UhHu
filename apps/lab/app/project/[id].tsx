@@ -47,7 +47,9 @@ export interface ProjectDetailProps {
   activeTab?: DetailTab;
 }
 
-export default function ProjectDetailScreen({ activeTab = 'none' }: ProjectDetailProps): JSX.Element {
+export default function ProjectDetailScreen({
+  activeTab = 'none',
+}: ProjectDetailProps): JSX.Element {
   const router = useRouter();
   const params = useLocalSearchParams<{ id: string }>();
   const projectId = typeof params.id === 'string' ? params.id : '';
@@ -274,7 +276,8 @@ export default function ProjectDetailScreen({ activeTab = 'none' }: ProjectDetai
         return;
       }
       if (error instanceof ApiError) {
-        const detail = error.requestId !== '' ? `${error.message} (req ${error.requestId})` : error.message;
+        const detail =
+          error.requestId !== '' ? `${error.message} (req ${error.requestId})` : error.message;
         setStatusError(detail);
       } else if (error instanceof Error) {
         setStatusError(error.message);
@@ -349,9 +352,15 @@ export default function ProjectDetailScreen({ activeTab = 'none' }: ProjectDetai
             editable={!titleSaving}
           />
           {titleError !== null ? <Text style={{ color: '#dc2626' }}>{titleError}</Text> : null}
-          {titleRequestId !== null ? <Text style={{ fontSize: 12 }}>(req {titleRequestId})</Text> : null}
+          {titleRequestId !== null ? (
+            <Text style={{ fontSize: 12 }}>(req {titleRequestId})</Text>
+          ) : null}
           <View style={{ flexDirection: 'row', gap: 8 }}>
-            <Button title={titleSaving ? 'Salvando…' : 'Salvar'} onPress={() => void handleSaveTitle()} disabled={titleSaving} />
+            <Button
+              title={titleSaving ? 'Salvando…' : 'Salvar'}
+              onPress={() => void handleSaveTitle()}
+              disabled={titleSaving}
+            />
             <Button title="Cancelar" onPress={handleCancelTitleEdit} disabled={titleSaving} />
           </View>
         </View>
@@ -379,9 +388,15 @@ export default function ProjectDetailScreen({ activeTab = 'none' }: ProjectDetai
             editable={!saving}
           />
           {saveError !== null ? <Text style={{ color: '#dc2626' }}>{saveError}</Text> : null}
-          {saveRequestId !== null ? <Text style={{ fontSize: 12 }}>(req {saveRequestId})</Text> : null}
+          {saveRequestId !== null ? (
+            <Text style={{ fontSize: 12 }}>(req {saveRequestId})</Text>
+          ) : null}
           <View style={{ flexDirection: 'row', gap: 8 }}>
-            <Button title={saving ? 'Salvando…' : 'Salvar'} onPress={() => void handleSaveQuestion()} disabled={saving} />
+            <Button
+              title={saving ? 'Salvando…' : 'Salvar'}
+              onPress={() => void handleSaveQuestion()}
+              disabled={saving}
+            />
             <Button title="Cancelar" onPress={handleCancelEdit} disabled={saving} />
           </View>
         </View>
@@ -403,10 +418,18 @@ export default function ProjectDetailScreen({ activeTab = 'none' }: ProjectDetai
       {project !== null ? <Text>Status: {project.status}</Text> : null}
       {statusError !== null ? <Text style={{ color: '#dc2626' }}>{statusError}</Text> : null}
       {project !== null && project.status === 'active' ? (
-        <Button title="Arquivar" onPress={() => void handleToggleStatus()} disabled={statusPending} />
+        <Button
+          title="Arquivar"
+          onPress={() => void handleToggleStatus()}
+          disabled={statusPending}
+        />
       ) : null}
       {project !== null && project.status === 'archived' ? (
-        <Button title="Reativar" onPress={() => void handleToggleStatus()} disabled={statusPending} />
+        <Button
+          title="Reativar"
+          onPress={() => void handleToggleStatus()}
+          disabled={statusPending}
+        />
       ) : null}
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <Link
@@ -415,7 +438,9 @@ export default function ProjectDetailScreen({ activeTab = 'none' }: ProjectDetai
             params: { id: projectId },
           }}
         >
-          <Text style={{ fontWeight: activeTab === 'strategies' ? '700' : '400' }}>Estratégias</Text>
+          <Text style={{ fontWeight: activeTab === 'strategies' ? '700' : '400' }}>
+            Estratégias
+          </Text>
         </Link>
         <Link
           href={{
@@ -431,7 +456,9 @@ export default function ProjectDetailScreen({ activeTab = 'none' }: ProjectDetai
             params: { id: projectId },
           }}
         >
-          <Text style={{ fontWeight: activeTab === 'corpus' ? '700' : '400' }}>{corpusTabLabel}</Text>
+          <Text style={{ fontWeight: activeTab === 'corpus' ? '700' : '400' }}>
+            {corpusTabLabel}
+          </Text>
         </Link>
       </View>
       <Link href="/projects">Voltar aos projetos</Link>

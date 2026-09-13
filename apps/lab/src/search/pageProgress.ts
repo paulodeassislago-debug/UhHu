@@ -17,10 +17,7 @@ export function sourceProgressLine(source: ExecutableSource, run: SearchRunDTO):
   if (metrics.status === 'failed') {
     return 'falhou';
   }
-  const pageProgress: string | null = formatPageProgress(
-    metrics.pagesFetched,
-    metrics.pagesTotal,
-  );
+  const pageProgress: string | null = formatPageProgress(metrics.pagesFetched, metrics.pagesTotal);
   if (!isTerminalStatus(run.status)) {
     return pageProgress ?? 'buscando…';
   }

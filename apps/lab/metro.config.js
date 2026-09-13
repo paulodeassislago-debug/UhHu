@@ -14,9 +14,10 @@ const config = getDefaultConfig(__dirname);
 
 const defaultResolveRequest = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (context, moduleName, platform) => {
-  const resolve = typeof defaultResolveRequest === 'function'
-    ? defaultResolveRequest.bind(config.resolver)
-    : context.resolveRequest;
+  const resolve =
+    typeof defaultResolveRequest === 'function'
+      ? defaultResolveRequest.bind(config.resolver)
+      : context.resolveRequest;
   if (typeof moduleName === 'string' && moduleName.endsWith('.js')) {
     const stripped = moduleName.slice(0, -'.js'.length);
     try {

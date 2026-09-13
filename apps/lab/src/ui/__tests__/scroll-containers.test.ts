@@ -29,10 +29,7 @@ function assertImportsFromReactNative(source: string, name: string, file: string
   const importPattern = new RegExp(
     `import\\s*\\{[^}]*\\b${name}\\b[^}]*\\}\\s*from\\s*['"]react-native['"]`,
   );
-  expect(
-    importPattern.test(source),
-    `${file} deve importar ${name} de react-native`,
-  ).toBe(true);
+  expect(importPattern.test(source), `${file} deve importar ${name} de react-native`).toBe(true);
 }
 
 function assertUsesComponent(source: string, name: string, file: string): void {
@@ -43,9 +40,7 @@ function mapLinesOutsideScrollable(source: string): string[] {
   return source
     .split('\n')
     .filter((line: string): boolean => line.includes('.map('))
-    .filter(
-      (line: string): boolean => !line.includes('FlatList') && !line.includes('renderItem'),
-    );
+    .filter((line: string): boolean => !line.includes('FlatList') && !line.includes('renderItem'));
 }
 
 function collectTsFiles(dir: string, out: string[]): void {

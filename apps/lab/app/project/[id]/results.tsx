@@ -291,7 +291,11 @@ export default function ResultsScreen(): JSX.Element {
         keyboardShouldPersistTaps="handled"
       >
         <Text style={{ fontSize: 24, fontWeight: '600' }}>Resultados</Text>
-        <ErrorBanner message={banner.message} requestId={banner.requestId} onRetry={handleRefresh} />
+        <ErrorBanner
+          message={banner.message}
+          requestId={banner.requestId}
+          onRetry={handleRefresh}
+        />
       </ScrollView>
     );
   }
@@ -327,123 +331,121 @@ export default function ResultsScreen(): JSX.Element {
               <Text style={{ fontSize: 24, fontWeight: '600' }}>Resultados</Text>
               <Button title="Tags" onPress={handleOpenTagsModal} />
             </View>
-          <Text>
-            {list.newCount} NOVOS desde a última execução
-          </Text>
-          <Text>
-            mostrando {visibleItems.length} de {list.runInfo?.totalKnown ?? list.total}
-          </Text>
-          <View style={{ gap: 8 }}>
-            <Text style={{ fontWeight: '600' }}>Estado</Text>
-            <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-              <Button
-                title={decision === 'all' ? '• todos' : 'todos'}
-                onPress={() => list.patchFilters({ decision: 'all' })}
-              />
-              <Button
-                title={decision === 'eligible' ? '• elegível' : 'elegível'}
-                onPress={() => list.patchFilters({ decision: 'eligible' })}
-              />
-              <Button
-                title={decision === 'ineligible' ? '• não' : 'não'}
-                onPress={() => list.patchFilters({ decision: 'ineligible' })}
-              />
-              <Button
-                title={decision === 'undecided' ? '• indeciso' : 'indeciso'}
-                onPress={() => list.patchFilters({ decision: 'undecided' })}
-              />
-              <Button
-                title={decision === 'untriaged' ? '• não triado' : 'não triado'}
-                onPress={() => list.patchFilters({ decision: 'untriaged' })}
-              />
-            </View>
-          </View>
-          <View style={{ gap: 8 }}>
-            <Text style={{ fontWeight: '600' }}>Tag</Text>
-            <View style={{ flexDirection: 'row' }}>
-              <Button
-                title={tag === null ? '• todas' : 'todas'}
-                onPress={() => list.patchFilters({ tag: null })}
-              />
-            </View>
-            <FlatList
-              data={list.tags}
-              horizontal={true}
-              keyExtractor={(tagItem): string => tagItem.id}
-              renderItem={({ item: tagItem }): JSX.Element => (
-                <Button
-                  title={tag === tagItem.name ? `• ${tagItem.name}` : tagItem.name}
-                  onPress={() => list.patchFilters({ tag: tagItem.name })}
-                />
-              )}
-              contentContainerStyle={{ gap: 8 }}
-            />
-          </View>
-          <View style={{ gap: 8 }}>
-            <Text style={{ fontWeight: '600' }}>Fonte</Text>
-            <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-              <Button
-                title={source === 'all' ? '• todas' : 'todas'}
-                onPress={() => list.patchFilters({ source: 'all' })}
-              />
-              <Button
-                title={source === 'bdtd' ? '• BDTD' : 'BDTD'}
-                onPress={() => list.patchFilters({ source: 'bdtd' })}
-              />
-              <Button
-                title={source === 'capes' ? '• CAPES' : 'CAPES'}
-                onPress={() => list.patchFilters({ source: 'capes' })}
-              />
-            </View>
-          </View>
-          <View style={{ gap: 8 }}>
-            <Text style={{ fontWeight: '600' }}>Ano</Text>
-            <TextInput
-              value={yearInput}
-              onChangeText={handleYearChange}
-              placeholder="todos"
-              keyboardType="numeric"
-              style={{ borderWidth: 1, padding: 8 }}
-            />
-          </View>
-        </View>
-      }
-      ListFooterComponent={
-        <View style={{ gap: 8, paddingVertical: 12 }}>
-          {list.loadingMore ? <Text>carregando…</Text> : null}
-          {list.loadMoreError !== null ? <Text>{list.loadMoreError.message}</Text> : null}
-          {list.fetchMoreError !== null && !list.fetchMoreLoading ? (
+            <Text>{list.newCount} NOVOS desde a última execução</Text>
+            <Text>
+              mostrando {visibleItems.length} de {list.runInfo?.totalKnown ?? list.total}
+            </Text>
             <View style={{ gap: 8 }}>
-              <Text>{list.fetchMoreError.message}</Text>
-              <Button title="tentar de novo" onPress={handleFetchMore} />
+              <Text style={{ fontWeight: '600' }}>Estado</Text>
+              <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+                <Button
+                  title={decision === 'all' ? '• todos' : 'todos'}
+                  onPress={() => list.patchFilters({ decision: 'all' })}
+                />
+                <Button
+                  title={decision === 'eligible' ? '• elegível' : 'elegível'}
+                  onPress={() => list.patchFilters({ decision: 'eligible' })}
+                />
+                <Button
+                  title={decision === 'ineligible' ? '• não' : 'não'}
+                  onPress={() => list.patchFilters({ decision: 'ineligible' })}
+                />
+                <Button
+                  title={decision === 'undecided' ? '• indeciso' : 'indeciso'}
+                  onPress={() => list.patchFilters({ decision: 'undecided' })}
+                />
+                <Button
+                  title={decision === 'untriaged' ? '• não triado' : 'não triado'}
+                  onPress={() => list.patchFilters({ decision: 'untriaged' })}
+                />
+              </View>
             </View>
-          ) : null}
-          {list.runInfo?.hasMore === true && list.fetchMoreError === null ? (
-            <Button
-              title={
-                list.fetchMoreLoading
-                  ? 'buscando mais 100…'
-                  : fetchMoreLabel(list.runInfo.remainingKnown)
-              }
-              disabled={list.fetchMoreLoading}
-              onPress={handleFetchMore}
-            />
-          ) : null}
-          {!list.hasMore &&
-          list.runInfo?.hasMore !== true &&
-          list.allItems.length > 0 &&
-          !list.loadingMore &&
-          !list.fetchMoreLoading ? (
-            <Text>fim da lista</Text>
-          ) : null}
-        </View>
-      }
-      ListEmptyComponent={
-        <Empty
-          title="Nenhum resultado"
-          message="Nenhum resultado — ajuste os filtros ou execute a busca novamente."
-        />
-      }
+            <View style={{ gap: 8 }}>
+              <Text style={{ fontWeight: '600' }}>Tag</Text>
+              <View style={{ flexDirection: 'row' }}>
+                <Button
+                  title={tag === null ? '• todas' : 'todas'}
+                  onPress={() => list.patchFilters({ tag: null })}
+                />
+              </View>
+              <FlatList
+                data={list.tags}
+                horizontal={true}
+                keyExtractor={(tagItem): string => tagItem.id}
+                renderItem={({ item: tagItem }): JSX.Element => (
+                  <Button
+                    title={tag === tagItem.name ? `• ${tagItem.name}` : tagItem.name}
+                    onPress={() => list.patchFilters({ tag: tagItem.name })}
+                  />
+                )}
+                contentContainerStyle={{ gap: 8 }}
+              />
+            </View>
+            <View style={{ gap: 8 }}>
+              <Text style={{ fontWeight: '600' }}>Fonte</Text>
+              <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+                <Button
+                  title={source === 'all' ? '• todas' : 'todas'}
+                  onPress={() => list.patchFilters({ source: 'all' })}
+                />
+                <Button
+                  title={source === 'bdtd' ? '• BDTD' : 'BDTD'}
+                  onPress={() => list.patchFilters({ source: 'bdtd' })}
+                />
+                <Button
+                  title={source === 'capes' ? '• CAPES' : 'CAPES'}
+                  onPress={() => list.patchFilters({ source: 'capes' })}
+                />
+              </View>
+            </View>
+            <View style={{ gap: 8 }}>
+              <Text style={{ fontWeight: '600' }}>Ano</Text>
+              <TextInput
+                value={yearInput}
+                onChangeText={handleYearChange}
+                placeholder="todos"
+                keyboardType="numeric"
+                style={{ borderWidth: 1, padding: 8 }}
+              />
+            </View>
+          </View>
+        }
+        ListFooterComponent={
+          <View style={{ gap: 8, paddingVertical: 12 }}>
+            {list.loadingMore ? <Text>carregando…</Text> : null}
+            {list.loadMoreError !== null ? <Text>{list.loadMoreError.message}</Text> : null}
+            {list.fetchMoreError !== null && !list.fetchMoreLoading ? (
+              <View style={{ gap: 8 }}>
+                <Text>{list.fetchMoreError.message}</Text>
+                <Button title="tentar de novo" onPress={handleFetchMore} />
+              </View>
+            ) : null}
+            {list.runInfo?.hasMore === true && list.fetchMoreError === null ? (
+              <Button
+                title={
+                  list.fetchMoreLoading
+                    ? 'buscando mais 100…'
+                    : fetchMoreLabel(list.runInfo.remainingKnown)
+                }
+                disabled={list.fetchMoreLoading}
+                onPress={handleFetchMore}
+              />
+            ) : null}
+            {!list.hasMore &&
+            list.runInfo?.hasMore !== true &&
+            list.allItems.length > 0 &&
+            !list.loadingMore &&
+            !list.fetchMoreLoading ? (
+              <Text>fim da lista</Text>
+            ) : null}
+          </View>
+        }
+        ListEmptyComponent={
+          <Empty
+            title="Nenhum resultado"
+            message="Nenhum resultado — ajuste os filtros ou execute a busca novamente."
+          />
+        }
       />
       <TagManagerModal
         visible={tagsModalVisible}

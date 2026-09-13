@@ -121,9 +121,7 @@ describe('project header inline pencils (07-06)', () => {
       true,
     );
     expect(source.includes('handleSaveTitle'), 'título deve ter handler de save').toBe(true);
-    expect(source.includes('Editar título'), 'lápis do título deve ter label acessível').toBe(
-      true,
-    );
+    expect(source.includes('Editar título'), 'lápis do título deve ter label acessível').toBe(true);
   });
 
   it('validação local bloqueia título vazio sem request', () => {
@@ -155,9 +153,7 @@ describe('project header inline pencils (07-06)', () => {
   it('botão separado ausente; ✎ inline no título e na pergunta', () => {
     const source: string = readDetailSource();
     expect(countOccurrences(source, '✎') >= 2, 'título + pergunta devem ter ✎').toBe(true);
-    expect(source.includes('Editar pergunta'), 'botão separado deve ter sido removido').toBe(
-      false,
-    );
+    expect(source.includes('Editar pergunta'), 'botão separado deve ter sido removido').toBe(false);
     expect(countOccurrences(source, 'projectsApi.update') >= 2, 'título + pergunta via PATCH').toBe(
       true,
     );

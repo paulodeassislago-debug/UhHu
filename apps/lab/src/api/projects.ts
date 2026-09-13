@@ -8,12 +8,7 @@
 // ProjectDTO em definição única; update espelha updateProjectSchema.
 
 import { createProjectSchema, updateProjectSchema } from '@uhhu/contracts';
-import type {
-  CreateProjectInput,
-  PageInfo,
-  ProjectDTO,
-  UpdateProjectInput,
-} from '@uhhu/contracts';
+import type { CreateProjectInput, PageInfo, ProjectDTO, UpdateProjectInput } from '@uhhu/contracts';
 import { apiFetch } from './client';
 import type { TokenProvider } from './client';
 
@@ -22,7 +17,10 @@ export interface ProjectsRequestOptions {
   baseUrl?: string;
 }
 
-function toRequestOptions(opts?: ProjectsRequestOptions): { getToken?: TokenProvider; baseUrl?: string } {
+function toRequestOptions(opts?: ProjectsRequestOptions): {
+  getToken?: TokenProvider;
+  baseUrl?: string;
+} {
   const out: { getToken?: TokenProvider; baseUrl?: string } = {};
   if (opts?.getToken !== undefined) {
     out.getToken = opts.getToken;

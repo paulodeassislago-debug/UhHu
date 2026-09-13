@@ -63,11 +63,7 @@ export function RunHistory({ searchId, projectId, getToken }: RunHistoryProps): 
       setLoadState('loading');
       setErrorMessage(null);
       try {
-        const res = await labApi.listRuns(
-          searchId,
-          { limit: RUN_HISTORY_PAGE_SIZE },
-          { getToken },
-        );
+        const res = await labApi.listRuns(searchId, { limit: RUN_HISTORY_PAGE_SIZE }, { getToken });
         if (cancelled) {
           return;
         }
@@ -138,9 +134,7 @@ export function RunHistory({ searchId, projectId, getToken }: RunHistoryProps): 
         title={`${headerTitle} ${expanded ? '▾' : '▸'}`}
         onPress={() => setExpanded((prev: boolean): boolean => !prev)}
       />
-      {loadState === 'loading' && items.length === 0 ? (
-        <Text>carregando histórico…</Text>
-      ) : null}
+      {loadState === 'loading' && items.length === 0 ? <Text>carregando histórico…</Text> : null}
       {loadState === 'error' ? (
         <View style={{ gap: 4 }}>
           <Text>{errorMessage ?? 'Erro interno. Tente novamente.'}</Text>
@@ -150,9 +144,7 @@ export function RunHistory({ searchId, projectId, getToken }: RunHistoryProps): 
           />
         </View>
       ) : null}
-      {loadState === 'ready' && items.length === 0 ? (
-        <Text>Nenhuma execução ainda</Text>
-      ) : null}
+      {loadState === 'ready' && items.length === 0 ? <Text>Nenhuma execução ainda</Text> : null}
       {expanded && loadState === 'ready' && items.length > 0 ? (
         <View style={{ gap: 8 }}>
           {items.map((run: SearchRunDTO): JSX.Element => {
@@ -164,19 +156,15 @@ export function RunHistory({ searchId, projectId, getToken }: RunHistoryProps): 
             );
             const showMissing: boolean = summary.missing.length > 0 || run.status === 'partial';
             const missingLine: string =
-              summary.missing.length > 0
-                ? `faltou: ${summary.missing.join(', ')}`
-                : 'faltou: —';
+              summary.missing.length > 0 ? `faltou: ${summary.missing.join(', ')}` : 'faltou: —';
             const motiveSuffix: string =
-              run.error !== null && run.error.message.length > 0
-                ? ` · ${run.error.message}`
-                : '';
+              run.error !== null && run.error.message.length > 0 ? ` · ${run.error.message}` : '';
             return (
               <Pressable key={run.id} onPress={() => handleOpenRun(run.id)}>
                 <View style={{ gap: 2, paddingVertical: 4 }}>
                   <Text>
-                    {formatRunWhen(run.executedAt)} · {runStatusLabel(run.status)} ·{' '}
-                    {summary.total} resultados
+                    {formatRunWhen(run.executedAt)} · {runStatusLabel(run.status)} · {summary.total}{' '}
+                    resultados
                   </Text>
                   <Text>
                     +{summary.newCount} novos · {duration}

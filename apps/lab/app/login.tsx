@@ -119,7 +119,11 @@ export default function LoginScreen(): JSX.Element {
         editable={!busy}
         style={{ borderWidth: 1, padding: 8 }}
       />
-      <Button title={busy ? 'Entrando…' : 'Entrar'} onPress={() => void handleLogin()} disabled={busy} />
+      <Button
+        title={busy ? 'Entrando…' : 'Entrar'}
+        onPress={() => void handleLogin()}
+        disabled={busy}
+      />
       {busy ? <CardSkeleton count={1} /> : null}
       {errorMessage !== null ? (
         <ErrorBanner

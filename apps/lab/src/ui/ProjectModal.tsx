@@ -55,7 +55,12 @@ function firstZodMessage(error: ZodError): string {
   return 'Dados inválidos. Verifique os campos.';
 }
 
-export function ProjectModal({ visible, onClose, onCreated, getToken }: ProjectModalProps): JSX.Element {
+export function ProjectModal({
+  visible,
+  onClose,
+  onCreated,
+  getToken,
+}: ProjectModalProps): JSX.Element {
   const [title, setTitle] = useState<string>('');
   const [question, setQuestion] = useState<string>('');
   const [fieldError, setFieldError] = useState<string | null>(null);
@@ -122,7 +127,14 @@ export function ProjectModal({ visible, onClose, onCreated, getToken }: ProjectM
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
-      <View style={{ flex: 1, justifyContent: 'center', padding: 24, backgroundColor: 'rgba(0,0,0,0.4)' }}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          padding: 24,
+          backgroundColor: 'rgba(0,0,0,0.4)',
+        }}
+      >
         <View style={{ backgroundColor: '#ffffff', padding: 16, gap: 12 }}>
           <Text style={{ fontSize: 20, fontWeight: '600' }}>Novo projeto</Text>
           <Text>Título</Text>
@@ -144,8 +156,14 @@ export function ProjectModal({ visible, onClose, onCreated, getToken }: ProjectM
           />
           {fieldError !== null ? <Text style={{ color: '#dc2626' }}>{fieldError}</Text> : null}
           {apiMessage !== null ? <Text style={{ color: '#dc2626' }}>{apiMessage}</Text> : null}
-          {apiRequestId !== null ? <Text style={{ fontSize: 12 }}>(req {apiRequestId})</Text> : null}
-          <Button title={submitting ? 'Criando…' : 'Criar projeto'} onPress={() => void handleCreate()} disabled={submitting} />
+          {apiRequestId !== null ? (
+            <Text style={{ fontSize: 12 }}>(req {apiRequestId})</Text>
+          ) : null}
+          <Button
+            title={submitting ? 'Criando…' : 'Criar projeto'}
+            onPress={() => void handleCreate()}
+            disabled={submitting}
+          />
           <Button title="Cancelar" onPress={handleClose} disabled={submitting} />
         </View>
       </View>

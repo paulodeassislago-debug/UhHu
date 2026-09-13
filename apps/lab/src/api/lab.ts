@@ -43,9 +43,11 @@ export interface LabRequestOptions {
   idempotencyKey?: string;
 }
 
-function toRequestOptions(
-  opts?: LabRequestOptions,
-): { getToken?: TokenProvider; baseUrl?: string; idempotencyKey?: string } {
+function toRequestOptions(opts?: LabRequestOptions): {
+  getToken?: TokenProvider;
+  baseUrl?: string;
+  idempotencyKey?: string;
+} {
   const out: { getToken?: TokenProvider; baseUrl?: string; idempotencyKey?: string } = {};
   if (opts?.getToken !== undefined) {
     out.getToken = opts.getToken;
@@ -161,21 +163,18 @@ export const labApi = {
   },
 
   async deleteSearch(searchId: string, opts?: LabRequestOptions): Promise<void> {
-    await apiFetch<void>(
-      `/api/v1/lab/searches/${encodeURIComponent(searchId)}?confirm=true`,
-      { ...toRequestOptions(opts), method: 'DELETE' },
-    );
+    await apiFetch<void>(`/api/v1/lab/searches/${encodeURIComponent(searchId)}?confirm=true`, {
+      ...toRequestOptions(opts),
+      method: 'DELETE',
+    });
   },
 
   // -- Runs + jobs (fase 7) --
-  async executeSearch(
-    searchId: string,
-    opts?: LabRequestOptions,
-  ): Promise<SearchRunDTO> {
-    return apiFetch<SearchRunDTO>(
-      `/api/v1/lab/searches/${encodeURIComponent(searchId)}/runs`,
-      { ...toRequestOptions(opts), method: 'POST' },
-    );
+  async executeSearch(searchId: string, opts?: LabRequestOptions): Promise<SearchRunDTO> {
+    return apiFetch<SearchRunDTO>(`/api/v1/lab/searches/${encodeURIComponent(searchId)}/runs`, {
+      ...toRequestOptions(opts),
+      method: 'POST',
+    });
   },
 
   async listRuns(
@@ -316,7 +315,11 @@ export const labApi = {
     );
   },
 
-  async attachTag(groupId: string, tagId: string, opts?: LabRequestOptions): Promise<DedupGroupDTO> {
+  async attachTag(
+    groupId: string,
+    tagId: string,
+    opts?: LabRequestOptions,
+  ): Promise<DedupGroupDTO> {
     return apiFetch<DedupGroupDTO>(`/api/v1/lab/groups/${encodeURIComponent(groupId)}/tags`, {
       ...toRequestOptions(opts),
       method: 'POST',
@@ -337,10 +340,11 @@ export const labApi = {
     opts?: LabRequestOptions,
   ): Promise<DedupGroupDTO> {
     const body = divergenceInputSchema.parse(input);
-    return apiFetch<DedupGroupDTO>(
-      `/api/v1/lab/groups/${encodeURIComponent(groupId)}/divergence`,
-      { ...toRequestOptions(opts), method: 'PUT', body },
-    );
+    return apiFetch<DedupGroupDTO>(`/api/v1/lab/groups/${encodeURIComponent(groupId)}/divergence`, {
+      ...toRequestOptions(opts),
+      method: 'PUT',
+      body,
+    });
   },
 
   // -- Corpus (fase 9; view derivada dos elegíveis) --

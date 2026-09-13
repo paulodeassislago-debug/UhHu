@@ -31,8 +31,7 @@ function makeRun(overrides?: RunOverrides): SearchRunDTO {
     sourcesSnapshot: ['bdtd', 'capes'],
     executedAt: overrides?.executedAt ?? '2026-09-11T10:00:00Z',
     startedAt: overrides?.startedAt !== undefined ? overrides.startedAt : '2026-09-11T10:00:00Z',
-    finishedAt:
-      overrides?.finishedAt !== undefined ? overrides.finishedAt : '2026-09-11T10:00:42Z',
+    finishedAt: overrides?.finishedAt !== undefined ? overrides.finishedAt : '2026-09-11T10:00:42Z',
     metrics: {
       perSource: {
         bdtd: { status: bdtdStatus, total: 4, returned: 4, durationMs: 1200 },

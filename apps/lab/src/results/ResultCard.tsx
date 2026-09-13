@@ -48,7 +48,9 @@ export function ResultCard({
   const yearLine: string = result.year !== null ? String(result.year) : 'ano desconhecido';
   const typeLabel: string | null = docTypeLabel(result.docType);
   const metaLine: string =
-    typeLabel !== null ? `${authorsLine} · ${yearLine} · ${typeLabel}` : `${authorsLine} · ${yearLine}`;
+    typeLabel !== null
+      ? `${authorsLine} · ${yearLine} · ${typeLabel}`
+      : `${authorsLine} · ${yearLine}`;
   const sourceBadge: string =
     group !== null && group.originCount > 1
       ? `[${group.origins.join('+').toUpperCase()} — ${group.originCount} origens ▸]`
@@ -72,7 +74,11 @@ export function ResultCard({
       <Text>{sourceBadge}</Text>
       {result.isNew ? <Text>NOVO</Text> : null}
       <Text>{provenanceLine}</Text>
-      <DecisionBar group={group} getToken={getToken} onDecided={onGroupUpdated ?? handleNoopGroup} />
+      <DecisionBar
+        group={group}
+        getToken={getToken}
+        onDecided={onGroupUpdated ?? handleNoopGroup}
+      />
       <TagInput
         group={group}
         projectId={projectId}

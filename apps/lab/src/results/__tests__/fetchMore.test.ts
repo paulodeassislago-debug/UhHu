@@ -66,15 +66,21 @@ describe('sourceHasMore (totalKnown vs armazenados do servidor)', () => {
 
 describe('fetchMoreAvailability (botão + contadores)', () => {
   it('hasMore em qualquer fonte mostra o botão', () => {
-    const both = fetchMoreAvailability(testRun({ total: 250, returned: 100 }, { total: 120, returned: 100 }));
+    const both = fetchMoreAvailability(
+      testRun({ total: 250, returned: 100 }, { total: 120, returned: 100 }),
+    );
     expect(both.hasMore).toBe(true);
     expect(both.hasMoreBdtd).toBe(true);
     expect(both.hasMoreCapes).toBe(true);
-    const one = fetchMoreAvailability(testRun({ total: 250, returned: 250 }, { total: 120, returned: 100 }));
+    const one = fetchMoreAvailability(
+      testRun({ total: 250, returned: 250 }, { total: 120, returned: 100 }),
+    );
     expect(one.hasMore).toBe(true);
     expect(one.hasMoreBdtd).toBe(false);
     expect(one.hasMoreCapes).toBe(true);
-    const none = fetchMoreAvailability(testRun({ total: 250, returned: 250 }, { total: 120, returned: 120 }));
+    const none = fetchMoreAvailability(
+      testRun({ total: 250, returned: 250 }, { total: 120, returned: 120 }),
+    );
     expect(none.hasMore).toBe(false);
   });
 

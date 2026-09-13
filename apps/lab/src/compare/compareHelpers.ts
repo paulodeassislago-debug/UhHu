@@ -32,11 +32,7 @@ export function mostInclusive(totals: Record<string, number>, order: string[]): 
   return best;
 }
 
-export function pairOverlap(
-  pairwiseOverlap: Record<string, number>,
-  a: string,
-  b: string,
-): number {
+export function pairOverlap(pairwiseOverlap: Record<string, number>, a: string, b: string): number {
   const direct: unknown = pairwiseOverlap[`${a}|${b}`];
   if (typeof direct === 'number' && Number.isFinite(direct)) {
     return direct;

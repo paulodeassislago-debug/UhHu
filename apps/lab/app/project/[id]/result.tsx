@@ -289,7 +289,9 @@ export default function ResultScreen(): JSX.Element {
   const yearLine: string = result.year !== null ? String(result.year) : 'ano desconhecido';
   const typeLabel: string | null = docTypeLabel(result.docType);
   const metaLine: string =
-    typeLabel !== null ? `${authorsLine} · ${yearLine} · ${typeLabel}` : `${authorsLine} · ${yearLine}`;
+    typeLabel !== null
+      ? `${authorsLine} · ${yearLine} · ${typeLabel}`
+      : `${authorsLine} · ${yearLine}`;
   const provenanceLine: string = formatProvenance(result);
   const abstractLine: string = result.abstract !== null ? result.abstract : 'sem resumo';
   const httpsOrigin: string | null = isHttpsUrl(result.originUrl) ? result.originUrl : null;
@@ -322,11 +324,7 @@ export default function ResultScreen(): JSX.Element {
         ) : null}
         <Text>{provenanceLine}</Text>
         {result.isNew ? <Text>NOVO</Text> : null}
-        <DecisionBar
-          group={effectiveGroup}
-          getToken={getToken}
-          onDecided={handleGroupUpdated}
-        />
+        <DecisionBar group={effectiveGroup} getToken={getToken} onDecided={handleGroupUpdated} />
         <TagInput
           group={effectiveGroup}
           projectId={projectId}

@@ -25,7 +25,10 @@ export interface AuthRequestOptions {
   baseUrl?: string;
 }
 
-function toRequestOptions(opts?: AuthRequestOptions): { getToken?: TokenProvider; baseUrl?: string } {
+function toRequestOptions(opts?: AuthRequestOptions): {
+  getToken?: TokenProvider;
+  baseUrl?: string;
+} {
   const out: { getToken?: TokenProvider; baseUrl?: string } = {};
   if (opts?.getToken !== undefined) {
     out.getToken = opts.getToken;
@@ -82,7 +85,10 @@ export const authApi = {
   },
 
   // O raw circula UMA vez nesta resposta; repassado sem logar (T-06-02-04).
-  async issuePat(input: PatCreateInput, opts?: AuthRequestOptions): Promise<PersonalAccessTokenCreated> {
+  async issuePat(
+    input: PatCreateInput,
+    opts?: AuthRequestOptions,
+  ): Promise<PersonalAccessTokenCreated> {
     const body = patCreateSchema.parse(input);
     const data = await apiFetch<PersonalAccessTokenCreated>('/api/v1/auth/token', {
       ...toRequestOptions(opts),

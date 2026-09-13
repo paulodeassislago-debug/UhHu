@@ -602,11 +602,7 @@ async function seenKeysForSearch(
   return new Set(priorRows.map((row) => `${row.source}|${row.sourceId}`));
 }
 
-function resultIsNew(
-  seen: Set<string>,
-  source: string,
-  sourceId: string,
-): boolean {
+function resultIsNew(seen: Set<string>, source: string, sourceId: string): boolean {
   return !seen.has(`${source}|${sourceId}`);
 }
 
@@ -667,10 +663,7 @@ export async function listResultsForActor(
   const seen = await seenKeysForSearch(db, run.searchId, runId, new Date(run.executedAt));
   return {
     items: pageRows.map((entry) =>
-      toResultDTO(
-        entry.result,
-        resultIsNew(seen, entry.result.source, entry.result.sourceId),
-      ),
+      toResultDTO(entry.result, resultIsNew(seen, entry.result.source, entry.result.sourceId)),
     ),
     page: { limit, nextCursor, hasMore },
     total: totalRows.length,

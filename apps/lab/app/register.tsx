@@ -131,7 +131,9 @@ export default function RegisterScreen(): JSX.Element {
         disabled={busy}
       />
       {errorMessage !== null ? <Text>{errorMessage}</Text> : null}
-      {errorRequestId !== null ? <Text style={{ fontSize: 12 }}>(req {errorRequestId})</Text> : null}
+      {errorRequestId !== null ? (
+        <Text style={{ fontSize: 12 }}>(req {errorRequestId})</Text>
+      ) : null}
       <Link href="/login">Voltar ao login</Link>
     </ScrollView>
   );

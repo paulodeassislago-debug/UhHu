@@ -133,17 +133,13 @@ export function SearchForm({
 
   function updateRowText(index: number, text: string): void {
     setRows((prev: TermRow[]): TermRow[] =>
-      prev.map((row: TermRow, i: number): TermRow =>
-        i === index ? { text, op: row.op } : row,
-      ),
+      prev.map((row: TermRow, i: number): TermRow => (i === index ? { text, op: row.op } : row)),
     );
   }
 
   function updateRowOp(index: number, op: TermOperator): void {
     setRows((prev: TermRow[]): TermRow[] =>
-      prev.map((row: TermRow, i: number): TermRow =>
-        i === index ? { text: row.text, op } : row,
-      ),
+      prev.map((row: TermRow, i: number): TermRow => (i === index ? { text: row.text, op } : row)),
     );
   }
 

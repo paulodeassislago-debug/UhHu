@@ -18,11 +18,22 @@ export interface ErrorBannerProps {
   onBack?: () => void;
 }
 
-export function ErrorBanner({ message, requestId, onRetry, onBack }: ErrorBannerProps): JSX.Element {
+export function ErrorBanner({
+  message,
+  requestId,
+  onRetry,
+  onBack,
+}: ErrorBannerProps): JSX.Element {
   return (
     <View
       testID="error-banner"
-      style={{ borderWidth: 1, borderColor: '#fca5a5', backgroundColor: '#fef2f2', padding: 12, gap: 8 }}
+      style={{
+        borderWidth: 1,
+        borderColor: '#fca5a5',
+        backgroundColor: '#fef2f2',
+        padding: 12,
+        gap: 8,
+      }}
     >
       <Text style={{ fontWeight: '600' }}>Algo falhou</Text>
       <Text>{message}</Text>

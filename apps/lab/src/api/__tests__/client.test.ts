@@ -90,7 +90,10 @@ describe('apiFetch', () => {
     expect((sentOk ?? '').length).toBeGreaterThan(0);
 
     stubFetch(async () =>
-      jsonResponse(500, '{"error":{"code":"INTERNAL_ERROR","message":"Erro interno.","requestId":""}}'),
+      jsonResponse(
+        500,
+        '{"error":{"code":"INTERNAL_ERROR","message":"Erro interno.","requestId":""}}',
+      ),
     );
     try {
       await apiFetch<{ ok: boolean }>('/api/v1/auth/me', { baseUrl: BASE_URL });

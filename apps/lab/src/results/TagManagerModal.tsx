@@ -320,7 +320,12 @@ export function TagManagerModal({
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
       <View
-        style={{ flex: 1, justifyContent: 'center', padding: 24, backgroundColor: 'rgba(0,0,0,0.4)' }}
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          padding: 24,
+          backgroundColor: 'rgba(0,0,0,0.4)',
+        }}
       >
         <View style={{ backgroundColor: '#ffffff', padding: 16, gap: 12 }}>
           <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
@@ -360,9 +365,7 @@ export function TagManagerModal({
               editable={!busyCreate}
               style={{ borderWidth: 1, padding: 8 }}
             />
-            {createError !== null ? (
-              <Text style={{ color: '#dc2626' }}>{createError}</Text>
-            ) : null}
+            {createError !== null ? <Text style={{ color: '#dc2626' }}>{createError}</Text> : null}
             <Button
               title={busyCreate ? 'Criando…' : 'Criar'}
               onPress={handleCreatePress}

@@ -42,10 +42,7 @@ const RUN_POLL_MAX_ERRORS = 3;
 // Verdadeiro para os 4 estados terminais do contrato (queued/running seguem).
 export function isTerminalStatus(status: RunStatus): boolean {
   return (
-    status === 'succeeded' ||
-    status === 'partial' ||
-    status === 'failed' ||
-    status === 'cancelled'
+    status === 'succeeded' || status === 'partial' || status === 'failed' || status === 'cancelled'
   );
 }
 
@@ -77,8 +74,7 @@ export function formatDurationMs(
   if (Number.isNaN(startMs)) {
     return '—';
   }
-  const endMs: number =
-    finishedAt !== null && finishedAt.length > 0 ? Date.parse(finishedAt) : now;
+  const endMs: number = finishedAt !== null && finishedAt.length > 0 ? Date.parse(finishedAt) : now;
   if (Number.isNaN(endMs)) {
     return '—';
   }
@@ -181,7 +177,9 @@ export function useRunPolling(runId: string, getToken: TokenProvider): RunPollin
             : new ApiError(
                 0,
                 'INTERNAL_ERROR',
-                unknownError instanceof Error ? unknownError.message : 'Erro interno. Tente novamente.',
+                unknownError instanceof Error
+                  ? unknownError.message
+                  : 'Erro interno. Tente novamente.',
                 '',
               );
         consecutiveErrors += 1;

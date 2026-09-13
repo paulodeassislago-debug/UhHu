@@ -28,7 +28,11 @@ import { projectsApi } from '../../../src/api/projects';
 import { useAuth } from '../../../src/auth/session';
 import { filterCorpus } from '../../../src/corpus/corpusFilters';
 import type { CorpusFilter } from '../../../src/corpus/corpusFilters';
-import { buildExportFilename, downloadExportFile, mimeForFormat } from '../../../src/export/exportDelivery';
+import {
+  buildExportFilename,
+  downloadExportFile,
+  mimeForFormat,
+} from '../../../src/export/exportDelivery';
 import { formatCorpusCount } from '../../../src/projects/counts';
 import { Empty } from '../../../src/ui/Empty';
 import { ErrorBanner } from '../../../src/ui/ErrorBanner';
@@ -411,10 +415,7 @@ export default function CorpusScreen(): JSX.Element {
           <View style={{ gap: 8 }}>
             <Text style={{ fontWeight: '600' }}>Exportar</Text>
             <View style={{ flexDirection: 'row', gap: 8 }}>
-              <Button
-                title={format === 'csv' ? '• CSV' : 'CSV'}
-                onPress={() => setFormat('csv')}
-              />
+              <Button title={format === 'csv' ? '• CSV' : 'CSV'} onPress={() => setFormat('csv')} />
               <Button
                 title={format === 'bibtex' ? '• BibTeX' : 'BibTeX'}
                 onPress={() => setFormat('bibtex')}

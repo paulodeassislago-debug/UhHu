@@ -116,9 +116,10 @@ export function DedupGroupSection({
   const { markExpired } = useAuth();
   const [expanded, setExpanded] = useState<boolean>(false);
   const [loadingMembers, setLoadingMembers] = useState<boolean>(false);
-  const [membersError, setMembersError] = useState<{ message: string; requestId: string | null } | null>(
-    null,
-  );
+  const [membersError, setMembersError] = useState<{
+    message: string;
+    requestId: string | null;
+  } | null>(null);
   const [members, setMembers] = useState<ResultDTO[] | null>(null);
   const initialSource: ExecutableSource = group.origins[0] ?? 'bdtd';
   const [divSource, setDivSource] = useState<ExecutableSource>(initialSource);
@@ -315,16 +316,12 @@ export function DedupGroupSection({
           </Text>
           {isCanonical ? <Text>★ versão mais completa</Text> : null}
           {httpsOrigin !== null ? (
-            <Text onPress={() => void Linking.openURL(httpsOrigin)}>
-              origem: {httpsOrigin}
-            </Text>
+            <Text onPress={() => void Linking.openURL(httpsOrigin)}>origem: {httpsOrigin}</Text>
           ) : rawOrigin !== null ? (
             <Text>origem: {rawOrigin}</Text>
           ) : null}
           {httpsSource !== null ? (
-            <Text onPress={() => void Linking.openURL(httpsSource)}>
-              fonte: {httpsSource}
-            </Text>
+            <Text onPress={() => void Linking.openURL(httpsSource)}>fonte: {httpsSource}</Text>
           ) : rawSource !== null ? (
             <Text>fonte: {rawSource}</Text>
           ) : null}
@@ -337,9 +334,7 @@ export function DedupGroupSection({
   for (let i = 0; i < diffs.length; i += 1) {
     const line: string | undefined = diffs[i];
     if (line !== undefined) {
-      diffRows.push(
-        <Text key={`diff-${i}`}>{line}</Text>,
-      );
+      diffRows.push(<Text key={`diff-${i}`}>{line}</Text>);
     }
   }
 
@@ -382,7 +377,11 @@ export function DedupGroupSection({
               <View style={{ gap: 8 }}>{memberRows}</View>
               <View style={{ gap: 4 }}>
                 <Text style={{ fontWeight: '600' }}>Diferenças</Text>
-                {diffRows.length > 0 ? <View style={{ gap: 2 }}>{diffRows}</View> : <Text>sem diferenças</Text>}
+                {diffRows.length > 0 ? (
+                  <View style={{ gap: 2 }}>{diffRows}</View>
+                ) : (
+                  <Text>sem diferenças</Text>
+                )}
               </View>
               <View style={{ gap: 4 }}>
                 <Text style={{ fontWeight: '600' }}>Divergências</Text>
@@ -412,7 +411,11 @@ export function DedupGroupSection({
                     ) : null}
                   </View>
                 ) : null}
-                <Button title={divBusy ? 'Anotando…' : 'Anotar'} onPress={() => void handleAnnotate()} disabled={divBusy} />
+                <Button
+                  title={divBusy ? 'Anotando…' : 'Anotar'}
+                  onPress={() => void handleAnnotate()}
+                  disabled={divBusy}
+                />
               </View>
             </View>
           ) : null}

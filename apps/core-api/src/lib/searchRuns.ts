@@ -251,10 +251,7 @@ async function readRunStatus(db: Db, runId: string): Promise<string | null> {
 }
 
 /** Contagem armazenada por fonte no run (offset server-side, T-08-07-02). */
-async function storedCountsForRun(
-  db: Db,
-  runId: string,
-): Promise<{ bdtd: number; capes: number }> {
+async function storedCountsForRun(db: Db, runId: string): Promise<{ bdtd: number; capes: number }> {
   const rows = await db
     .select({ source: labResults.source })
     .from(labResults)
@@ -524,7 +521,11 @@ export function nextPageFor(
 }
 
 /** Carrega os sourceIds já armazenados do run+fonte (anti-loop entre lotes). */
-export async function loadSeenIds(db: Db, runId: string, source: ExecutableSource): Promise<Set<string>> {
+export async function loadSeenIds(
+  db: Db,
+  runId: string,
+  source: ExecutableSource,
+): Promise<Set<string>> {
   const rows = await db
     .select({ sourceId: labResults.sourceId })
     .from(labResults)

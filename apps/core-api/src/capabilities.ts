@@ -342,8 +342,7 @@ function registryHandlers(db: Db): Record<CapabilityName, CapabilityHandler> {
     // por lote (D-15, badge≡contador). Null fora do escopo → rota vira 404.
     'lab.run.fetchMore': async (input, actor) => {
       const data = parseOrThrow(runFetchMoreInputSchema, input);
-      const sources =
-        data.sources === undefined ? {} : { sources: data.sources };
+      const sources = data.sources === undefined ? {} : { sources: data.sources };
       return fetchMoreForActor(db, actor, data.id, sources);
     },
     'lab.result.decision.update': async (input, actor) => {

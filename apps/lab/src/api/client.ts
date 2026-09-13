@@ -123,7 +123,8 @@ function newRequestId(): string | null {
 }
 
 export async function apiFetch<T>(path: string, opts?: ApiFetchOptions): Promise<T> {
-  const baseUrl = typeof opts?.baseUrl === 'string' && opts.baseUrl.length > 0 ? opts.baseUrl : getApiBaseUrl();
+  const baseUrl =
+    typeof opts?.baseUrl === 'string' && opts.baseUrl.length > 0 ? opts.baseUrl : getApiBaseUrl();
   const url = joinUrl(baseUrl, path);
   const method = typeof opts?.method === 'string' && opts.method.length > 0 ? opts.method : 'GET';
 

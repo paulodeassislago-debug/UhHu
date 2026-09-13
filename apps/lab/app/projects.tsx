@@ -192,7 +192,9 @@ export default function ProjectsScreen(): JSX.Element {
         message = error.message;
       }
       const detail =
-        error instanceof ApiError && error.requestId !== '' ? `${message} (req ${error.requestId})` : message;
+        error instanceof ApiError && error.requestId !== ''
+          ? `${message} (req ${error.requestId})`
+          : message;
       setToggleErrors((prev: Record<string, string>): Record<string, string> => ({
         ...prev,
         [project.id]: detail,
@@ -322,7 +324,9 @@ export default function ProjectsScreen(): JSX.Element {
             ) : null}
             <Text>Status: {project.status}</Text>
             {typeof countLabel === 'string' ? <Text>{countLabel}</Text> : null}
-            {typeof toggleError === 'string' ? <Text style={{ color: '#dc2626' }}>{toggleError}</Text> : null}
+            {typeof toggleError === 'string' ? (
+              <Text style={{ color: '#dc2626' }}>{toggleError}</Text>
+            ) : null}
             <View style={{ flexDirection: 'row', gap: 8 }}>
               <Link
                 href={{

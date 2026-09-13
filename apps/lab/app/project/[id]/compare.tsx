@@ -36,8 +36,7 @@ import { CardSkeleton } from '../../../src/ui/Skeleton';
 type ListState = 'loading' | 'ready' | 'error';
 type CompareState = 'idle' | 'loading' | 'ready' | 'error';
 
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const TERM_HEADLINE_LENGTH = 40;
 
 function shortTerm(term: string): string {
@@ -126,11 +125,7 @@ interface CompareResultProps {
   referenceSearchId: string | null;
 }
 
-function CompareResult({
-  compare,
-  termsById,
-  referenceSearchId,
-}: CompareResultProps): JSX.Element {
+function CompareResult({ compare, termsById, referenceSearchId }: CompareResultProps): JSX.Element {
   const winner: string | null = mostInclusive(compare.totals, compare.searches);
   const baseId: string = compare.searches[0] ?? '';
   const yearRows: YearRow[] = sortedYearRows(compare.yearHistogram);
@@ -301,9 +296,7 @@ export default function CompareScreen(): JSX.Element {
 
   function handleToggle(searchId: string): void {
     if (selectedIds.includes(searchId)) {
-      setSelectedIds(
-        selectedIds.filter((id: string): boolean => id !== searchId),
-      );
+      setSelectedIds(selectedIds.filter((id: string): boolean => id !== searchId));
     } else {
       setSelectedIds([...selectedIds, searchId]);
     }
@@ -458,9 +451,7 @@ export default function CompareScreen(): JSX.Element {
       ListHeaderComponent={
         <View style={{ gap: 12 }}>
           <Text style={{ fontSize: 24, fontWeight: '600' }}>Comparação</Text>
-          <Text>
-            {orderedIds.length} selecionadas (2 a 4)
-          </Text>
+          <Text>{orderedIds.length} selecionadas (2 a 4)</Text>
           <Button
             title="Comparar"
             onPress={() => void handleCompare()}

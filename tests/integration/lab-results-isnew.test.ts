@@ -270,7 +270,11 @@ async function createMember(
 // Stack de prova sem adapters: runs/results inseridos direto no PG com o
 // shape mínimo exigido pelo schema (status/metrics/snapshots). O GET exercita
 // a derivação on-read — nenhum dado de teste carrega isNew persistido.
-async function seedTwoRuns(db: Db, ownerId: string, searchId: string): Promise<{
+async function seedTwoRuns(
+  db: Db,
+  ownerId: string,
+  searchId: string,
+): Promise<{
   run1Id: string;
   run2Id: string;
   repeatedResultId: string;
@@ -369,7 +373,11 @@ async function seedTwoRuns(db: Db, ownerId: string, searchId: string): Promise<{
 // 1/1/1). Prova o histórico congelado: o run3 posterior NUNCA apaga o badge
 // do run2, e count(isNew)===newCount nos 3 runs. Empate exato de executedAt
 // é tratado como posterior (não-visto → isNew true).
-async function seedThreeRuns(db: Db, ownerId: string, searchId: string): Promise<{
+async function seedThreeRuns(
+  db: Db,
+  ownerId: string,
+  searchId: string,
+): Promise<{
   run1Id: string;
   run2Id: string;
   run3Id: string;
@@ -645,9 +653,14 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
       expect(foreign.statusCode).toBe(404);
       expect(errorOf(foreign.json()).code).toBe('NOT_FOUND');
 
-      const foreignSingle = await apiRequest(app, 'GET', `/api/v1/lab/results/${seed.freshResultId}`, {
-        cookieValue: stranger.cookie,
-      });
+      const foreignSingle = await apiRequest(
+        app,
+        'GET',
+        `/api/v1/lab/results/${seed.freshResultId}`,
+        {
+          cookieValue: stranger.cookie,
+        },
+      );
       expect(foreignSingle.statusCode).toBe(404);
       expect(errorOf(foreignSingle.json()).code).toBe('NOT_FOUND');
 

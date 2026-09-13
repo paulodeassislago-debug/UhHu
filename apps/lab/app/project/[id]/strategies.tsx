@@ -104,17 +104,12 @@ export default function StrategiesScreen(): JSX.Element {
     void load();
   }, [load]);
 
-  const handleDeleted = useCallback(
-    (searchId: string): void => {
-      setItems((prev: SearchDTO[]): SearchDTO[] =>
-        prev.filter((item: SearchDTO): boolean => item.id !== searchId),
-      );
-      setReferenceSearchId((prev: string | null): string | null =>
-        prev === searchId ? null : prev,
-      );
-    },
-    [],
-  );
+  const handleDeleted = useCallback((searchId: string): void => {
+    setItems((prev: SearchDTO[]): SearchDTO[] =>
+      prev.filter((item: SearchDTO): boolean => item.id !== searchId),
+    );
+    setReferenceSearchId((prev: string | null): string | null => (prev === searchId ? null : prev));
+  }, []);
 
   const handleSetReference = useCallback(
     async (searchId: string): Promise<void> => {

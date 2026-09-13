@@ -45,7 +45,9 @@ export function suggestTags(tags: ProjectTag[], prefix: string): ProjectTag[] {
       rest.push(tag);
     }
   }
-  defaults.sort((a: ProjectTag, b: ProjectTag): number => defaultRank(a.name) - defaultRank(b.name));
+  defaults.sort(
+    (a: ProjectTag, b: ProjectTag): number => defaultRank(a.name) - defaultRank(b.name),
+  );
   rest.sort((a: ProjectTag, b: ProjectTag): number => a.name.localeCompare(b.name, 'pt-BR'));
   const out: ProjectTag[] = [];
   for (const tag of defaults) {
@@ -64,9 +66,7 @@ export function suggestTags(tags: ProjectTag[], prefix: string): ProjectTag[] {
 }
 
 export type TagAction =
-  | { type: 'attach'; tagId: string }
-  | { type: 'create'; name: string }
-  | { type: 'invalid' };
+  { type: 'attach'; tagId: string } | { type: 'create'; name: string } | { type: 'invalid' };
 
 // Decide sem rede: vazio ou >100 → invalid (sem request, molde 07-06);
 // match exato case-insensitive → attach; senão → create com o nome aparado.

@@ -12,7 +12,13 @@
 // expired e next (guards são UX; authZ real no CORE). Sem `any`.
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { DedupGroupDTO, FetchMoreResult, PageInfo, ResultDTO, SearchRunDTO } from '@uhhu/contracts';
+import type {
+  DedupGroupDTO,
+  FetchMoreResult,
+  PageInfo,
+  ResultDTO,
+  SearchRunDTO,
+} from '@uhhu/contracts';
 import { ApiError } from '../api/client';
 import type { TokenProvider } from '../api/client';
 import { labApi } from '../api/lab';

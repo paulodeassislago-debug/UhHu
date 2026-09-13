@@ -97,7 +97,9 @@ async function fakeIncrementalFetch(input: string | URL | Request): Promise<Resp
     const slice = INCREMENTAL_RECORDS.slice(start, start + safeLimit);
     return jsonFetchResponse({ resultCount: INCREMENTAL_TOTAL, records: slice, status: 'OK' }, 200);
   }
-  throw new Error(`fakeIncrementalFetch: host inesperado (sem rede real no teste): ${url.slice(0, 80)}`);
+  throw new Error(
+    `fakeIncrementalFetch: host inesperado (sem rede real no teste): ${url.slice(0, 80)}`,
+  );
 }
 
 function installIncrementalFake(): void {
@@ -547,7 +549,12 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
       }
       const api = app;
       const owner = await bootstrapAdmin(api, 'Dona Fetch', 'fetch@example.com');
-      const stranger = await createMember(api, owner.cookie, 'Estranho Fetch', 'stranger-fetch@example.com');
+      const stranger = await createMember(
+        api,
+        owner.cookie,
+        'Estranho Fetch',
+        'stranger-fetch@example.com',
+      );
       const created = await apiRequest(api, 'POST', '/api/v1/projects', {
         body: { title: 'Projeto fetch-more isolado' },
         cookieValue: owner.cookie,

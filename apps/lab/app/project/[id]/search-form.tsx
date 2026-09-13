@@ -31,7 +31,11 @@ import { labApi } from '../../../src/api/lab';
 import type { LabSourceEntry } from '../../../src/api/lab';
 import { useAuth } from '../../../src/auth/session';
 import { SearchForm } from '../../../src/search/SearchForm';
-import type { SearchFormInitial, SearchFormPayload, SourceHealthLabels } from '../../../src/search/SearchForm';
+import type {
+  SearchFormInitial,
+  SearchFormPayload,
+  SourceHealthLabels,
+} from '../../../src/search/SearchForm';
 import { ErrorBanner } from '../../../src/ui/ErrorBanner';
 import { CardSkeleton } from '../../../src/ui/Skeleton';
 import { newIdempotencyKey } from '../../../src/utils/uuid';
@@ -76,7 +80,9 @@ export default function SearchFormScreen(): JSX.Element {
   const [initial, setInitial] = useState<SearchFormInitial | null>(null);
   const [health, setHealth] = useState<SourceHealthLabels>(HEALTH_LOADING);
   const [banner, setBanner] = useState<{ message: string; requestId: string | null } | null>(null);
-  const [loadError, setLoadError] = useState<{ message: string; requestId: string | null } | null>(null);
+  const [loadError, setLoadError] = useState<{ message: string; requestId: string | null } | null>(
+    null,
+  );
   const [loadRequestId, setLoadRequestId] = useState<string | null>(null);
   const [saving, setSaving] = useState<boolean>(false);
 
@@ -90,36 +96,33 @@ export default function SearchFormScreen(): JSX.Element {
     router.replace({ pathname: '/login', params: { expired: '1', next: nextAfterLogin } });
   }, [markExpired, router, nextAfterLogin]);
 
-  const loadHealth = useCallback(
-    async (token: TokenProvider): Promise<void> => {
-      try {
-        const entries: LabSourceEntry[] = await labApi.listSources({ getToken: token });
-        let bdtdLabel = HEALTH_UNAVAILABLE.bdtd;
-        let capesLabel = HEALTH_UNAVAILABLE.capes;
-        for (const entry of entries) {
-          if (entry.name !== 'bdtd' && entry.name !== 'capes') {
-            continue;
-          }
-          try {
-            const dto: SourceHealthDTO = await labApi.getSourceHealth(entry.name, {
-              getToken: token,
-            });
-            if (entry.name === 'bdtd') {
-              bdtdLabel = healthLabel(dto.status);
-            } else {
-              capesLabel = healthLabel(dto.status);
-            }
-          } catch {
-            // Saúde de uma fonte falhou: "indisponível" sem bloquear o form.
-          }
+  const loadHealth = useCallback(async (token: TokenProvider): Promise<void> => {
+    try {
+      const entries: LabSourceEntry[] = await labApi.listSources({ getToken: token });
+      let bdtdLabel = HEALTH_UNAVAILABLE.bdtd;
+      let capesLabel = HEALTH_UNAVAILABLE.capes;
+      for (const entry of entries) {
+        if (entry.name !== 'bdtd' && entry.name !== 'capes') {
+          continue;
         }
-        setHealth({ bdtd: bdtdLabel, capes: capesLabel });
-      } catch {
-        setHealth(HEALTH_UNAVAILABLE);
+        try {
+          const dto: SourceHealthDTO = await labApi.getSourceHealth(entry.name, {
+            getToken: token,
+          });
+          if (entry.name === 'bdtd') {
+            bdtdLabel = healthLabel(dto.status);
+          } else {
+            capesLabel = healthLabel(dto.status);
+          }
+        } catch {
+          // Saúde de uma fonte falhou: "indisponível" sem bloquear o form.
+        }
       }
-    },
-    [],
-  );
+      setHealth({ bdtd: bdtdLabel, capes: capesLabel });
+    } catch {
+      setHealth(HEALTH_UNAVAILABLE);
+    }
+  }, []);
 
   const load = useCallback(async (): Promise<void> => {
     if (projectId.length === 0) {

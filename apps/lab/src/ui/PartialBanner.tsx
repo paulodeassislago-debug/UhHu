@@ -41,7 +41,9 @@ export function PartialBanner({
         gap: 8,
       }}
     >
-      <Text style={{ fontWeight: '600' }}>{failed ? 'Resultado com falha' : 'Resultado parcial'}</Text>
+      <Text style={{ fontWeight: '600' }}>
+        {failed ? 'Resultado com falha' : 'Resultado parcial'}
+      </Text>
       <Text>
         Chegaram {whatCame}, faltou {whatMissed}.
       </Text>
