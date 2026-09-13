@@ -25,6 +25,7 @@ import type { ListRenderItemInfo } from 'react-native';
 import type { CompareDTO, SearchDTO } from '@uhhu/contracts';
 import { ApiError } from '../../../src/api/client';
 import { labApi } from '../../../src/api/lab';
+import { projectsApi } from '../../../src/api/projects';
 import { useAuth } from '../../../src/auth/session';
 import { mostInclusive, pairOverlap, sortedYearRows } from '../../../src/compare/compareHelpers';
 import type { YearRow } from '../../../src/compare/compareHelpers';
@@ -54,6 +55,7 @@ interface CompareColumnProps {
   capes: number;
   overlapText: string;
   isWinner: boolean;
+  isReference: boolean;
 }
 
 function CompareColumn({
@@ -64,13 +66,21 @@ function CompareColumn({
   capes,
   overlapText,
   isWinner,
+  isReference,
 }: CompareColumnProps): JSX.Element {
   return (
     <View
       testID={`compare-column-${searchId}`}
-      style={{ minWidth: 150, borderWidth: 1, padding: 8, gap: 4 }}
+      style={
+        isReference
+          ? { minWidth: 150, borderWidth: 2, padding: 8, gap: 4 }
+          : { minWidth: 150, borderWidth: 1, padding: 8, gap: 4 }
+      }
     >
-      <Text style={{ fontWeight: '600' }}>{shortTerm(term)}</Text>
+      <Text style={isReference ? { fontWeight: '700' } : { fontWeight: '600' }}>
+        {shortTerm(term)}
+      </Text>
+      {isReference ? <Text style={{ fontWeight: '700' }}>Referência</Text> : null}
       {isWinner ? <Text>★ mais inclusiva</Text> : null}
       <Text>Resultados: {total}</Text>
       <Text>BDTD: {bdtd}</Text>
@@ -86,6 +96,7 @@ function columnProps(
   baseId: string,
   winner: string | null,
   searchId: string,
+  referenceSearchId: string | null,
 ): CompareColumnProps {
   const totalValue: unknown = compare.totals[searchId];
   const total: number =
@@ -105,15 +116,21 @@ function columnProps(
     capes,
     overlapText,
     isWinner: winner !== null && winner === searchId,
+    isReference: referenceSearchId !== null && referenceSearchId === searchId,
   };
 }
 
 interface CompareResultProps {
   compare: CompareDTO;
   termsById: Record<string, string>;
+  referenceSearchId: string | null;
 }
 
-function CompareResult({ compare, termsById }: CompareResultProps): JSX.Element {
+function CompareResult({
+  compare,
+  termsById,
+  referenceSearchId,
+}: CompareResultProps): JSX.Element {
   const winner: string | null = mostInclusive(compare.totals, compare.searches);
   const baseId: string = compare.searches[0] ?? '';
   const yearRows: YearRow[] = sortedYearRows(compare.yearHistogram);
@@ -126,16 +143,24 @@ function CompareResult({ compare, termsById }: CompareResultProps): JSX.Element 
       <ScrollView horizontal>
         <View style={{ flexDirection: 'row', gap: 8 }}>
           {col0 !== null ? (
-            <CompareColumn {...columnProps(compare, termsById, baseId, winner, col0)} />
+            <CompareColumn
+              {...columnProps(compare, termsById, baseId, winner, col0, referenceSearchId)}
+            />
           ) : null}
           {col1 !== null ? (
-            <CompareColumn {...columnProps(compare, termsById, baseId, winner, col1)} />
+            <CompareColumn
+              {...columnProps(compare, termsById, baseId, winner, col1, referenceSearchId)}
+            />
           ) : null}
           {col2 !== null ? (
-            <CompareColumn {...columnProps(compare, termsById, baseId, winner, col2)} />
+            <CompareColumn
+              {...columnProps(compare, termsById, baseId, winner, col2, referenceSearchId)}
+            />
           ) : null}
           {col3 !== null ? (
-            <CompareColumn {...columnProps(compare, termsById, baseId, winner, col3)} />
+            <CompareColumn
+              {...columnProps(compare, termsById, baseId, winner, col3, referenceSearchId)}
+            />
           ) : null}
         </View>
       </ScrollView>
@@ -171,6 +196,7 @@ export default function CompareScreen(): JSX.Element {
   const [compare, setCompare] = useState<CompareDTO | null>(null);
   const [compareError, setCompareError] = useState<string | null>(null);
   const [compareRequestId, setCompareRequestId] = useState<string | null>(null);
+  const [referenceSearchId, setReferenceSearchId] = useState<string | null>(null);
 
   const load = useCallback(async (): Promise<void> => {
     if (projectId.length === 0) {
@@ -223,6 +249,39 @@ export default function CompareScreen(): JSX.Element {
     }
     void load();
   }, [authLoading, user, load, router, projectId]);
+
+  useEffect(() => {
+    if (authLoading || user === null || projectId.length === 0) {
+      return;
+    }
+    let cancelled = false;
+    async function fetchReference(): Promise<void> {
+      try {
+        const project = await projectsApi.listById(projectId, { getToken });
+        if (!cancelled) {
+          setReferenceSearchId(project.referenceSearchId);
+        }
+      } catch (error: unknown) {
+        if (error instanceof ApiError && error.status === 401) {
+          if (!cancelled) {
+            markExpired();
+            router.replace({
+              pathname: '/login',
+              params: { expired: '1', next: `/project/${projectId}/compare` },
+            });
+          }
+          return;
+        }
+        if (!cancelled) {
+          setReferenceSearchId(null);
+        }
+      }
+    }
+    void fetchReference();
+    return (): void => {
+      cancelled = true;
+    };
+  }, [authLoading, user, projectId, getToken, markExpired, router]);
 
   const listedIds = new Set<string>();
   for (const search of searches) {
@@ -330,7 +389,13 @@ export default function CompareScreen(): JSX.Element {
         />
       );
     }
-    return <CompareResult compare={compare} termsById={termsById} />;
+    return (
+      <CompareResult
+        compare={compare}
+        termsById={termsById}
+        referenceSearchId={referenceSearchId}
+      />
+    );
   }
 
   if (authLoading || (user !== null && listState === 'loading')) {

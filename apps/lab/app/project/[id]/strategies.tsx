@@ -20,6 +20,7 @@ import type { ListRenderItemInfo } from 'react-native';
 import type { SearchDTO } from '@uhhu/contracts';
 import { ApiError } from '../../../src/api/client';
 import { labApi } from '../../../src/api/lab';
+import { projectsApi } from '../../../src/api/projects';
 import { useAuth } from '../../../src/auth/session';
 import { SearchCard } from '../../../src/search/SearchCard';
 import { Empty } from '../../../src/ui/Empty';
@@ -37,6 +38,9 @@ export default function StrategiesScreen(): JSX.Element {
   const [items, setItems] = useState<SearchDTO[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [errorRequestId, setErrorRequestId] = useState<string | null>(null);
+  const [referenceSearchId, setReferenceSearchId] = useState<string | null>(null);
+  const [referenceError, setReferenceError] = useState<string | null>(null);
+  const [referenceRequestId, setReferenceRequestId] = useState<string | null>(null);
 
   const load = useCallback(async (): Promise<void> => {
     if (projectId.length === 0) {
@@ -50,8 +54,14 @@ export default function StrategiesScreen(): JSX.Element {
     setErrorMessage(null);
     setErrorRequestId(null);
     try {
-      const result = await labApi.listSearches(projectId, { limit: 100 }, { getToken });
-      setItems(result.items);
+      const [searchesResult, project] = await Promise.all([
+        labApi.listSearches(projectId, { limit: 100 }, { getToken }),
+        projectsApi.listById(projectId, { getToken }),
+      ]);
+      setItems(searchesResult.items);
+      setReferenceSearchId(project.referenceSearchId);
+      setReferenceError(null);
+      setReferenceRequestId(null);
       setState('ready');
     } catch (error: unknown) {
       if (error instanceof ApiError && error.status === 401) {
@@ -94,11 +104,55 @@ export default function StrategiesScreen(): JSX.Element {
     void load();
   }, [load]);
 
-  const handleDeleted = useCallback((searchId: string): void => {
-    setItems((prev: SearchDTO[]): SearchDTO[] =>
-      prev.filter((item: SearchDTO): boolean => item.id !== searchId),
-    );
-  }, []);
+  const handleDeleted = useCallback(
+    (searchId: string): void => {
+      setItems((prev: SearchDTO[]): SearchDTO[] =>
+        prev.filter((item: SearchDTO): boolean => item.id !== searchId),
+      );
+      setReferenceSearchId((prev: string | null): string | null =>
+        prev === searchId ? null : prev,
+      );
+    },
+    [],
+  );
+
+  const handleSetReference = useCallback(
+    async (searchId: string): Promise<void> => {
+      const previous = referenceSearchId;
+      setReferenceError(null);
+      setReferenceRequestId(null);
+      setReferenceSearchId(searchId);
+      try {
+        const updated = await projectsApi.update(
+          projectId,
+          { referenceSearchId: searchId },
+          { getToken },
+        );
+        setReferenceSearchId(updated.referenceSearchId);
+      } catch (error: unknown) {
+        setReferenceSearchId(previous);
+        if (error instanceof ApiError && error.status === 401) {
+          markExpired();
+          router.replace({
+            pathname: '/login',
+            params: { expired: '1', next: `/project/${projectId}/strategies` },
+          });
+          return;
+        }
+        if (error instanceof ApiError) {
+          setReferenceError(error.message);
+          setReferenceRequestId(error.requestId !== '' ? error.requestId : null);
+        } else if (error instanceof Error) {
+          setReferenceError(error.message);
+          setReferenceRequestId(null);
+        } else {
+          setReferenceError('Erro interno. Tente novamente.');
+          setReferenceRequestId(null);
+        }
+      }
+    },
+    [projectId, getToken, markExpired, router, referenceSearchId],
+  );
 
   function handleNewStrategy(): void {
     router.push({ pathname: '/project/[id]/search-form', params: { id: projectId } });
@@ -145,6 +199,9 @@ export default function StrategiesScreen(): JSX.Element {
           getToken={getToken}
           onChanged={handleRefresh}
           onDeleted={handleDeleted}
+          projectId={projectId}
+          isReference={search.id === referenceSearchId}
+          onSetReference={(searchId: string) => void handleSetReference(searchId)}
         />
       )}
       style={{ flex: 1 }}
@@ -153,6 +210,13 @@ export default function StrategiesScreen(): JSX.Element {
         <View style={{ gap: 12 }}>
           <Text style={{ fontSize: 24, fontWeight: '600' }}>Estratégias</Text>
           <Button title="Nova estratégia (+)" onPress={handleNewStrategy} />
+          {referenceError !== null ? (
+            <ErrorBanner
+              message={referenceError}
+              requestId={referenceRequestId}
+              onRetry={handleRefresh}
+            />
+          ) : null}
         </View>
       }
       ListEmptyComponent={
