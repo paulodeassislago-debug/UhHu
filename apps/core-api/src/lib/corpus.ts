@@ -949,8 +949,8 @@ export function isCorpusEligible(g: { status: string; decision: string }): boole
   return g.status === 'confirmed' && g.decision === 'eligible';
 }
 
-function parseDocType(value: unknown): 'masterThesis' | 'doctoralThesis' | null {
-  if (value === 'masterThesis' || value === 'doctoralThesis') {
+function parseDocType(value: unknown): 'masterThesis' | 'doctoralThesis' | 'professionalMaster' | null {
+  if (value === 'masterThesis' || value === 'doctoralThesis' || value === 'professionalMaster') {
     return value;
   }
   return null;

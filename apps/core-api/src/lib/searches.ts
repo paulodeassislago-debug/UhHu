@@ -81,7 +81,8 @@ function parseSearchFilters(value: unknown): SearchFilters {
   }
   if (Array.isArray(record['docTypes'])) {
     const docTypes = (record['docTypes'] as unknown[]).filter(
-      (entry): entry is DocType => entry === 'masterThesis' || entry === 'doctoralThesis',
+      (entry): entry is DocType =>
+        entry === 'masterThesis' || entry === 'doctoralThesis' || entry === 'professionalMaster',
     );
     if (docTypes.length > 0) {
       out.docTypes = docTypes;
@@ -235,7 +236,7 @@ function parseAuthors(value: unknown): string[] {
 }
 
 function parseDocType(value: unknown): DocType | null {
-  if (value === 'masterThesis' || value === 'doctoralThesis') {
+  if (value === 'masterThesis' || value === 'doctoralThesis' || value === 'professionalMaster') {
     return value;
   }
   return null;
