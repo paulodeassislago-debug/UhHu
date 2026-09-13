@@ -31,13 +31,13 @@ Requirements for this milestone. Each maps to roadmap phases 6–9.
 
 - [x] **UI-12**: User vê os cards de estratégia (termos legíveis, filtros, fontes, runs, última execução com contagem) e o estado vazio — done 07-02 (SearchCard com runs reais + strategies FlatList + vazio verbatim)
 - [x] **UI-13**: User salva estratégia (só salvar) ou salva-e-executa, com selo "filtro garantido pelo Core" e status das fontes visível — done 07-02 (SearchForm §6 + search-form com saúde via listSources/getSourceHealth + Idempotency-Key por toque)
-- [x] **UI-14**: User executa busca e acompanha o run com progresso por fonte (cancelável) até ok / parcial (banner âmbar com o que faltou) / falha (motivo + repetir) / cancelled — done 07-03 (useRunPolling 2500ms/teto 240 + run.tsx §7 + tripwire 6/6) + busca COMPLETA 08-06 (decisão Paulo 12/09: loop 50/pág até o total, timeout 30min, UI 720 polls + página X de ~Y + cancela sempre; prova 120/120 + rerun 0 + cancel 50/cancelled)
+- [x] **UI-14**: User executa busca e acompanha o run com progresso por fonte (cancelável) até ok / parcial (banner âmbar com o que faltou) / falha (motivo + repetir) / cancelled — done 07-03 (useRunPolling 2500ms/teto 240 + run.tsx §7 + tripwire 6/6) + busca COMPLETA 08-06 (decisão Paulo 12/09: loop 50/pág até o total, timeout 30min, UI 720 polls + página X de ~Y + cancela sempre; prova 120/120 + rerun 0 + cancel 50/cancelled) + lote INCREMENTAL 08-07 (decisão Paulo 12/09 REVISADA, SUPERSEDE 08-06: run 1 lote 100/fonte + totalKnown, BUSCAR MAIS +100/fonte com newCount/lote, UI botão/loading/retry + X de Y, polling 240; prova 250 em 100+100+50 + IDOR)
 - [x] **UI-15**: User exclui busca via diálogo que lista a cascata (nº de runs, resultados e decisões perdidas) antes do hard-delete — done 07-04 (DeleteSearchDialog com contagens honestas + Excluir explícito + remoção local do card)
 - [x] **UI-16**: User consulta o histórico de execuções (runs) de uma busca — done 07-04 (RunHistory expansível no card, D-11/D-12, paginado 20 + Ver mais, toque abre o run)
 
 ### Resultados e triagem
 
-- [x] **UI-17**: User vê cards de resultado (título, autores, ano, tipo, instituição/programa, fontes, proveniência busca → run → data → fonte) — done 08-02 (ResultCard base + lista infinita; decisão/tags/ficha em 08-03/08-04)
+- [x] **UI-17**: User vê cards de resultado (título, autores, ano, tipo, instituição/programa, fontes, proveniência busca → run → data → fonte) — done 08-02 (ResultCard base + lista infinita; decisão/tags/ficha em 08-03/08-04) + 08-07 (BUSCAR MAIS incremental + "mostrando X de Y" com Y totalKnown)
 - [x] **UI-18**: User expande grupo deduplicado (origens, links, diferenças de metadados, "versão mais completa") e diverge por fonte quando precisar — done 08-03 (DedupGroupSection expansível + diffMembers + divergência sem mudar decisão, com groupOverrides/resultCache)
 - [x] **UI-19**: User decide elegibilidade por card (elegível / não elegível / indeciso), mutável a qualquer toque, com `decidido_em` atualizado — done 08-03 (DecisionBar por groupId sem confirmação + decidedAt visível + overrides sem refetch)
 - [x] **UI-20**: User associa tag opcional com autocomplete (defaults incluir/excluir/duplicado/indisponível/revisar) e gerencia tags do projeto — done 08-04 (TagInput autocomplete+criar-na-hora no card/ficha + TagManagerModal criar/renomear/excluir com refresh canônico)
@@ -119,10 +119,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | UI-11 | Phase 7 | Done (07-01, Comparação disabled fase 9; cabeçalho 07-06 intacto) |
 | UI-12 | Phase 7 | Done (07-02) |
 | UI-13 | Phase 7 | Done (07-02) |
-| UI-14 | Phase 7 + 8 | Done (07-03 + busca completa 08-06) |
+| UI-14 | Phase 7 + 8 | Done (07-03 + busca completa 08-06 SUPERSEDED + lote incremental 08-07) |
 | UI-15 | Phase 7 | Done (07-04) |
 | UI-16 | Phase 7 | Done (07-04) |
-| UI-17 | Phase 8 | Done (08-02) |
+| UI-17 | Phase 8 | Done (08-02 + BUSCAR MAIS/X de Y 08-07) |
 | UI-18 | Phase 8 | Done (08-03) |
 | UI-19 | Phase 8 | Done (08-03) |
 | UI-20 | Phase 8 | Done (08-04) |

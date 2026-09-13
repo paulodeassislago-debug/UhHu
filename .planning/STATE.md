@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Lab UI v1
-status: "executing — phase 8 extended (6/6 plans: 08-01 CORE + 08-02 client/lista + 08-03 decisão/grupo + 08-04 tags/ficha + gap 08-05 + 08-06 busca completa done, phase 9 unblocked)"
-stopped_at: Phase 8 plan 08-06 complete
-last_updated: "2026-09-13T00:13:26Z"
-last_activity: "2026-09-13 — Phase 8 plan 08-06 complete (busca completa Paulo 12/09: loop 50/pág + 30min + 120/120 + UI 30min; caf30b6, 09f8a90, 639bafb; full 2/2, lab 91/91)"
+status: "executing — phase 8 extended (7/7 plans: 08-01 CORE + 08-02 client/lista + 08-03 decisão/grupo + 08-04 tags/ficha + gap 08-05 + 08-06 busca completa SUPERSEDED + 08-07 lote incremental done, phase 9 unblocked)"
+stopped_at: Phase 8 plan 08-07 complete
+last_updated: "2026-09-13T00:28:08Z"
+last_activity: "2026-09-13 — Phase 8 plan 08-07 complete (lote incremental Paulo 12/09 REVISADA: fetchBatch 100/fonte + fetch-more + BUSCAR MAIS + newCount/lote, 08-06 SUPERSEDED; 294d305, a9e792f, f8093e7; fetch-more 2/2, full 2/2, lab 99/99)"
 progress:
   total_phases: 4
   completed_phases: 0
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-09-11)
 
 ## Current Position
 
-Phase: 8 of 9 (Executed 7/7 incl. gaps 08-05/08-06 — busca completa 120/120, phase NOT closed pending UAT tablet + audit sign-off)
-Plan: 08-06 of 6 done (busca completa Paulo 12/09)
-Status: CI unblocked (root tsc 0, full 2/2 + runs 9/9 + isnew 2/2, lab 91/91); awaiting human UAT + Hermes audit approval
-Last activity: 2026-09-13 — Plan 08-06 done (loop 50/pág até o total, 30min, 120/120 + rerun 0 + cancel 50/cancelled, UI 720 polls + página X de ~Y)
+Phase: 8 of 9 (Executed 8/8 incl. gaps 08-05/08-06 + revisão 08-07 — lote incremental 250 em 100+100+50, phase NOT closed pending UAT tablet + audit sign-off)
+Plan: 08-07 of 7 done (lote incremental Paulo 12/09 REVISADA, 08-06 SUPERSEDED)
+Status: CI unblocked (root tsc 0, fetch-more 2/2 + full 2/2 + runs 9/9 + isnew 2/2, lab 99/99); awaiting human UAT + Hermes audit approval
+Last activity: 2026-09-13 — Plan 08-07 done (run 1 lote 100/fonte + totalKnown, fetch-more +100/fonte com newCount/lote, BUSCAR MAIS + X de Y, polling 240)
 Resume file: .planning/phases/08-resultados-triagem/08-HUMAN-UAT.md
 
 Progress: [██████████████████] 5/5 plans executed (phase open, UAT + audit pending)
@@ -45,9 +45,9 @@ Progress: [████████░░] 6/6 plans phase 7 + UAT approved (mil
 
 **Velocity:**
 
-- Total plans completed: 11
+- Total plans completed: 12
 - Average duration: ~8min
-- Total execution time: ~66min
+- Total execution time: ~77min
 
 **By Phase:**
 
@@ -57,7 +57,7 @@ Progress: [████████░░] 6/6 plans phase 7 + UAT approved (mil
 | 3. Buscas e adapters | 6 | ~74min+40min | ~19min |
 | 4. Corpus e exportação | 5 | ~150min (executor + checkpoint/fixes) | ~30min |
 | 7. Projetos, buscas e execução | 6 (07-01, 07-02, 07-03, 07-04, gap 07-05, UX 07-06) | ~43min | ~7min |
-| 8. Resultados e triagem | 6 (08-01, 08-02, 08-03, 08-04, gap 08-05, 08-06) | ~37min | ~6min |
+| 8. Resultados e triagem | 7 (08-01, 08-02, 08-03, 08-04, gap 08-05, 08-06 SUPERSEDED, 08-07) | ~48min | ~7min |
 
 **Recent Trend:**
 
@@ -103,7 +103,8 @@ Recent decisions affecting current work:
 - 08-02: client triagem + lista infinita na UI (UI-17/UI-21, e8da752+940f4be): labApi com 9 métodos contra rotas reais (PUT decision/divergence, tags CRUD, attach/detach; bodies via parse, ProjectTag espelhado local — contracts não exporta); triage.ts puro (index por memberIds, merge com null degradado, filtros AND D-17, formatProvenance/docTypeLabel/formatResultWhen fallback ISO) + 10 testes; useResultsList (results limit 30 + groups limit 100 até hasMore false, loadMore por nextCursor, refresh, erros com status); ResultCard base (proveniência+NOVO+grupo indisponível, sem Links/SSRF); results.tsx (FlatList onEndReached 0.5, 4 filtros incl. tags em FlatList horizontal sem .map, skeleton ×3, empty verbatim); run succeeded/partial com Ver resultados + Stack results registrado; vitest 61/61, tsc+eslint verdes, any 0; auditoria 0 crit/0 high
 - 08-03: decisão mutável + grupo expansível na UI (UI-18/UI-19, 62b9f47+28c3cff): DecisionBar por groupId (3 botões, decidedAt visível, sem confirmação, 401 markExpired) + helpers puros decision.ts (vitest isolation) + 11 testes; DedupGroupSection só originCount>1 (getResult sob demanda Promise.all com cache/skeleton/retry isolado, origens/links só-https, diffMembers puro, ★ canônica, divergências fonte:nota, form setDivergence com bloqueio <>) ; ResultCard integra ambos; results.tsx com groupOverrides + resultCache + filtros sobre efetivo sem tocar hook/triage (08-04 reusa); vitest 72/72, tsc+eslint verdes, any 0; auditoria 0 crit/0 high
 - 08-04: tags autocomplete + gestão + ficha sob demanda na UI (UI-20/UI-22, 44443b3+143a3a1+223d68e): tags.ts puro (suggestTags defaults-primeiro/teto-8 + resolveTagAction attach/create/invalid) + TagInput no card/ficha (chips × com detach 204 sintetizado, criar-e-associar com retry mantendo criada, verbatim, null degradado) + 10 testes; TagManagerModal (FlatList, rename 400 na linha, delete two-tap, criar com cor texto, dirty+refresh idempotente); results.tsx com botão Tags + refreshGroups canônico (descarta overrides + list.refresh) + projectTags no card; result.tsx ficha dedicada (getResult fresco + grupo por memberIds + overrides locais + skeleton/retry + links só-https + NOVO + DecisionBar/TagInput/Dedup cache-1) + Stack Ficha; vitest 82/82, tsc+eslint verdes, any 0; auditoria 0 crit/0 high; fase 8 FECHADA 4/4
-- 08-06: busca completa Paulo 12/09 (UI-14 fim-a-fim, caf30b6+09f8a90+639bafb): engine loop 50/pág até o total (paradas vazia/repetida/abort/cancel, rank global, insert por página, 30min com trade-off documentado, challenge só p1, falha mid-loop preserva) + parseOne repassa pagesFetched/pagesTotal ao DTO (Rule 2) + fetch p1 dentro do loop checado (Rule 1: cancel em voo preserva) + prova PG real 120/120 rank 0..119 + rerun newCount 0 + cancel determinístico 50/cancelled (full 2/2) + UI teto 720 polls com página X de ~Y (pageProgress.ts puro, precedente 08-03) + Cancelar sempre vivo + D-08 intacto; lab 91/91 (82+9), runs 9/9 + isnew 2/2 sem regressão; tsc raiz+pacotes+app + eslint verdes, any 0; auditoria 0 crit/0 high
+- 08-06: busca completa Paulo 12/09 (UI-14 fim-a-fim, caf30b6+09f8a90+639bafb): engine loop 50/pág até o total (paradas vazia/repetida/abort/cancel, rank global, insert por página, 30min com trade-off documentado, challenge só p1, falha mid-loop preserva) + parseOne repassa pagesFetched/pagesTotal ao DTO (Rule 2) + fetch p1 dentro do loop checado (Rule 1: cancel em voo preserva) + prova PG real 120/120 rank 0..119 + rerun newCount 0 + cancel determinístico 50/cancelled (full 2/2) + UI teto 720 polls com página X de ~Y (pageProgress.ts puro, precedente 08-03) + Cancelar sempre vivo + D-08 intacto; lab 91/91 (82+9), runs 9/9 + isnew 2/2 sem regressão; tsc raiz+pacotes+app + eslint verdes, any 0; auditoria 0 crit/0 high — SUPERSEDED por 08-07 (decisão Paulo 12/09 REVISADA: eager sem teto → lote incremental)
+- 08-07: lote incremental Paulo 12/09 REVISADA (UI-14/UI-17 fim-a-fim, 294d305+a9e792f+f8093e7): fetchBatch reusável (BDTD 1×100 + CAPES 2×50, totalKnown da pág.1, timeout 60s de volta, rank storedBefore+i, cancel/página, anti-loop) + POST /runs/:runId/fetch-more com lab.run.fetchMore (Zod, 404 idêntico, offset server-side, +100/fonte, newCount recomputado/lote D-15, parcial honesto) + BDTD PER_PAGE_MAX 50→100 (Rule 3) + prova PG real 250 em 100+100+50 com hasMore/isNew/newCount por lote + 4º fetch idempotente + IDOR/401 (fetch-more 2/2) + lote inicial 100+100 com totalKnown 250/120 + cancel de batch (full 2/2) + UI BUSCAR MAIS (label/loading/retry, reload superset sem pular topo, X de Y totalKnown) + polling 240 de volta + fetchMore puro 8/8; lab 99/99 (91+8), runs 9/9 + isnew 2/2 sem regressão; tsc+eslint verdes, any 0; auditoria 0 crit/0 high
 
 ### Pending Todos
 
@@ -126,6 +127,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-13T00:13:26Z
-Stopped at: Phase 8 plan 08-06 complete (busca completa 120/120 + UI 30min, lab 91/91) — Phase 8 ESTENDIDA 6/6, next phase 9. Nota: re-teste humano UAT 07-HUMAN-UAT item 1 (EXECUTAR AGORA via tailnet) segue pendente em paralelo, junto com 06-HUMAN-UAT; UAT da fase 8 (autocomplete/criar/modal/ficha/retry + run longo/cancel) entra na fila.
+Last session: 2026-09-13T00:28:08Z
+Stopped at: Phase 8 plan 08-07 complete (lote incremental 250 em 100+100+50 + BUSCAR MAIS + X de Y, lab 99/99) — Phase 8 ESTENDIDA 7/7, next phase 9. Nota: re-teste humano UAT 07-HUMAN-UAT item 1 (EXECUTAR AGORA via tailnet) segue pendente em paralelo, junto com 06-HUMAN-UAT; UAT da fase 8 (autocomplete/criar/modal/ficha/retry + BUSCAR MAIS/loading/retry/scroll + cancel de lote) entra na fila.
 Resume file: none (Phase 8 complete; 08-04 SUMMARY em .planning/phases/08-resultados-triagem/08-04-SUMMARY.md). Nota: re-teste humano UAT 06-HUMAN-UAT (LISTA ROLA web+nativo) segue pendente em paralelo.
