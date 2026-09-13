@@ -147,6 +147,12 @@ export interface PerSourceMetrics {
   total: number;
   returned: number;
   durationMs: number;
+  // 08-06 (busca completa, decisão Paulo 12/09): progresso aditivo do loop de
+  // páginas (§19 permite campo aditivo; métricas são JSON, sem migration).
+  // pagesFetched = páginas ok coletadas; pagesTotal = teto estimado
+  // (ceil(total/50), null quando a fonte não declara total).
+  pagesFetched?: number;
+  pagesTotal?: number | null;
 }
 
 export interface RunCoverage {

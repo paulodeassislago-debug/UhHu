@@ -12,8 +12,10 @@
 //     corpo → mesmo run (`replayed: true`; a rota responde 200 + header
 //     `Idempotent-Replayed: true`); mesma key + corpo diferente → 422
 //  4. run `queued` (snapshot congelado + adapter_versions) → `running`
-//  5. execução sequencial bdtd→capes com timeout global de fila de 60s (D-29),
-//     1 retry com jar renovado após challenge (D-38), pós-filtro e persistência
+//  5. execução sequencial bdtd→capes com timeout global de 30min (D-29,
+//     decisão Paulo 12/09: run retorna a busca COMPLETA), loop de páginas
+//     `perPage: 50` até o total da fonte (08-06), 1 retry com jar renovado
+//     após challenge na página 1 (D-38), pós-filtro e persistência por página
 //  6. status final D-37 (2 ok → succeeded; 1 ok → partial; 0 ok → failed),
 //     `newCount` por anti-join (D-35, sem dedup cross-fonte) e `coverage`
 //  7. sync/async D-28: este lib SEMPRE executa até o fim (`sync: true`); o
@@ -72,8 +74,14 @@ const uuidSchema = z.string().uuid();
  */
 export const MAX_SYNC_MS = 25000;
 
-/** Timeout global de fila do run (D-29): 60000ms; estouro falha as fontes restantes. */
-export const RUN_QUEUE_TIMEOUT_MS = 60000;
+/**
+ * Timeout global do run (D-29, decisão Paulo 12/09: busca COMPLETA, sem teto).
+ * Trade-off: run longo segura worker/DB por até 30min — Paulo aceitou o custo;
+ * sync race 25s/202 inalterado. Cancelamento manual + trava anti-loop (página
+ * vazia/repetida, T-08-06-01/02) continuam valendo; sem timeout dinâmico (v1
+ * auditável).
+ */
+export const RUN_QUEUE_TIMEOUT_MS = 30 * 60_000;
 
 /** Header que a rota devolve quando serve um run por replay de idempotência. */
 export const IDEMPOTENT_REPLAYED_HEADER = 'Idempotent-Replayed';
@@ -85,8 +93,12 @@ const RUN_RATE_WINDOW_MS = 3_600_000;
 /** Janela da idempotência (D-39): 24h. */
 const IDEMPOTENCY_TTL_MS = 24 * 3_600_000;
 
-/** Página única por fonte no v1 (cortesia; paginação profunda é pós-v1). */
-const RUN_PER_PAGE = 20;
+/**
+ * Página do loop de busca completa (08-06, decisão Paulo 12/09): 50 = máx
+ * honrado pelos adapters BDTD/CAPES (PER_PAGE_MAX); o run pagina até o total
+ * da fonte em vez de truncar na primeira página.
+ */
+const RUN_FETCH_PER_PAGE = 50;
 
 /** Ordem de execução sequencial (cortesia global bdtd→capes). */
 const EXECUTION_ORDER: readonly ExecutableSource[] = ['bdtd', 'capes'];
@@ -375,9 +387,14 @@ export async function executeSearchRun(
         signal: controller.signal as AbortSignal,
         ...(opts.fetchFn !== undefined ? { fetchFn: opts.fetchFn } : {}),
       };
-      const attemptOnce = async (): Promise<SourcePage> => {
+      const attemptPage = async (pageNum: number): Promise<SourcePage> => {
         try {
-          return await adapter.search(client, def, { page: 1, perPage: RUN_PER_PAGE }, ctx);
+          return await adapter.search(
+            client,
+            def,
+            { page: pageNum, perPage: RUN_FETCH_PER_PAGE },
+            ctx,
+          );
         } catch {
           // RangeTooWideError / transporte / parse inesperado: fonte failed
           // (D-37), nunca derruba o run nem a outra fonte.
@@ -385,17 +402,26 @@ export async function executeSearchRun(
         }
       };
 
-      let page = await attemptOnce();
-      let challengeSeen = page.sourceStatus === 'challenge';
+      // D-38: retry de challenge SÓ na página 1 (jar já renovado pelo
+      // SourceClient) — 1 retry único com jar novo; demais páginas têm
+      // tentativa única (08-06).
+      let firstPage = await attemptPage(1);
+      let challengeSeen = firstPage.sourceStatus === 'challenge';
       if (challengeSeen && !controller.signal.aborted) {
-        // D-38: jar já renovado pelo SourceClient — 1 retry único com jar novo.
-        page = await attemptOnce();
+        firstPage = await attemptPage(1);
         challengeSeen = true;
       }
-      const durationMs = Date.now() - startedSource;
 
-      if (page.sourceStatus !== 'ok') {
-        perSource[source] = { status: 'failed', total: 0, returned: 0, durationMs };
+      if (firstPage.sourceStatus !== 'ok') {
+        const durationMs = Date.now() - startedSource;
+        perSource[source] = {
+          status: 'failed',
+          total: 0,
+          returned: 0,
+          durationMs,
+          pagesFetched: 0,
+          pagesTotal: null,
+        };
         const reason = controller.signal.aborted
           ? 'tempo esgotado'
           : challengeSeen
@@ -406,44 +432,148 @@ export async function executeSearchRun(
         continue;
       }
 
-      const filtered = postFilter(page.items, def);
-      const kept = filtered.kept;
-      if (kept.length > 0) {
-        const rowsToInsert = [];
-        for (let index = 0; index < kept.length; index += 1) {
-          const item = kept[index];
-          if (item === undefined) {
-            continue;
-          }
-          rowsToInsert.push({
-            runId,
-            source,
-            sourceId: item.sourceId,
-            title: item.title,
-            authors: item.authors,
-            year: item.year,
-            docType: item.docType,
-            institution: item.institution,
-            program: item.program,
-            abstract: item.abstract,
-            originUrl: item.originUrl,
-            sourceUrl: item.sourceUrl,
-            rawMetadata: item.rawMetadata,
-            rank: index,
-          });
+      // Loop de páginas 08-06 (busca COMPLETA, sem teto): `perPage: 50` até
+      // `coletados >= total` OU página vazia (total mentiroso/infinito) OU
+      // página só com itens já vistos (anti-loop) OU abort/cancel.
+      // Cancelamento (`readRunStatus`) e `aborted` checados A CADA página —
+      // run longo cancelável de verdade. Falha após a página 1 preserva o
+      // coletado e marca a fonte failed → run parcial (D-37), nunca apaga.
+      let fetchedRaw = 0;
+      let keptTotal = 0;
+      let lastTotal: number | null = null;
+      let pagesFetched = 0;
+      const seenIds = new Set<string>();
+      let pageNum = 1;
+      let current = firstPage;
+      let stoppedByCancel = false;
+      let abortedMidLoop = false;
+      let midLoopFailed = false;
+
+      while (true) {
+        const statusNow = await readRunStatus(db, runId);
+        if (statusNow === 'cancelled' || statusNow === null) {
+          cancelledSeen = statusNow === 'cancelled';
+          stoppedByCancel = true;
+          break;
         }
-        if (rowsToInsert.length > 0) {
-          await db
-            .insert(labResults)
-            .values(rowsToInsert)
-            .onConflictDoNothing({
-              target: [labResults.runId, labResults.source, labResults.sourceId],
+        if (controller.signal.aborted) {
+          abortedMidLoop = true;
+          break;
+        }
+        if (current.sourceStatus !== 'ok') {
+          midLoopFailed = true;
+          break;
+        }
+        if (current.items.length === 0) {
+          break;
+        }
+        if (pagesFetched > 0 && current.items.every((item) => seenIds.has(item.sourceId))) {
+          break;
+        }
+        const filtered = postFilter(current.items, def);
+        const kept = filtered.kept;
+        fetchedRaw += current.items.length;
+        if (current.total !== null) {
+          lastTotal = current.total;
+        }
+        for (const item of current.items) {
+          seenIds.add(item.sourceId);
+        }
+        if (kept.length > 0) {
+          const rowsToInsert = [];
+          for (let index = 0; index < kept.length; index += 1) {
+            const item = kept[index];
+            if (item === undefined) {
+              continue;
+            }
+            rowsToInsert.push({
+              runId,
+              source,
+              sourceId: item.sourceId,
+              title: item.title,
+              authors: item.authors,
+              year: item.year,
+              docType: item.docType,
+              institution: item.institution,
+              program: item.program,
+              abstract: item.abstract,
+              originUrl: item.originUrl,
+              sourceUrl: item.sourceUrl,
+              rawMetadata: item.rawMetadata,
+              // Rank global contínuo entre páginas (08-06).
+              rank: (pageNum - 1) * RUN_FETCH_PER_PAGE + index,
             });
+          }
+          if (rowsToInsert.length > 0) {
+            await db
+              .insert(labResults)
+              .values(rowsToInsert)
+              .onConflictDoNothing({
+                target: [labResults.runId, labResults.source, labResults.sourceId],
+              });
+          }
         }
+        keptTotal += kept.length;
+        pagesFetched += 1;
+        // Total desconhecido (null) = 1 página (nunca laço só por total).
+        if (fetchedRaw >= (lastTotal ?? fetchedRaw)) {
+          break;
+        }
+        pageNum += 1;
+        current = await attemptPage(pageNum);
       }
-      const total = page.total ?? kept.length;
-      perSource[source] = { status: 'ok', total, returned: kept.length, durationMs };
-      okParts.push(`${source} ok (${String(kept.length)} resultados)`);
+
+      const durationMs = Date.now() - startedSource;
+      const pagesTotal = lastTotal === null ? null : Math.ceil(lastTotal / RUN_FETCH_PER_PAGE);
+      if (stoppedByCancel) {
+        // Cancel no meio do loop: preserva o coletado (métricas aterrissam no
+        // update complementar final); o status final fica `cancelled`.
+        // Sem recordSourceEvent: cancel é ação do operador, não sinal da fonte.
+        perSource[source] = {
+          status: 'failed',
+          total: lastTotal ?? keptTotal,
+          returned: keptTotal,
+          durationMs,
+          pagesFetched,
+          pagesTotal,
+        };
+        break;
+      }
+      if (abortedMidLoop) {
+        perSource[source] = {
+          status: 'failed',
+          total: lastTotal ?? keptTotal,
+          returned: keptTotal,
+          durationMs,
+          pagesFetched,
+          pagesTotal,
+        };
+        failParts.push(`${source} indisponível (tempo esgotado)`);
+        await recordSourceEvent(db, source, false, false);
+        continue;
+      }
+      if (midLoopFailed) {
+        perSource[source] = {
+          status: 'failed',
+          total: lastTotal ?? keptTotal,
+          returned: keptTotal,
+          durationMs,
+          pagesFetched,
+          pagesTotal,
+        };
+        failParts.push(`${source} indisponível`);
+        await recordSourceEvent(db, source, false, false);
+        continue;
+      }
+      perSource[source] = {
+        status: 'ok',
+        total: lastTotal ?? keptTotal,
+        returned: keptTotal,
+        durationMs,
+        pagesFetched,
+        pagesTotal,
+      };
+      okParts.push(`${source} ok (${String(keptTotal)} resultados)`);
       await recordSourceEvent(db, source, true, challengeSeen);
     }
   } finally {
