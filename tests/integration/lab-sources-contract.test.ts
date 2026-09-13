@@ -252,14 +252,14 @@ describe('contrato BDTD (fixture VuFind)', () => {
     expect(page.items).toEqual([]);
   });
 
-  it('perPage com clamp 5..50 (200→50, 2→5)', async () => {
+  it('perPage com clamp 5..100 (200→100, 2→5)', async () => {
     const { fetchFn, requests } = makeFakeFetch(() => jsonResponse(JSON.parse(BDTD_FIXTURE)));
     const client = new SourceClient('bdtd');
     await searchBdtd(client, { term: 'a' }, { page: 1, perPage: 200 }, testContext(fetchFn));
     await searchBdtd(client, { term: 'a' }, { page: 1, perPage: 2 }, testContext(fetchFn));
     expect(
       new URL(requests[0] === undefined ? '' : requests[0].url).searchParams.get('limit'),
-    ).toBe('50');
+    ).toBe('100');
     const second = requests[1];
     if (second === undefined) {
       throw new Error('segunda chamada não registrada');

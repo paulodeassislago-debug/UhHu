@@ -189,6 +189,7 @@ Gap da auditoria externa: `pnpm typecheck` raiz falhava com TS2345 ×2 em `tests
 - `pnpm test` → 19 arquivos, 200/200 verdes
 - vitest `@uhhu/lab` → 11 arquivos, 82/82 verdes; typecheck + lint do lab exit 0
 - 12/12 must-haves revalidados: mudança confined a closures de teste, nenhum runtime/rota/auth tocado; teste D-15 (H-01) inalterado em comportamento. Status segue `human_needed` (UAT tablet pendente).
+- Adendo pós-08-07: teste de contrato BDTD `perPage clamp 5..50` atualizado para `5..100` (PER_PAGE_MAX 50→100 deliberado no 08-07, lote 1×100); CAPES segue 5..50. Monorepo 204/204, raiz verde, lab 99/99.
 
 ---
 
