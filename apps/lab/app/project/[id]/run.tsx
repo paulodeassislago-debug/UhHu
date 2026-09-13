@@ -356,6 +356,15 @@ export default function RunScreen(): JSX.Element {
   const whatCame: string = `${total} itens (${okLabels.join(' + ')})`;
   const missedSources: string = missedLabels.length > 0 ? missedLabels.join(' + ') : 'fontes';
   const whatMissed: string = `${missedSources} (motivo: ${effectiveRun.error?.message ?? 'fonte indisponível'})`;
+  // Hint 2026 (08-09, decisão Paulo 12/09): CAPES zerada com ano final >= 2026 —
+  // só com dados já carregados na tela (filtersSnapshot + métricas do run),
+  // sem nova rota/fetch.
+  const capesYearTo: number | undefined = effectiveRun.filtersSnapshot.yearTo;
+  const capes2026Hint: boolean =
+    showsCapes &&
+    effectiveRun.metrics.perSource.capes.total === 0 &&
+    capesYearTo !== undefined &&
+    capesYearTo >= 2026;
 
   return (
     <ScrollView
@@ -380,6 +389,7 @@ export default function RunScreen(): JSX.Element {
         <View style={{ borderWidth: 1, padding: 12, gap: 4 }}>
           <Text style={{ fontWeight: '600' }}>CAPES</Text>
           <Text>CAPES: {sourceProgressLine('capes', effectiveRun)}</Text>
+          {capes2026Hint ? <Text>(a fonte tem poucos dados de 2026)</Text> : null}
         </View>
       ) : null}
       {cancellable ? (

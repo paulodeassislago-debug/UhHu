@@ -7,9 +7,12 @@
 // - Termos: FlatList aninhada (scrollEnabled=false) de rows {text, op}; primeira
 //   sem seletor de op; demais com 3 botões AND/OR/NOT; "+" adiciona, "×" remove
 //   (mínimo 1).
-// - Filtros §6: Ano de/até (opcional), Tipo tese/dissertacão, Área/Instituição/
-//   Programa (opcionais, pós-filtro Core quando a fonte não honra).
-// - Mapeamento UI→contrato: tese → 'doctoralThesis', dissertação → 'masterThesis' (sem inverter).
+// - Filtros §6: Ano de/até (opcional), Tipo tese/dissertacão/mestrado
+//   profissional, Área/Instituição/Programa (opcionais, pós-filtro Core quando
+//   a fonte não honra).
+// - Mapeamento UI→contrato: tese → 'doctoralThesis', dissertação → 'masterThesis',
+//   mestrado profissional → 'professionalMaster' (decisão Paulo 12/09/2026, 08-09;
+//   sem inverter tese/dissertação).
 // - Fontes: toggles BDTD/CAPES (mínimo 1; default ambas) + selo fixo
 //   "filtro garantido pelo Core (pós-filtro)" + status por fonte via prop.
 // - CTAs: "Salvar estratégia" → onSave(payload), "Executar agora" →
@@ -24,7 +27,7 @@ import { Button, FlatList, Text, TextInput, View } from 'react-native';
 import type { ListRenderItemInfo } from 'react-native';
 import { ZodError } from 'zod';
 import { createSearchSchema } from '@uhhu/contracts';
-import type { ExecutableSource, SearchFilters } from '@uhhu/contracts';
+import type { DocType, ExecutableSource, SearchFilters } from '@uhhu/contracts';
 import { buildSearchTerm, splitSearchTerm } from './searchTerm';
 import type { TermOperator, TermRow } from './searchTerm';
 
@@ -118,6 +121,9 @@ export function SearchForm({
   const [dissertacao, setDissertacao] = useState<boolean>(
     initial?.filters.docTypes?.includes('masterThesis') ?? false,
   );
+  const [mestradoProf, setMestradoProf] = useState<boolean>(
+    initial?.filters.docTypes?.includes('professionalMaster') ?? false,
+  );
   const [area, setArea] = useState<string>(initial?.filters.area ?? '');
   const [institution, setInstitution] = useState<string>(initial?.filters.institution ?? '');
   const [program, setProgram] = useState<string>(initial?.filters.program ?? '');
@@ -170,12 +176,15 @@ export function SearchForm({
       setFormError('Ano final deve ser um ano entre 1800 e 2100.');
       return null;
     }
-    const docTypes: Array<'doctoralThesis' | 'masterThesis'> = [];
+    const docTypes: DocType[] = [];
     if (tese) {
       docTypes.push('doctoralThesis');
     }
     if (dissertacao) {
       docTypes.push('masterThesis');
+    }
+    if (mestradoProf) {
+      docTypes.push('professionalMaster');
     }
     const sources: ExecutableSource[] = [];
     if (bdtd) {
@@ -299,6 +308,11 @@ export function SearchForm({
         <Button
           title={dissertacao ? '[x] dissertação' : '[ ] dissertação'}
           onPress={() => setDissertacao((prev: boolean): boolean => !prev)}
+          disabled={saving}
+        />
+        <Button
+          title={mestradoProf ? '[x] mestrado profissional' : '[ ] mestrado profissional'}
+          onPress={() => setMestradoProf((prev: boolean): boolean => !prev)}
           disabled={saving}
         />
       </View>

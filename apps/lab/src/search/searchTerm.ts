@@ -3,11 +3,14 @@
 // A UI monta a busca em linhas (SEM expressão livre — D-09) e este helper compõe
 // o único `term` do contrato (D-31: o Core repassa sem tradução estruturada; NENHUM
 // campo novo no contrato — FASE 7 NÃO MUDA CONTRATO).
-// Regra de composição: cada linha {text, op} onde op é o operador ANTES da linha
-// (o op da primeira linha é ignorado); texto com espaço e sem aspas → envolver em
-// `"..."`; juntar a partir da 2ª linha com ` AND `/` OR `/` NOT `. A validação
-// (tamanho 1..500 + aspas balanceadas) é feita pelo chamador via
-// `searchTermSchema.parse` — este arquivo nunca chama a API. Zero `any`.
+// Regra de composição (decisão Paulo 12/09/2026 DEFINITIVA, 08-09 — fidelidade
+// ao site, SEM auto-aspas): cada linha {text, op} onde op é o operador ANTES da
+// linha (o op da primeira linha é ignorado); o texto vai trimado e CRU —
+// multi-palavra NÃO é envolvida em `"..."`; aspas digitadas explicitamente
+// pelo usuário são PRESERVADAS verbatim. Juntar a partir da 2ª linha com
+// ` AND `/` OR `/` NOT `. A validação (tamanho 1..500 + aspas balanceadas) é
+// feita pelo chamador via `searchTermSchema.parse` — este arquivo nunca chama
+// a API. Zero `any`.
 
 export type TermOperator = 'AND' | 'OR' | 'NOT';
 
@@ -16,23 +19,10 @@ export interface TermRow {
   op: TermOperator;
 }
 
-function quoteIfNeeded(raw: string): string {
-  const text = raw.trim();
-  if (text.length === 0) {
-    return '';
-  }
-  const hasWhitespace = /\s/.test(text);
-  const alreadyQuoted = text.length >= 2 && text.startsWith('"') && text.endsWith('"');
-  if (hasWhitespace && !alreadyQuoted) {
-    return `"${text}"`;
-  }
-  return text;
-}
-
 export function buildSearchTerm(rows: TermRow[]): string {
   const parts: TermRow[] = [];
   for (const row of rows) {
-    const text = quoteIfNeeded(row.text);
+    const text = row.text.trim();
     if (text.length === 0) {
       continue;
     }

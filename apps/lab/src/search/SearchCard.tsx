@@ -66,7 +66,13 @@ function summarizeFilters(search: SearchDTO): string {
   if (filters.docTypes !== undefined && filters.docTypes.length > 0) {
     const labels: string[] = [];
     for (const docType of filters.docTypes) {
-      labels.push(docType === 'doctoralThesis' ? 'tese' : 'dissertação');
+      if (docType === 'doctoralThesis') {
+        labels.push('tese');
+      } else if (docType === 'professionalMaster') {
+        labels.push('mestrado profissional');
+      } else {
+        labels.push('dissertação');
+      }
     }
     parts.push(labels.join(', '));
   }

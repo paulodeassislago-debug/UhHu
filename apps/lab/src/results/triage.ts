@@ -122,11 +122,18 @@ export function applyResultFilters(items: TriagedItem[], filter: GroupFilter): T
 
 // Mapa único de tipo documental (molde SearchCard.summarizeFilters, que não é
 // exportado — este é o ponto único; ResultCard importa daqui, sem duplicar).
+// Decisão Paulo 12/09/2026 (08-09): MP tem rótulo próprio, nunca 'dissertação'.
 export function docTypeLabel(docType: DocType | null): string | null {
   if (docType === null) {
     return null;
   }
-  return docType === 'doctoralThesis' ? 'tese' : 'dissertação';
+  if (docType === 'doctoralThesis') {
+    return 'tese';
+  }
+  if (docType === 'professionalMaster') {
+    return 'mestrado profissional';
+  }
+  return 'dissertação';
 }
 
 // Data/hora do resultado: hoje HH:MM senão DD/MM HH:MM; vazia/inválida → ISO
