@@ -157,6 +157,12 @@ export interface GroupBundle {
   memberKeys: Map<string, string>;
   decision: 'eligible' | 'ineligible' | 'undecided';
   pin: { source: string; sourceId: string } | null;
+  // UI-18/19/20 (08-01): triagem exposta por grupo — tags (nomes ordenados),
+  // divergências por origem e ISO de labGroupDecisions.updatedAt (null = nunca
+  // decidido = "não triado" do filtro D-17).
+  tagNames: string[];
+  divergences: Array<{ source: ExecutableSource; note: string }>;
+  decidedAt: string | null;
 }
 
 function narrowConfidence(value: string): 'exact' | 'fuzzy' | 'single' {
@@ -188,6 +194,9 @@ export function toGroupDTO(bundle: GroupBundle): DedupGroupDTO {
     decision: bundle.decision,
     originCount: origins.length,
     origins,
+    tags: [...bundle.tagNames],
+    divergences: bundle.divergences.map((d) => ({ source: d.source, note: d.note })),
+    decidedAt: bundle.decidedAt,
   };
 }
 
@@ -238,6 +247,49 @@ export async function loadGroupBundles(
   const pinByGroup = new Map(
     pins.map((p) => [p.groupId, { source: p.source, sourceId: p.sourceId }] as const),
   );
+  // UI-18/19/20 (08-01): triagem por grupo — tags via join
+  // labGroupTags→labTags (nomes ordenados), divergências e updatedAt da
+  // decisão (decidedAt; sem linha = null = "não triado").
+  const tagLinks =
+    ids.length === 0
+      ? []
+      : await db.select().from(labGroupTags).where(inArray(labGroupTags.groupId, ids));
+  const tagIds = [...new Set(tagLinks.map((l) => l.tagId))];
+  const tagRows =
+    tagIds.length === 0 ? [] : await db.select().from(labTags).where(inArray(labTags.id, tagIds));
+  const tagNameById = new Map(tagRows.map((t) => [t.id, t.name] as const));
+  const tagNamesByGroup = new Map<string, string[]>();
+  for (const link of tagLinks) {
+    const name = tagNameById.get(link.tagId);
+    if (name === undefined) {
+      continue;
+    }
+    const list = tagNamesByGroup.get(link.groupId) ?? [];
+    list.push(name);
+    tagNamesByGroup.set(link.groupId, list);
+  }
+  for (const list of tagNamesByGroup.values()) {
+    list.sort();
+  }
+  const divergenceRows =
+    ids.length === 0
+      ? []
+      : await db.select().from(labDivergences).where(inArray(labDivergences.groupId, ids));
+  const divergencesByGroup = new Map<string, Array<{ source: ExecutableSource; note: string }>>();
+  for (const d of divergenceRows) {
+    if (!isExecutableSource(d.source)) {
+      continue;
+    }
+    const list = divergencesByGroup.get(d.groupId) ?? [];
+    list.push({ source: d.source, note: d.note });
+    divergencesByGroup.set(d.groupId, list);
+  }
+  for (const list of divergencesByGroup.values()) {
+    list.sort((a, b) => (a.source < b.source ? -1 : a.source > b.source ? 1 : 0));
+  }
+  const decidedAtByGroup = new Map(
+    decisions.map((d) => [d.groupId, d.updatedAt.toISOString()] as const),
+  );
   return groups.map((group) => {
     const membersOfGroup = memberRows.filter((m) => m.groupId === group.id);
     const memberIds = membersOfGroup.map((m) => m.resultId);
@@ -253,6 +305,9 @@ export async function loadGroupBundles(
       memberKeys,
       decision: decisionByGroup.get(group.id) ?? 'undecided',
       pin: pinByGroup.get(group.id) ?? null,
+      tagNames: tagNamesByGroup.get(group.id) ?? [],
+      divergences: divergencesByGroup.get(group.id) ?? [],
+      decidedAt: decidedAtByGroup.get(group.id) ?? null,
     };
   });
 }
@@ -624,8 +679,18 @@ export async function ensureDefaultTags(
   if (project === null) {
     return null;
   }
-  for (const name of DEFAULT_TAGS) {
-    await db.insert(labTags).values({ projectId, name, color: null }).onConflictDoNothing();
+  // UI-20 (08-01): seed-if-empty — só semeia os DEFAULT_TAGS quando o projeto
+  // ainda não tem NENHUMA tag. Sem isto a tag padrão excluída ressuscitaria a
+  // cada GET .../tags (a rota dá ensure antes de list).
+  const existing = await db
+    .select({ id: labTags.id })
+    .from(labTags)
+    .where(eq(labTags.projectId, projectId))
+    .limit(1);
+  if (existing.length === 0) {
+    for (const name of DEFAULT_TAGS) {
+      await db.insert(labTags).values({ projectId, name, color: null }).onConflictDoNothing();
+    }
   }
   const rows = await db.select().from(labTags).where(eq(labTags.projectId, projectId));
   return rows.map((t) => ({ id: t.id, name: t.name, color: t.color }));
@@ -674,6 +739,101 @@ export async function createTagForActor(
     return null;
   }
   return { id: row.id, name: row.name, color: row.color };
+}
+
+// UI-20 (08-01): colisão de nome no rename. A rota mapeia para 400
+// VALIDATION_ERROR com details `{ name: 'Já existe uma tag com este nome.' }`
+// (catálogo de erros intocado — sem código novo).
+export class TagNameConflictError extends Error {
+  constructor() {
+    super('Já existe uma tag com este nome.');
+    this.name = 'TagNameConflictError';
+  }
+}
+
+export async function renameTagForActor(
+  db: Db,
+  actor: ActorContext,
+  projectId: string,
+  tagId: string,
+  input: { name?: string | undefined; color?: string | null | undefined },
+): Promise<ProjectTag | null> {
+  if (!uuidSchema.safeParse(projectId).success || !uuidSchema.safeParse(tagId).success) {
+    return null;
+  }
+  // JOIN tag→project owner-first (molde attachTagForActor): tag de outro dono
+  // ou inexistente → null → 404 idêntico, sem oráculo.
+  const tagRows = await db
+    .select({ tag: labTags })
+    .from(labTags)
+    .innerJoin(projects, eq(labTags.projectId, projects.id))
+    .where(
+      and(
+        eq(labTags.id, tagId),
+        eq(labTags.projectId, projectId),
+        eq(projects.ownerId, actor.userId),
+      ),
+    )
+    .limit(1);
+  const current = tagRows[0]?.tag;
+  if (current === undefined) {
+    return null;
+  }
+  const set: { name?: string; color?: string | null } = {};
+  if (input.name !== undefined && input.name !== current.name) {
+    const clash = await db
+      .select({ id: labTags.id })
+      .from(labTags)
+      .where(and(eq(labTags.projectId, projectId), eq(labTags.name, input.name)))
+      .limit(1);
+    if (clash.length > 0) {
+      throw new TagNameConflictError();
+    }
+    set.name = input.name;
+  }
+  if (input.color !== undefined && input.color !== current.color) {
+    // color null limpa a cor (contrato: nullable).
+    set.color = input.color;
+  }
+  if (Object.keys(set).length > 0) {
+    await db.update(labTags).set(set).where(eq(labTags.id, tagId));
+  }
+  const rows = await db.select().from(labTags).where(eq(labTags.id, tagId)).limit(1);
+  const row = rows[0];
+  if (row === undefined) {
+    return null;
+  }
+  return { id: row.id, name: row.name, color: row.color };
+}
+
+export async function deleteTagForActor(
+  db: Db,
+  actor: ActorContext,
+  projectId: string,
+  tagId: string,
+): Promise<boolean> {
+  if (!uuidSchema.safeParse(projectId).success || !uuidSchema.safeParse(tagId).success) {
+    return false;
+  }
+  // Owner check via JOIN (molde rename): fora do escopo → false → 404.
+  // Os joins em labGroupTags caem por cascade (FK onDelete nos dois lados).
+  const tagRows = await db
+    .select({ id: labTags.id })
+    .from(labTags)
+    .innerJoin(projects, eq(labTags.projectId, projects.id))
+    .where(
+      and(
+        eq(labTags.id, tagId),
+        eq(labTags.projectId, projectId),
+        eq(projects.ownerId, actor.userId),
+      ),
+    )
+    .limit(1);
+  if (tagRows[0] === undefined) {
+    return false;
+  }
+  await db.delete(labTags).where(eq(labTags.id, tagId));
+  return true;
 }
 
 export async function attachTagForActor(
@@ -743,12 +903,15 @@ export async function setGroupDecisionForActor(
     return null;
   }
   const reason = input.reason === undefined ? null : input.reason.trim();
+  // UI-19: decidedAt = updatedAt — refresh explícito no upsert (o SET do
+  // onConflictDoUpdate é explícito; sem isto a re-decisão manteria o
+  // updatedAt da primeira decisão e o "decidido_em" mentiria).
   await db
     .insert(labGroupDecisions)
     .values({ groupId, decision: input.decision, reason })
     .onConflictDoUpdate({
       target: labGroupDecisions.groupId,
-      set: { decision: input.decision, reason },
+      set: { decision: input.decision, reason, updatedAt: new Date() },
     });
   const bundles = await loadGroupBundles(db, group.projectId, [groupId]);
   const bundle = bundles[0];
@@ -790,8 +953,10 @@ export function isCorpusEligible(g: { status: string; decision: string }): boole
   return g.status === 'confirmed' && g.decision === 'eligible';
 }
 
-function parseDocType(value: unknown): 'masterThesis' | 'doctoralThesis' | null {
-  if (value === 'masterThesis' || value === 'doctoralThesis') {
+function parseDocType(
+  value: unknown,
+): 'masterThesis' | 'doctoralThesis' | 'professionalMaster' | null {
+  if (value === 'masterThesis' || value === 'doctoralThesis' || value === 'professionalMaster') {
     return value;
   }
   return null;

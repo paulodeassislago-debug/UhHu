@@ -38,11 +38,13 @@ import {
   decisionInputSchema,
   divergenceInputSchema,
   exportQuerySchema,
+  fetchMoreRunsSchema,
   labSourceSchema,
   paginationQuerySchema,
   pinInputSchema,
   updateProjectSchema,
   updateSearchSchema,
+  updateTagSchema,
   type CorpusEntryDTO,
   type ErrorEnvelope,
   type ExportQuery,
@@ -79,6 +81,7 @@ import {
 import {
   cancelRunForActor,
   executeSearchRun,
+  fetchMoreForActor,
   IdempotencyConflictError,
   RunRateLimitedError,
 } from './lib/searchRuns.js';
@@ -89,6 +92,7 @@ import {
   computeDedupGroupsForActor,
   confirmGroupForActor,
   createTagForActor,
+  deleteTagForActor,
   detachTagForActor,
   ensureDefaultTags,
   EXPORT_MAX_GROUPS,
@@ -97,6 +101,7 @@ import {
   listExportMembersForActor,
   listTagsForActor,
   rejectGroupForActor,
+  renameTagForActor,
   resolveSelectionGroupsForActor,
   setDivergenceForActor,
   setGroupDecisionForActor,
@@ -111,6 +116,7 @@ import { exportFilename, toBibTeX, toCSV, toExportJSON } from './lib/exports.js'
 export type { ListProjectsResult } from './lib/projects.js';
 export type { ListResultsResult, ListRunsResult, ListSearchesResult } from './lib/searches.js';
 export type { CancelRunResult, ExecuteSearchRunResult } from './lib/searchRuns.js';
+export type { FetchMoreResult } from '@uhhu/contracts';
 export type {
   CorpusListResult,
   ExportMemberRaw,
@@ -142,6 +148,15 @@ export function toHttpError(error: unknown, requestId: string): HttpErrorMapping
     return {
       status: error.statusCode,
       envelope: buildEnvelope('VALIDATION_ERROR', requestId, error.details),
+    };
+  }
+  // UI-30 (Rule 2): libs lançam ZodError via schema.parse para input hostil
+  // (ex.: referenceSearchId não-uuid em updateProjectForActor). Mapear para
+  // o mesmo 400 VALIDATION_ERROR da fronteira — sem isso viraria 500.
+  if (error instanceof z.ZodError) {
+    return {
+      status: 400,
+      envelope: buildEnvelope('VALIDATION_ERROR', requestId, error.flatten()),
     };
   }
   if (error instanceof SourceDisabledError) {
@@ -193,6 +208,13 @@ const searchExecuteInputSchema = z.object({
   idempotencyKey: z.string().regex(IDEMPOTENCY_KEY_PATTERN).optional(),
 });
 
+// 08-07 BUSCAR MAIS (decisão Paulo 12/09 REVISADA): run + fontes opcionais
+// (default: fontes com hasMore). Offset sempre server-side (T-08-07-02).
+const runFetchMoreInputSchema = z.object({
+  id: z.string(),
+  sources: fetchMoreRunsSchema.shape.sources,
+});
+
 const compareInputSchema = z.object({
   searchId: z.string(),
   with: z.array(z.string().uuid()).min(1).max(10),
@@ -205,6 +227,20 @@ const pinSetInputSchema = z.object({ groupId: z.string(), input: pinInputSchema 
 const tagCreateInputSchema = z.object({
   projectId: z.string(),
   input: createTagSchema,
+});
+
+// UI-20 (08-01): rename/delete de tag do projeto (owner-first no lib; a rota
+// traduz TagNameConflictError em 400 VALIDATION_ERROR via error.name — rotas
+// não importam `lib/*`, ver comentário na rota PATCH).
+const tagRenameInputSchema = z.object({
+  projectId: z.string(),
+  tagId: z.string(),
+  input: updateTagSchema,
+});
+
+const tagDeleteInputSchema = z.object({
+  projectId: z.string(),
+  tagId: z.string(),
 });
 
 const groupTagInputSchema = z.object({ groupId: z.string(), tagId: z.string() });
@@ -302,6 +338,13 @@ function registryHandlers(db: Db): Record<CapabilityName, CapabilityHandler> {
         cursor: data.cursor,
       });
     },
+    // 08-07 BUSCAR MAIS: lote incremental +100/fonte com newCount recomputado
+    // por lote (D-15, badge≡contador). Null fora do escopo → rota vira 404.
+    'lab.run.fetchMore': async (input, actor) => {
+      const data = parseOrThrow(runFetchMoreInputSchema, input);
+      const sources = data.sources === undefined ? {} : { sources: data.sources };
+      return fetchMoreForActor(db, actor, data.id, sources);
+    },
     'lab.result.decision.update': async (input, actor) => {
       const data = parseOrThrow(decisionUpdateInputSchema, input);
       return setGroupDecisionForActor(db, actor, data.groupId, data.input);
@@ -350,6 +393,8 @@ const EXTENDED_CAPABILITY_NAMES = [
   'lab.tag.ensure',
   'lab.tag.list',
   'lab.tag.create',
+  'lab.tag.rename',
+  'lab.tag.delete',
   'lab.group.tag.attach',
   'lab.group.tag.detach',
   'lab.group.pin.set',
@@ -403,6 +448,14 @@ function extendedHandlers(db: Db): Record<ExtendedCapabilityName, CapabilityHand
     'lab.tag.create': async (input, actor) => {
       const data = parseOrThrow(tagCreateInputSchema, input);
       return createTagForActor(db, actor, data.projectId, data.input);
+    },
+    'lab.tag.rename': async (input, actor) => {
+      const data = parseOrThrow(tagRenameInputSchema, input);
+      return renameTagForActor(db, actor, data.projectId, data.tagId, data.input);
+    },
+    'lab.tag.delete': async (input, actor) => {
+      const data = parseOrThrow(tagDeleteInputSchema, input);
+      return deleteTagForActor(db, actor, data.projectId, data.tagId);
     },
     'lab.group.tag.attach': async (input, actor) => {
       const data = parseOrThrow(groupTagInputSchema, input);

@@ -17,7 +17,7 @@ import {
   type UpdateProjectInput,
 } from '@uhhu/contracts';
 import type { ActorContext } from '@uhhu/core';
-import { projects, type Db, type Project } from '@uhhu/db';
+import { projects, labSearches, type Db, type Project } from '@uhhu/db';
 
 const uuidSchema = z.string().uuid();
 
@@ -35,6 +35,8 @@ export function toProjectDTO(row: Project): ProjectDTO {
     researchQuestion: row.researchQuestion,
     description: row.description,
     status: toStatus(row.status),
+    // UI-30 (§14-4): expõe a referência da comparação (null = sem referência).
+    referenceSearchId: row.referenceSearchId ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -165,11 +167,41 @@ export async function updateProjectForActor(
   if (!uuidSchema.safeParse(id).success) {
     return null;
   }
+  // UI-30 (§14-4): valida referenceSearchId na fronteira do lib (defesa em
+  // profundidade — rota + capability já validam via updateProjectSchema).
+  // String não-uuid → ZodError (capabilities mapeia para 400
+  // VALIDATION_ERROR); uuid válido segue para check de pertencimento abaixo.
+  if (input.referenceSearchId !== undefined && input.referenceSearchId !== null) {
+    uuidSchema.parse(input.referenceSearchId);
+  }
+  // Se o patch traz referenceSearchId não-nulo, verificar que a search
+  // existe, pertence ao MESMO projectId E ao mesmo owner (join
+  // lab_searches→projects com ownerId = actor.userId). Fora do escopo →
+  // null (rota responde 404 idêntico, sem revelar existência — IDOR
+  // 08-security-baseline §2.3). Null limpa a referência.
+  if (input.referenceSearchId !== undefined && input.referenceSearchId !== null) {
+    const scoped = await db
+      .select({ searchId: labSearches.id })
+      .from(labSearches)
+      .innerJoin(projects, eq(labSearches.projectId, projects.id))
+      .where(
+        and(
+          eq(labSearches.id, input.referenceSearchId),
+          eq(labSearches.projectId, id),
+          eq(projects.ownerId, actor.userId),
+        ),
+      )
+      .limit(1);
+    if (scoped[0] === undefined) {
+      return null;
+    }
+  }
   const hasChanges =
     input.title !== undefined ||
     input.researchQuestion !== undefined ||
     input.description !== undefined ||
-    input.status !== undefined;
+    input.status !== undefined ||
+    input.referenceSearchId !== undefined;
   if (!hasChanges) {
     return getProjectForActor(db, actor, id);
   }
@@ -178,6 +210,7 @@ export async function updateProjectForActor(
     researchQuestion?: string | null;
     description?: string | null;
     status?: string;
+    referenceSearchId?: string | null;
     updatedAt: Date;
   } = { updatedAt: new Date() };
   if (input.title !== undefined) {
@@ -191,6 +224,9 @@ export async function updateProjectForActor(
   }
   if (input.status !== undefined) {
     set.status = input.status;
+  }
+  if (input.referenceSearchId !== undefined) {
+    set.referenceSearchId = input.referenceSearchId;
   }
   const updated = await db
     .update(projects)

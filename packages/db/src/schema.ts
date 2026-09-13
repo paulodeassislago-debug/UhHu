@@ -125,6 +125,11 @@ export const projects = pgTable('projects', {
     researchQuestion: text('research_question'),
     description: text('description'),
     status: text('status').notNull().default('active'),
+    // UI-30 (§14-4): search de referência da comparação, nullable. SEM FK
+    // proposital: evita ciclo projects↔lab_searches na migration;
+    // validação de pertencimento é application-level no lib (mesmo
+    // projectId + owner). Coluna uuid pura.
+    referenceSearchId: uuid('reference_search_id'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
   },

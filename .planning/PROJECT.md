@@ -8,6 +8,31 @@ UhHu! é uma suite de apps (Lab, Lib, Note, Plan, Prof) sobre um único backend 
 
 Um pesquisador consegue executar uma busca real (BDTD/CAPES) pelo CORE, com isolamento por usuário, proveniência e histórico — sem UI direta no banco e sem Supabase.
 
+## Current Milestone: v1.1 Lab UI v1 — ✅ SHIPPED 2026-09-13
+
+**Goal (achieved):** Pesquisador usa o Lab por interface tablet-first (web/PWA beta + nativo Android/iOS) consumindo SOMENTE o CORE — slice vertical login → corpus/export primeiro.
+
+**Shipped:** Phases 6–9 (26 plans, 09-11→09-13) — Expo app + auth cookie/PAT + CORS; projetos/buscas/runs com polling; triagem infinita + decisão/tags + lote incremental; corpus/export 3 formatos + compare 2–4 + referência manual. Gates: lab 121/121, smoke 28/28, PG 20/20, IDOR 16/16, auditorias 0 crit/0 high, UATs 06/07/08 approved + 09 7/7. Tag `v1.1`. Archives: `milestones/v1.1-ROADMAP.md`, `milestones/v1.1-REQUIREMENTS.md`. Audit `tech_debt` (`.planning/v1.1-MILESTONE-AUDIT.md`): sem blockers; dívida documentada (H-01 frozen-vs-live, corpus-100, getJob órfão, Nyquist 6–9).
+
+## Next Milestone Goals (v1.2+ candidates, unscoped)
+
+- Refinamento visual pós-uso real (UIV-01/02: paleta, tipografia, animações)
+- Métrica "menos ruído" v2 com taxa de elegibilidade pós-triagem (UIV-03, amostra ~20)
+- Conveniência de triagem: lote (UIV-04), cache local do último run (UIV-05)
+- Dívida v1.1: H-01 (decisão frozen-vs-live), corpus >100 paginação, getJob, referenceSearchId dangling
+- Pendência Paulo 12/09: autocomplete de filtros de área (pós-filtro até seleção explícita)
+- Carry-over v1.0: adendo contrato §10 (14 extensões), wiring bin nu `uhhu`, review info I-01–I-05, re-teste CAPES ao vivo
+
+**Target features (v1.1, all shipped):**
+- Scaffold Expo + TypeScript strict em `apps/lab` + client CORE tipado (contracts em definição única)
+- Auth web (cookie httpOnly) + nativo (PAT por device em secure storage) + CORS da API para origem do web beta
+- Projetos: lista/criar/arquivar + cabeçalho com pergunta + abas (Estratégias/Comparação/Corpus)
+- Busca: formulário + execução com polling de run + estados ok/parcial/falha/cancelled
+- Resultados: cards + DedupGroup expansível + decisão elegibilidade + tags + badge `isNew`
+- Corpus: view derivada + filtros + export CSV/BibTeX/JSON por grupo deduplicado inteiro
+- Comparação 2–4 buscas com destaque só "mais inclusiva" + escolha manual da referência
+- CORE (§14): migration `referenceSearchId` nullable + `isNew` derivado on-read + diálogo hard-delete com cascata
+
 ## Requirements
 
 ### Validated
@@ -18,15 +43,21 @@ Um pesquisador consegue executar uma busca real (BDTD/CAPES) pelo CORE, com isol
 - ✓ Lab v1 (buscas, runs, dedup, corpus, compare, exportação) — v1.0
 - ✓ Adapters BDTD/CAPES + SourceClient + partial — v1.0
 - ✓ CLI/MCP mínimos + gates (typecheck, IDOR, Gitleaks, SAST, audit, PG) — v1.0
+- ✓ Fundação do app Lab UI (Expo scaffold + client tipado + auth web/PAT + estados §11 + lista rolável) — v1.1 Phase 6
+- ✓ Suporte CORE p/ UI (`referenceSearchId` migration + `isNew` on-read + CORS allowlist) — v1.1 Phase 6
+- ✓ Projetos/buscas/execução na UI (modal, form §6, polling, cascata, histórico, UUID fix, lápis ✎) — v1.1 Phase 7 (UAT 4/4 tablet 12/09)
+- ✓ Resultados/triagem na UI (infinito+filtros, decisão mutável, dedup expansível, tags, ficha, isNew só-anteriores) — v1.1 Phase 8 (UAT 3/3 tablet 12/09)
+- ✓ Busca completa incremental (lote 100/fonte + BUSCAR MAIS + totalKnown) — v1.1 Phase 8 (decisão revisada Paulo 12/09)
+- ✓ Contorno CAPES (Ano-only, sem Grande Área, year dataDefesa) + decisões definitivas (termo cru fiel ao site; MP terceiro valor separado) — v1.1 Phase 8 (prova viva bate com o site)
+- ✓ Corpus (§10) + export por grupo inteiro nos 3 formatos + BibTeX MP — v1.1 Phase 9 (UAT 7/7 + beta IDOR 16/16)
+- ✓ Comparação (§9) só "mais inclusiva" + referência manual — v1.1 Phase 9 (UAT 7/7)
+- ✓ CORE §14 completo na UI + gates verdes fim-a-fim — v1.1 Phases 6–9 (lab 121/121, smoke 28/28, auditorias limpas)
 
-### Active
+### Active (next milestone, unscoped)
 
-Próximo milestone definido via `/gsd-new-milestone`. Carry-over técnico conhecido (candidatos):
-
-- [ ] Adendo ao contrato §10: formalizar as 14 extensões transicionais de capability
-- [ ] Wiring do bin nu `uhhu` na raiz do monorepo
-- [ ] Review info I-01–I-05 (05-REVIEW.md)
-- [ ] Re-teste CAPES ao vivo (bloqueio na fonte durante v1.0)
+- [ ] Escopo v1.2 a definir via `/gsd-new-milestone` (candidatos em "Next Milestone Goals" acima)
+- [ ] Carry-over v1.0 (fora do caminho crítico UI; só se bloquear): adendo contrato §10 (14 extensões), wiring bin nu `uhhu`, review info I-01–I-05, re-teste CAPES ao vivo
+- [ ] Pendência Paulo 12/09: UI de seleção com autocomplete para filtros de área (Grande Área nunca vai à fonte — área cai no pós-filtro até existir seleção explícita)
 
 ### Out of Scope
 
@@ -48,7 +79,9 @@ Próximo milestone definido via `/gsd-new-milestone`. Carry-over técnico conhec
 - Roadmap macro: `dev-docs/09-roadmap-geral.md` — fundação → CORE v1 → Lab v1 → Lib → Note → Plan → Prof → suite integrada → evolução. Este GSD cobre fundação + CORE v1 + Lab v1.
 - Ambiente DEV atual (09/09/2026, verificado): workspace `/home/coder/projetos/UhHu`; sem Node/pnpm/psql/docker no PATH deste container; vault symlink quebrado (`~/ubuntu/vault` → `/home/ubuntu/...` inexistente aqui) — fonte utilizável é `docs/` (espelho) + `dev-docs/`; sem `.planning` antes deste init; git recém-inicializado (`main`, sem commits).
 - GSD: sem runtime Node → `gsd-sdk`/subagents indisponíveis; research paralela pulada (workflow fallback); roadmap gerado inline e ancorado aos dev-docs. `AGENTS.md` existente é normativo e NÃO foi sobrescrito pelo gerador.
+- Out of Scope vigente confirmado em v1.1: paleta/tema visual, refinamento de componentes, IA/síntese, etapa Análise, Lib/Note/Plan/Prof UI, Nextcloud (decisão Paulo 10–11/09/2026)
 - Estado v1.0 SHIPPED 2026-09-11: 5 fases, 23 plans, 104 commits, ~12.4k LOC TS; suite 195/195, typecheck 7/7, scanners zerados; tag v1.0. Dívida conhecida: adendo §10, bin `uhhu`, info I-01–I-05, re-teste CAPES (ver milestones/v1.0-ROADMAP.md).
+- Estado v1.1 SHIPPED 2026-09-13: 4 fases (6–9), 26 plans, 130+ commits, +34k LOC; lab 121/121, smoke 28/28, PG 20/20, IDOR 16/16, auditorias 0 crit/0 high; UATs 06/07/08 approved + 09 7/7; tag v1.1. Dívida: H-01 frozen-vs-live, corpus-100, getJob órfão, Nyquist 6–9 (ver milestones/v1.1-ROADMAP.md + v1.1-MILESTONE-AUDIT.md).
 
 ## Constraints
 
@@ -72,6 +105,10 @@ Próximo milestone definido via `/gsd-new-milestone`. Carry-over técnico conhec
 | GSD ancorado aos dev-docs, sem duplicar roadmap | dev-docs + docs/ já são a base validada; vault é fonte da verdade | ✓ Good (este init) |
 | `AGENTS.md` preservado (não sobrescrito pelo gerador GSD) | Normativo do projeto; gerador sobrescreveria | ✓ Good |
 | Git `main` inicializado sem commits de código | Rastrear `.planning` + fundação; código só após gates | — Pending |
+| Expo Go + web beta sem EAS; CORS allowlist exata (v1.1 D-03–D-06) | Tablet-first sem infra de release; auth íntegra | ✓ Good (UATs approved, IDOR 16/16) |
+| Busca incremental 100/fonte + BUSCAR MAIS (rev. 08-07) | Run longo eager afugenta; puxadas sob demanda | ✓ Good (prova 250 em lotes + IDOR) |
+| CAPES Ano-only + MP terceiro valor + termo cru (08-09) | Fidelidade ao site da fonte; sem combo rejeitado | ✓ Good (prova viva bate com o site) |
+| Export blob+anchor/Share zero dep; referência só memória (D-22–D-26) | Sem expo-sharing/file-system; sem "menos ruído" | ✓ Good (beta attachments + UAT 7/7) |
 
 ## Evolution
 
@@ -91,4 +128,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-09-11 after v1.0 milestone (shipped; próxima definição via /gsd-new-milestone)*
+*Last updated: 2026-09-13 after v1.1 Lab UI v1 shipped (phases 6–9; tag v1.1)*

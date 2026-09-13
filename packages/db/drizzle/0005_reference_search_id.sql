@@ -1,0 +1,1 @@
+ALTER TABLE "projects" ADD COLUMN "reference_search_id" uuid;

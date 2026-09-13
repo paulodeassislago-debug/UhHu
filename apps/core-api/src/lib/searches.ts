@@ -12,7 +12,7 @@
 // - results: `source|rank|id` base64url (D-36), ordenação
 //   `source ASC, rank ASC, id ASC`, default 20 max 100.
 
-import { and, asc, desc, eq, gt, lt, or } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, lt, ne, or } from 'drizzle-orm';
 import { z } from 'zod';
 import {
   decodeCursor,
@@ -23,6 +23,7 @@ import {
   type DocType,
   type ExecutableSource,
   type PageInfo,
+  type PerSourceMetrics,
   type ResultDTO,
   type RunErrorInfo,
   type RunMetrics,
@@ -80,7 +81,8 @@ function parseSearchFilters(value: unknown): SearchFilters {
   }
   if (Array.isArray(record['docTypes'])) {
     const docTypes = (record['docTypes'] as unknown[]).filter(
-      (entry): entry is DocType => entry === 'masterThesis' || entry === 'doctoralThesis',
+      (entry): entry is DocType =>
+        entry === 'masterThesis' || entry === 'doctoralThesis' || entry === 'professionalMaster',
     );
     if (docTypes.length > 0) {
       out.docTypes = docTypes;
@@ -136,14 +138,7 @@ function parseRunMetrics(value: unknown): RunMetrics {
   if (typeof bdtd !== 'object' || bdtd === null || typeof capes !== 'object' || capes === null) {
     return fallback;
   }
-  const parseOne = (
-    entry: Record<string, unknown>,
-  ): {
-    status: 'ok' | 'failed' | 'skipped';
-    total: number;
-    returned: number;
-    durationMs: number;
-  } | null => {
+  const parseOne = (entry: Record<string, unknown>): PerSourceMetrics | null => {
     const status = entry['status'];
     const total = entry['total'];
     const returned = entry['returned'];
@@ -160,7 +155,31 @@ function parseRunMetrics(value: unknown): RunMetrics {
     if (typeof durationMs !== 'number' || !Number.isSafeInteger(durationMs) || durationMs < 0) {
       return null;
     }
-    return { status, total, returned, durationMs };
+    const out: PerSourceMetrics = { status, total, returned, durationMs };
+    // 08-06 (busca completa): progresso aditivo do loop de páginas (§19).
+    // Ausente = linha legada (sem fallback); presente mas malformado = linha
+    // suspeita → fallback fail-closed como os campos centrais.
+    const pagesFetched = entry['pagesFetched'];
+    if (pagesFetched !== undefined) {
+      if (
+        typeof pagesFetched !== 'number' ||
+        !Number.isSafeInteger(pagesFetched) ||
+        pagesFetched < 0
+      ) {
+        return null;
+      }
+      out.pagesFetched = pagesFetched;
+    }
+    const pagesTotal = entry['pagesTotal'];
+    if (pagesTotal !== undefined && pagesTotal !== null) {
+      if (typeof pagesTotal !== 'number' || !Number.isSafeInteger(pagesTotal) || pagesTotal < 0) {
+        return null;
+      }
+      out.pagesTotal = pagesTotal;
+    } else if (pagesTotal === null) {
+      out.pagesTotal = null;
+    }
+    return out;
   };
   const bdtdParsed = parseOne(bdtd as Record<string, unknown>);
   const capesParsed = parseOne(capes as Record<string, unknown>);
@@ -217,7 +236,7 @@ function parseAuthors(value: unknown): string[] {
 }
 
 function parseDocType(value: unknown): DocType | null {
-  if (value === 'masterThesis' || value === 'doctoralThesis') {
+  if (value === 'masterThesis' || value === 'doctoralThesis' || value === 'professionalMaster') {
     return value;
   }
   return null;
@@ -279,7 +298,7 @@ export function toRunDTO(row: LabSearchRun): SearchRunDTO {
   };
 }
 
-export function toResultDTO(row: LabResult): ResultDTO {
+export function toResultDTO(row: LabResult, isNew: boolean): ResultDTO {
   const source = isExecutableSource(row.source) ? row.source : 'bdtd';
   return {
     id: row.id,
@@ -289,6 +308,8 @@ export function toResultDTO(row: LabResult): ResultDTO {
     title: row.title,
     authors: parseAuthors(row.authors),
     year: parseNullableYear(row.year),
+    // UI-31 (§14-5, D-35): isNew derivado on-read, nunca persistido.
+    isNew,
     docType: parseDocType(row.docType),
     institution: parseNullableString(row.institution),
     program: parseNullableString(row.program),
@@ -552,6 +573,39 @@ export interface ListResultsResult {
   total: number;
 }
 
+// UI-31 (§14-5, D-35 canônica de searchRuns.ts + D-15/H-01 "só-anteriores"):
+// "novos" = (source,sourceId) ausentes em TODOS os runs ANTERIORES da mesma
+// search (anti-join por executedAt). Um Set por request, sem N+1; mesma
+// semântica do newCount para que newCount === count(isNew===true).
+//
+// D-15 (decisão Paulo 12/09): o anti-join filtra SÓ runs com
+// `executedAt < executedAt do run corrente` — run posterior NUNCA apaga o
+// badge NOVO de itens antigos (histórico congelado). Empate exato de
+// executedAt é tratado como posterior (não-visto → isNew true).
+async function seenKeysForSearch(
+  db: Db,
+  searchId: string,
+  excludeRunId: string,
+  currentExecutedAt: Date,
+): Promise<Set<string>> {
+  const priorRows = await db
+    .select({ source: labResults.source, sourceId: labResults.sourceId })
+    .from(labResults)
+    .innerJoin(labSearchRuns, eq(labResults.runId, labSearchRuns.id))
+    .where(
+      and(
+        eq(labSearchRuns.searchId, searchId),
+        ne(labSearchRuns.id, excludeRunId),
+        lt(labSearchRuns.executedAt, currentExecutedAt),
+      ),
+    );
+  return new Set(priorRows.map((row) => `${row.source}|${row.sourceId}`));
+}
+
+function resultIsNew(seen: Set<string>, source: string, sourceId: string): boolean {
+  return !seen.has(`${source}|${sourceId}`);
+}
+
 export async function listResultsForActor(
   db: Db,
   actor: ActorContext,
@@ -604,8 +658,13 @@ export async function listResultsForActor(
     .innerJoin(labSearches, eq(labSearchRuns.searchId, labSearches.id))
     .innerJoin(projects, eq(labSearches.projectId, projects.id))
     .where(and(eq(labResults.runId, runId), eq(projects.ownerId, actor.userId)));
+  // UI-31: deriva isNew on-read via anti-join D-15 (só-anteriores: o
+  // executedAt do run corrente ancora o filtro, sem coluna nova).
+  const seen = await seenKeysForSearch(db, run.searchId, runId, new Date(run.executedAt));
   return {
-    items: pageRows.map((entry) => toResultDTO(entry.result)),
+    items: pageRows.map((entry) =>
+      toResultDTO(entry.result, resultIsNew(seen, entry.result.source, entry.result.sourceId)),
+    ),
     page: { limit, nextCursor, hasMore },
     total: totalRows.length,
   };
@@ -620,7 +679,12 @@ export async function getResultForActor(
     return null;
   }
   const rows = await db
-    .select({ result: labResults })
+    .select({
+      result: labResults,
+      searchId: labSearches.id,
+      runId: labSearchRuns.id,
+      runExecutedAt: labSearchRuns.executedAt,
+    })
     .from(labResults)
     .innerJoin(labSearchRuns, eq(labResults.runId, labSearchRuns.id))
     .innerJoin(labSearches, eq(labSearchRuns.searchId, labSearches.id))
@@ -631,5 +695,8 @@ export async function getResultForActor(
   if (row === undefined) {
     return null;
   }
-  return toResultDTO(row.result);
+  // UI-31: mesmo anti-join D-15 do list (busca o run pai para achar
+  // searchId + executedAt que ancora o filtro só-anteriores).
+  const seen = await seenKeysForSearch(db, row.searchId, row.runId, row.runExecutedAt);
+  return toResultDTO(row.result, resultIsNew(seen, row.result.source, row.result.sourceId));
 }

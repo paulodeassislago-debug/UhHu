@@ -67,6 +67,16 @@
   mudou em set/2024 e sobreviveu); scraping por IDs HTML é frágil a layout.
 - TLS: problema de cadeia observado no probe → validar no deploy (não
   `rejectUnauthorized:false`).
+- TLS CAPES resolvido via infra (12/09/2026, host DEV): `catalogodeteses.capes.gov.br`
+  envia só o leaf (RNP ICPEdu GR46 OV TLS CA 2025) sem intermediário; hosts sem a
+  RNP no trust store falham com `UNABLE_TO_VERIFY_LEAF_SIGNATURE` (~110ms, run
+  aparece como capes failed/skipped — NÃO é bug do adapter). Fix: intermediário via
+  AIA (`http://secure.globalsign.com/cacert/rnpicpedugr46ovtlsca2025.crt`,
+  emissor GlobalSign Root R46) em `/usr/local/share/ca-certificates/` +
+  `update-ca-certificates` + `NODE_EXTRA_CA_CERTS=<intermediário>.pem` no env do
+  core-api. **Todo ambiente/produção novo precisa repetir este passo** ou a CAPES
+  falha silenciosamente. Opcional futuro: teste de integração que diagnostique
+  `UNABLE_TO_VERIFY_LEAF` para a fonte.
 
 ## 3. Cobertura (por que as DUAS fontes)
 

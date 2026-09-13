@@ -12,10 +12,20 @@
 //     corpo → mesmo run (`replayed: true`; a rota responde 200 + header
 //     `Idempotent-Replayed: true`); mesma key + corpo diferente → 422
 //  4. run `queued` (snapshot congelado + adapter_versions) → `running`
-//  5. execução sequencial bdtd→capes com timeout global de fila de 60s (D-29),
-//     1 retry com jar renovado após challenge (D-38), pós-filtro e persistência
+//  5. execução sequencial bdtd→capes com timeout global de 60s por lote
+//     (D-29, decisão Paulo 12/09 REVISADA: lote incremental 100/fonte —
+//     substitui o eager 08-06 sem teto; BDTD pág.1 limit=100, CAPES págs.1-2
+//     ×50), 1 retry com jar renovado após challenge na página 1 (D-38),
+//     pós-filtro e persistência por página
 //  6. status final D-37 (2 ok → succeeded; 1 ok → partial; 0 ok → failed),
 //     `newCount` por anti-join (D-35, sem dedup cross-fonte) e `coverage`
+//  7. BUSCAR MAIS sob demanda: `fetchMoreForActor` puxa +100 NOVOS/fonte
+//     (offset = count armazenado no servidor, nunca input do cliente —
+//     T-08-07-02) com o mesmo `fetchBatch` do run inicial (sem duplicar
+//     regra), rank contínuo e RECOMPUTO de `newCount` por lote (D-15:
+//     lote posterior pertence ao run corrente — badge≡contador);
+//     parcial honesto (fonte caída no lote → 200 com added parcial +
+//     hasMore preservado, nunca 500 — lote é interação, não run)
 //  7. sync/async D-28: este lib SEMPRE executa até o fim (`sync: true`); o
 //     CONTROLE 25s vive na ROTA (03-05) via `Promise.race` contra MAX_SYNC_MS
 //     (25000) — vencida a race a rota responde 202 e a execução continua em
@@ -37,6 +47,10 @@ import { and, eq, gt, inArray, ne } from 'drizzle-orm';
 import { z } from 'zod';
 import type {
   ExecutableSource,
+  FetchMoreAdded,
+  FetchMoreHasMore,
+  FetchMoreInput,
+  FetchMoreResult,
   PerSourceMetrics,
   RunErrorInfo,
   RunMetrics,
@@ -72,8 +86,15 @@ const uuidSchema = z.string().uuid();
  */
 export const MAX_SYNC_MS = 25000;
 
-/** Timeout global de fila do run (D-29): 60000ms; estouro falha as fontes restantes. */
-export const RUN_QUEUE_TIMEOUT_MS = 60000;
+/**
+ * Timeout global do lote (D-29, decisão Paulo 12/09 REVISADA — substitui o
+ * eager 08-06 de 30min). Lotes são curtos (100/fonte); cada lote — run
+ * inicial ou fetch-more — tem 60s. Sync race 25s/202 inalterado.
+ * Cancelamento manual + trava anti-loop (página vazia/repetida,
+ * T-08-06-01/02, T-08-07-01) continuam valendo; sem timeout dinâmico (v1
+ * auditável).
+ */
+export const RUN_QUEUE_TIMEOUT_MS = 60_000;
 
 /** Header que a rota devolve quando serve um run por replay de idempotência. */
 export const IDEMPOTENT_REPLAYED_HEADER = 'Idempotent-Replayed';
@@ -85,8 +106,23 @@ const RUN_RATE_WINDOW_MS = 3_600_000;
 /** Janela da idempotência (D-39): 24h. */
 const IDEMPOTENCY_TTL_MS = 24 * 3_600_000;
 
-/** Página única por fonte no v1 (cortesia; paginação profunda é pós-v1). */
-const RUN_PER_PAGE = 20;
+/**
+ * Lote incremental 08-07 (decisão Paulo 12/09 REVISADA, substitui o eager
+ * 08-06): 100 POR FONTE por lote. BDTD honra `limit=100` em 1 chamada
+ * (medido); CAPES tem teto interno (60+ retorna 20) → lote CAPES = 2×50.
+ * `perSource.total` = totalKnown da fonte (page.total da pág. 1: BDTD
+ * resultCount, CAPES total); `returned` = armazenados; hasMore implícito:
+ * stored < total.
+ */
+const BDTD_BATCH_PER_PAGE = 100;
+const CAPES_BATCH_PER_PAGE = 50;
+
+/** Alvo de itens NOVOS (kept) por fonte em cada lote (inicial ou fetch-more). */
+const FETCH_BATCH_NEW_TARGET = 100;
+
+function perPageFor(source: ExecutableSource): number {
+  return source === 'bdtd' ? BDTD_BATCH_PER_PAGE : CAPES_BATCH_PER_PAGE;
+}
 
 /** Ordem de execução sequencial (cortesia global bdtd→capes). */
 const EXECUTION_ORDER: readonly ExecutableSource[] = ['bdtd', 'capes'];
@@ -212,6 +248,289 @@ async function readRunStatus(db: Db, runId: string): Promise<string | null> {
     .limit(1);
   const row = rows[0];
   return row === undefined ? null : row.status;
+}
+
+/** Contagem armazenada por fonte no run (offset server-side, T-08-07-02). */
+async function storedCountsForRun(db: Db, runId: string): Promise<{ bdtd: number; capes: number }> {
+  const rows = await db
+    .select({ source: labResults.source })
+    .from(labResults)
+    .where(eq(labResults.runId, runId));
+  let bdtd = 0;
+  let capes = 0;
+  for (const row of rows) {
+    if (row.source === 'bdtd') {
+      bdtd += 1;
+    } else if (row.source === 'capes') {
+      capes += 1;
+    }
+  }
+  return { bdtd, capes };
+}
+
+/**
+ * Recomputa `newCount` + `coverage` do run (D-15 só-anteriores, D-35).
+ * "Novos" = (source,sourceId) do run ausentes em runs com `executedAt`
+ * ANTERIOR ao run corrente — lote posterior pertence ao run corrente, e run
+ * futuro nunca apaga o badge (histórico congelado, badge≡contador).
+ * Chamada no run inicial E após CADA lote de fetch-more (obrigatório 08-07).
+ */
+async function recomputeNewCount(
+  db: Db,
+  searchId: string,
+  runId: string,
+  executedAt: Date,
+): Promise<{ newCount: number; coverage: { bdtd: number; capes: number } }> {
+  const priorRows = await db
+    .select({
+      source: labResults.source,
+      sourceId: labResults.sourceId,
+      executedAt: labSearchRuns.executedAt,
+    })
+    .from(labResults)
+    .innerJoin(labSearchRuns, eq(labResults.runId, labSearchRuns.id))
+    .where(and(eq(labSearchRuns.searchId, searchId), ne(labSearchRuns.id, runId)));
+  const seen = new Set<string>();
+  for (const row of priorRows) {
+    // Empate exato de executedAt = posterior (não-visto → isNew true),
+    // mesma semântica do on-read em searches.ts seenKeysForSearch (D-15).
+    if (row.executedAt < executedAt) {
+      seen.add(`${row.source}|${row.sourceId}`);
+    }
+  }
+  const currentRows = await db
+    .select({ source: labResults.source, sourceId: labResults.sourceId })
+    .from(labResults)
+    .where(eq(labResults.runId, runId));
+  let newCount = 0;
+  const coverage: { bdtd: number; capes: number } = { bdtd: 0, capes: 0 };
+  for (const row of currentRows) {
+    if (row.source === 'bdtd') {
+      coverage.bdtd += 1;
+    } else if (row.source === 'capes') {
+      coverage.capes += 1;
+    }
+    if (!seen.has(`${row.source}|${row.sourceId}`)) {
+      newCount += 1;
+    }
+  }
+  return { newCount, coverage };
+}
+
+export interface ExecuteSearchRunResult {
+  run: SearchRunDTO;
+  /** Sempre true aqui: o lib executa até o fim; a rota decide 201 vs 202 (D-28). */
+  sync: boolean;
+  /** True quando o run foi servido por replay de idempotência (sem nova execução). */
+  replayed: boolean;
+}
+
+/**
+ * Miolo reusável de fetch+insert de UM lote (08-07): usado pelo run inicial
+ * E pelo fetch-more (sem duplicar regra de negócio).
+ *
+ * Busca páginas sequenciais a partir de `startPage` até +`targetNew` itens
+ * kept NOVOS ou fonte esgotada — mesmas paradas/proteções do 08-06:
+ * página vazia, página só com itens já vistos (anti-loop), abort (timeout
+ * 60s/lote) e cancel (só no run inicial; fetch-more roda sobre run terminal).
+ * Insert por página com rank contínuo (`storedBefore + keptSoFar + i`) e
+ * `onConflictDoNothing` (double-tap seguro). Retry de challenge (D-38) SÓ
+ * quando `retryChallenge` (primeira página global do run).
+ *
+ * `seenIds` deve conter os sourceIds já armazenados do run+fonte (anti-loop
+ * entre lotes); `storedBefore` = count armazenado (offset server-side).
+ */
+export interface FetchBatchParams {
+  db: Db;
+  runId: string;
+  source: ExecutableSource;
+  def: SearchDef;
+  storedBefore: number;
+  startPage: number;
+  targetNew: number;
+  seenIds: Set<string>;
+  signal: AbortSignal;
+  fetchFn?: typeof fetch | undefined;
+  retryChallenge: boolean;
+  checkCancel: boolean;
+}
+
+export interface FetchBatchResult {
+  keptNew: number;
+  fetchedRaw: number;
+  lastTotal: number | null;
+  pagesFetched: number;
+  challengeSeen: boolean;
+  stoppedByCancel: boolean;
+  abortedMidLoop: boolean;
+  midLoopFailed: boolean;
+  pageOneFailed: boolean;
+}
+
+export async function fetchBatch(params: FetchBatchParams): Promise<FetchBatchResult> {
+  const {
+    db,
+    runId,
+    source,
+    def,
+    storedBefore,
+    startPage,
+    targetNew,
+    seenIds,
+    signal,
+    retryChallenge,
+  } = params;
+  const perPage = perPageFor(source);
+  const adapter = getSourceAdapter(source);
+  const { client } = getAdapter(source);
+  const ctx = {
+    signal,
+    ...(params.fetchFn !== undefined ? { fetchFn: params.fetchFn } : {}),
+  };
+  const attemptPage = async (pageNum: number): Promise<SourcePage> => {
+    try {
+      return await adapter.search(client, def, { page: pageNum, perPage }, ctx);
+    } catch {
+      return { total: null, items: [], sourceStatus: 'failed' };
+    }
+  };
+  let keptNew = 0;
+  let fetchedRaw = 0;
+  let lastTotal: number | null = null;
+  let pagesFetched = 0;
+  let challengeSeen = false;
+  let stoppedByCancel = false;
+  let abortedMidLoop = false;
+  let midLoopFailed = false;
+  let pageOneFailed = false;
+  let pageNum = startPage - 1;
+  const globalFirstPage = startPage;
+
+  while (keptNew < targetNew) {
+    if (params.checkCancel) {
+      const statusNow = await readRunStatus(db, runId);
+      if (statusNow === 'cancelled' || statusNow === null) {
+        stoppedByCancel = true;
+        break;
+      }
+    }
+    if (signal.aborted) {
+      abortedMidLoop = true;
+      break;
+    }
+    pageNum += 1;
+    let current = await attemptPage(pageNum);
+    if (retryChallenge && pageNum === globalFirstPage) {
+      challengeSeen = current.sourceStatus === 'challenge';
+      if (challengeSeen && !signal.aborted) {
+        current = await attemptPage(pageNum);
+        challengeSeen = true;
+      }
+    }
+    if (current.sourceStatus !== 'ok') {
+      if (pagesFetched === 0 && storedBefore === 0) {
+        pageOneFailed = true;
+      } else {
+        midLoopFailed = true;
+      }
+      break;
+    }
+    if (current.items.length === 0) {
+      break;
+    }
+    if (pagesFetched > 0 && current.items.every((item) => seenIds.has(item.sourceId))) {
+      break;
+    }
+    const filtered = postFilter(current.items, def);
+    const kept = filtered.kept;
+    fetchedRaw += current.items.length;
+    if (current.total !== null) {
+      lastTotal = current.total;
+    }
+    for (const item of current.items) {
+      seenIds.add(item.sourceId);
+    }
+    if (kept.length > 0) {
+      const rowsToInsert = [];
+      for (let index = 0; index < kept.length; index += 1) {
+        const item = kept[index];
+        if (item === undefined) {
+          continue;
+        }
+        rowsToInsert.push({
+          runId,
+          source,
+          sourceId: item.sourceId,
+          title: item.title,
+          authors: item.authors,
+          year: item.year,
+          docType: item.docType,
+          institution: item.institution,
+          program: item.program,
+          abstract: item.abstract,
+          originUrl: item.originUrl,
+          sourceUrl: item.sourceUrl,
+          rawMetadata: item.rawMetadata,
+          // Rank global contínuo: armazenados antes + kept deste lote + índice.
+          rank: storedBefore + keptNew + index,
+        });
+      }
+      if (rowsToInsert.length > 0) {
+        await db
+          .insert(labResults)
+          .values(rowsToInsert)
+          .onConflictDoNothing({
+            target: [labResults.runId, labResults.source, labResults.sourceId],
+          });
+      }
+    }
+    keptNew += kept.length;
+    pagesFetched += 1;
+    // Total desconhecido (null) = 1 página por lote (nunca laço só por total).
+    if (lastTotal === null) {
+      break;
+    }
+    // Parada pelo total GLOBAL (armazenados antes + brutos deste lote).
+    if (storedBefore + fetchedRaw >= lastTotal) {
+      break;
+    }
+  }
+  return {
+    keptNew,
+    fetchedRaw,
+    lastTotal,
+    pagesFetched,
+    challengeSeen,
+    stoppedByCancel,
+    abortedMidLoop,
+    midLoopFailed,
+    pageOneFailed,
+  };
+}
+
+/** Próxima página a buscar: após `pagesFetchedTotal` páginas já ok (fallback: offset/count). */
+export function nextPageFor(
+  source: ExecutableSource,
+  storedBefore: number,
+  pagesFetchedTotal: number | undefined,
+): number {
+  if (typeof pagesFetchedTotal === 'number' && pagesFetchedTotal > 0) {
+    return pagesFetchedTotal + 1;
+  }
+  return Math.floor(storedBefore / perPageFor(source)) + 1;
+}
+
+/** Carrega os sourceIds já armazenados do run+fonte (anti-loop entre lotes). */
+export async function loadSeenIds(
+  db: Db,
+  runId: string,
+  source: ExecutableSource,
+): Promise<Set<string>> {
+  const rows = await db
+    .select({ sourceId: labResults.sourceId })
+    .from(labResults)
+    .where(and(eq(labResults.runId, runId), eq(labResults.source, source)));
+  return new Set(rows.map((row) => row.sourceId));
 }
 
 /**
@@ -369,33 +688,48 @@ export async function executeSearchRun(
       }
 
       const startedSource = Date.now();
-      const adapter = getSourceAdapter(source);
-      const { client } = getAdapter(source);
-      const ctx = {
+      const perPage = perPageFor(source);
+      // Lote inicial 08-07: 1 lote (BDTD 1×100, CAPES 2×50 até +100 novos)
+      // via `fetchBatch` compartilhado com o fetch-more. `total` exposto é
+      // o totalKnown da fonte (page.total da pág. 1); `returned` = kept.
+      const batch = await fetchBatch({
+        db,
+        runId,
+        source,
+        def,
+        storedBefore: 0,
+        startPage: 1,
+        targetNew: FETCH_BATCH_NEW_TARGET,
+        seenIds: new Set<string>(),
         signal: controller.signal as AbortSignal,
         ...(opts.fetchFn !== undefined ? { fetchFn: opts.fetchFn } : {}),
-      };
-      const attemptOnce = async (): Promise<SourcePage> => {
-        try {
-          return await adapter.search(client, def, { page: 1, perPage: RUN_PER_PAGE }, ctx);
-        } catch {
-          // RangeTooWideError / transporte / parse inesperado: fonte failed
-          // (D-37), nunca derruba o run nem a outra fonte.
-          return { total: null, items: [], sourceStatus: 'failed' };
-        }
-      };
-
-      let page = await attemptOnce();
-      let challengeSeen = page.sourceStatus === 'challenge';
-      if (challengeSeen && !controller.signal.aborted) {
-        // D-38: jar já renovado pelo SourceClient — 1 retry único com jar novo.
-        page = await attemptOnce();
-        challengeSeen = true;
+        retryChallenge: true,
+        checkCancel: true,
+      });
+      if (batch.stoppedByCancel) {
+        const statusNow = await readRunStatus(db, runId);
+        cancelledSeen = statusNow === 'cancelled';
       }
-      const durationMs = Date.now() - startedSource;
+      const keptTotal = batch.keptNew;
+      const pagesFetched = batch.pagesFetched;
+      const lastTotal = batch.lastTotal;
+      const challengeSeen = batch.challengeSeen;
+      const stoppedByCancel = batch.stoppedByCancel;
+      const abortedMidLoop = batch.abortedMidLoop;
+      const midLoopFailed = batch.midLoopFailed;
+      const pageOneFailed = batch.pageOneFailed;
 
-      if (page.sourceStatus !== 'ok') {
-        perSource[source] = { status: 'failed', total: 0, returned: 0, durationMs };
+      const durationMs = Date.now() - startedSource;
+      const pagesTotal = lastTotal === null ? null : Math.ceil(lastTotal / perPage);
+      if (pageOneFailed) {
+        perSource[source] = {
+          status: 'failed',
+          total: 0,
+          returned: 0,
+          durationMs,
+          pagesFetched: 0,
+          pagesTotal: null,
+        };
         const reason = controller.signal.aborted
           ? 'tempo esgotado'
           : challengeSeen
@@ -405,76 +739,65 @@ export async function executeSearchRun(
         await recordSourceEvent(db, source, false, challengeSeen);
         continue;
       }
-
-      const filtered = postFilter(page.items, def);
-      const kept = filtered.kept;
-      if (kept.length > 0) {
-        const rowsToInsert = [];
-        for (let index = 0; index < kept.length; index += 1) {
-          const item = kept[index];
-          if (item === undefined) {
-            continue;
-          }
-          rowsToInsert.push({
-            runId,
-            source,
-            sourceId: item.sourceId,
-            title: item.title,
-            authors: item.authors,
-            year: item.year,
-            docType: item.docType,
-            institution: item.institution,
-            program: item.program,
-            abstract: item.abstract,
-            originUrl: item.originUrl,
-            sourceUrl: item.sourceUrl,
-            rawMetadata: item.rawMetadata,
-            rank: index,
-          });
-        }
-        if (rowsToInsert.length > 0) {
-          await db
-            .insert(labResults)
-            .values(rowsToInsert)
-            .onConflictDoNothing({
-              target: [labResults.runId, labResults.source, labResults.sourceId],
-            });
-        }
+      if (stoppedByCancel) {
+        // Cancel no meio do loop: preserva o coletado (métricas aterrissam no
+        // update complementar final); o status final fica `cancelled`.
+        // Sem recordSourceEvent: cancel é ação do operador, não sinal da fonte.
+        perSource[source] = {
+          status: 'failed',
+          total: lastTotal ?? keptTotal,
+          returned: keptTotal,
+          durationMs,
+          pagesFetched,
+          pagesTotal,
+        };
+        break;
       }
-      const total = page.total ?? kept.length;
-      perSource[source] = { status: 'ok', total, returned: kept.length, durationMs };
-      okParts.push(`${source} ok (${String(kept.length)} resultados)`);
+      if (abortedMidLoop) {
+        perSource[source] = {
+          status: 'failed',
+          total: lastTotal ?? keptTotal,
+          returned: keptTotal,
+          durationMs,
+          pagesFetched,
+          pagesTotal,
+        };
+        failParts.push(`${source} indisponível (tempo esgotado)`);
+        await recordSourceEvent(db, source, false, false);
+        continue;
+      }
+      if (midLoopFailed) {
+        perSource[source] = {
+          status: 'failed',
+          total: lastTotal ?? keptTotal,
+          returned: keptTotal,
+          durationMs,
+          pagesFetched,
+          pagesTotal,
+        };
+        failParts.push(`${source} indisponível`);
+        await recordSourceEvent(db, source, false, false);
+        continue;
+      }
+      perSource[source] = {
+        status: 'ok',
+        total: lastTotal ?? keptTotal,
+        returned: keptTotal,
+        durationMs,
+        pagesFetched,
+        pagesTotal,
+      };
+      okParts.push(`${source} ok (${String(keptTotal)} resultados)`);
       await recordSourceEvent(db, source, true, challengeSeen);
     }
   } finally {
     clearTimeout(queueTimer);
   }
 
-  // D-35: "novos" = (source,sourceId) ausentes em TODOS os runs anteriores da
-  // mesma search (anti-join; sem dedup cross-fonte — overlap exato é Phase 4).
-  // coverage = counts do run atual por fonte.
-  const priorRows = await db
-    .select({ source: labResults.source, sourceId: labResults.sourceId })
-    .from(labResults)
-    .innerJoin(labSearchRuns, eq(labResults.runId, labSearchRuns.id))
-    .where(and(eq(labSearchRuns.searchId, search.id), ne(labSearchRuns.id, runId)));
-  const seen = new Set(priorRows.map((row) => `${row.source}|${row.sourceId}`));
-  const currentRows = await db
-    .select({ source: labResults.source, sourceId: labResults.sourceId })
-    .from(labResults)
-    .where(eq(labResults.runId, runId));
-  let newCount = 0;
-  const coverage: { bdtd: number; capes: number } = { bdtd: 0, capes: 0 };
-  for (const row of currentRows) {
-    if (row.source === 'bdtd') {
-      coverage.bdtd += 1;
-    } else if (row.source === 'capes') {
-      coverage.capes += 1;
-    }
-    if (!seen.has(`${row.source}|${row.sourceId}`)) {
-      newCount += 1;
-    }
-  }
+  // D-35/D-15: `newCount` por anti-join só-anteriores + `coverage` do run
+  // atual. Extração compartilhada `recomputeNewCount` (também usada pelo
+  // fetch-more a cada lote — badge≡contador).
+  const { newCount, coverage } = await recomputeNewCount(db, search.id, runId, executedAt);
 
   const metrics: RunMetrics = { perSource, newCount, coverage };
   const executedCount = orderedSources.length;
@@ -520,6 +843,180 @@ export async function executeSearchRun(
     throw new Error('search run vanished mid-execution');
   }
   return { run: toRunDTO(finalRow), sync: true, replayed: false };
+}
+
+export interface FetchMoreOptions {
+  fetchFn?: typeof fetch | undefined;
+}
+
+/**
+ * BUSCAR MAIS sob demanda (08-07, decisão Paulo 12/09 REVISADA).
+ * Puxa +100 NOVOS itens por fonte com hasMore (offset = count armazenado no
+ * servidor, nunca input do cliente — T-08-07-02) via `fetchBatch`
+ * compartilhado; rank contínuo (`storedBefore + i`); timeout 60s por batch
+ * (T-08-07-01); sem auto-retry.
+ *
+ * Retorna null fora do escopo/inexistente (rota vira 404 idêntico, T-08-07-03;
+ * contagens só do próprio run). Erro de fonte no lote → parcial honesto
+ * (200 com added parcial + hasMore preservado — lote é interação, não run;
+ * nunca 500 por fonte caída). Double-tap seguro: `onConflictDoNothing` +
+ * UI desabilita durante load.
+ *
+ * RECOMPUTA `newCount` do run após o lote (D-15: lote posterior pertence ao
+ * run corrente — OBRIGATÓRIO para badge≡contador) e atualiza
+ * `metrics.returned`/`pagesFetched`/`coverage`.
+ */
+export async function fetchMoreForActor(
+  db: Db,
+  actor: ActorContext,
+  runId: string,
+  input: FetchMoreInput = {},
+  opts: FetchMoreOptions = {},
+): Promise<FetchMoreResult | null> {
+  if (!uuidSchema.safeParse(runId).success) {
+    return null;
+  }
+  const run = await getRunForActor(db, actor, runId);
+  if (run === null) {
+    return null;
+  }
+  const search = await getSearchForActor(db, actor, run.searchId);
+  if (search === null) {
+    return null;
+  }
+  const executedAt = new Date(run.executedAt);
+  const stored = await storedCountsForRun(db, runId);
+  const hasMoreNow = (source: ExecutableSource): boolean => {
+    if (!run.sourcesSnapshot.includes(source)) {
+      return false;
+    }
+    const metrics = run.metrics.perSource[source];
+    if (metrics.status === 'skipped') {
+      return false;
+    }
+    return stored[source] < metrics.total;
+  };
+  const requested =
+    input.sources === undefined
+      ? (['bdtd', 'capes'] as const).filter((source) => hasMoreNow(source))
+      : input.sources.filter((source) => hasMoreNow(source));
+  const added: FetchMoreAdded = { bdtd: 0, capes: 0 };
+  const currentTotals: Record<ExecutableSource, number> = {
+    bdtd: run.metrics.perSource.bdtd.total,
+    capes: run.metrics.perSource.capes.total,
+  };
+  const currentPages: Record<ExecutableSource, number | undefined> = {
+    bdtd: run.metrics.perSource.bdtd.pagesFetched,
+    capes: run.metrics.perSource.capes.pagesFetched,
+  };
+  const currentDurations: Record<ExecutableSource, number> = {
+    bdtd: run.metrics.perSource.bdtd.durationMs,
+    capes: run.metrics.perSource.capes.durationMs,
+  };
+  if (requested.length === 0) {
+    const { newCount } = await recomputeNewCount(db, run.searchId, runId, executedAt);
+    const returned = stored.bdtd + stored.capes;
+    const total = currentTotals.bdtd + currentTotals.capes;
+    return {
+      added,
+      hasMore: { bdtd: hasMoreNow('bdtd'), capes: hasMoreNow('capes') },
+      newCount,
+      returned,
+      total,
+    };
+  }
+  const def = toSearchDef(search.term, search.filters);
+  const controller = new AbortController();
+  const batchTimer = setTimeout(() => {
+    controller.abort();
+  }, RUN_QUEUE_TIMEOUT_MS);
+  try {
+    for (const source of requested) {
+      if (controller.signal.aborted) {
+        break;
+      }
+      const storedBefore = stored[source];
+      const seenIds = await loadSeenIds(db, runId, source);
+      const startedBatch = Date.now();
+      const batch = await fetchBatch({
+        db,
+        runId,
+        source,
+        def,
+        storedBefore,
+        startPage: nextPageFor(source, storedBefore, currentPages[source]),
+        targetNew: FETCH_BATCH_NEW_TARGET,
+        seenIds,
+        signal: controller.signal as AbortSignal,
+        ...(opts.fetchFn !== undefined ? { fetchFn: opts.fetchFn } : {}),
+        retryChallenge: false,
+        checkCancel: false,
+      });
+      added[source] = batch.keptNew;
+      if (batch.lastTotal !== null) {
+        currentTotals[source] = batch.lastTotal;
+      }
+      const pagesBefore = currentPages[source] ?? 0;
+      currentPages[source] = pagesBefore + batch.pagesFetched;
+      currentDurations[source] += Date.now() - startedBatch;
+      // Falha mid-lote (midLoopFailed/aborted): parcial honesto — o coletado
+      // já inserido fica, hasMore segue true (stored < totalKnown); o run
+      // NÃO muda de status (já terminal). Sem recordSourceEvent aqui: o
+      // evento de saúde foi registrado no run inicial; lote parcial sob
+      // comando não é sinal de saúde novo (mantém série histórica estável).
+    }
+  } finally {
+    clearTimeout(batchTimer);
+  }
+  const storedAfter = await storedCountsForRun(db, runId);
+  const { newCount, coverage } = await recomputeNewCount(db, run.searchId, runId, executedAt);
+  const bdtdPagesTotal =
+    currentPages.bdtd === undefined
+      ? run.metrics.perSource.bdtd.pagesTotal
+      : Math.ceil(currentTotals.bdtd / perPageFor('bdtd'));
+  const capesPagesTotal =
+    currentPages.capes === undefined
+      ? run.metrics.perSource.capes.pagesTotal
+      : Math.ceil(currentTotals.capes / perPageFor('capes'));
+  const bdtdMetrics: PerSourceMetrics = {
+    status: run.metrics.perSource.bdtd.status,
+    total: currentTotals.bdtd,
+    returned: storedAfter.bdtd,
+    durationMs: currentDurations.bdtd,
+    ...(currentPages.bdtd === undefined ? {} : { pagesFetched: currentPages.bdtd }),
+    ...(bdtdPagesTotal === undefined ? {} : { pagesTotal: bdtdPagesTotal }),
+  };
+  const capesMetrics: PerSourceMetrics = {
+    status: run.metrics.perSource.capes.status,
+    total: currentTotals.capes,
+    returned: storedAfter.capes,
+    durationMs: currentDurations.capes,
+    ...(currentPages.capes === undefined ? {} : { pagesFetched: currentPages.capes }),
+    ...(capesPagesTotal === undefined ? {} : { pagesTotal: capesPagesTotal }),
+  };
+  const perSource: Record<ExecutableSource, PerSourceMetrics> = {
+    bdtd: bdtdMetrics,
+    capes: capesMetrics,
+  };
+  const metrics: RunMetrics = { perSource, newCount, coverage };
+  await db.update(labSearchRuns).set({ metrics }).where(eq(labSearchRuns.id, runId));
+  const hasMore: FetchMoreHasMore = {
+    bdtd:
+      run.sourcesSnapshot.includes('bdtd') &&
+      run.metrics.perSource.bdtd.status !== 'skipped' &&
+      storedAfter.bdtd < currentTotals.bdtd,
+    capes:
+      run.sourcesSnapshot.includes('capes') &&
+      run.metrics.perSource.capes.status !== 'skipped' &&
+      storedAfter.capes < currentTotals.capes,
+  };
+  return {
+    added,
+    hasMore,
+    newCount,
+    returned: storedAfter.bdtd + storedAfter.capes,
+    total: currentTotals.bdtd + currentTotals.capes,
+  };
 }
 
 export interface CancelRunResult {

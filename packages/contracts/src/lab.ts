@@ -47,7 +47,11 @@ export type SearchTerm = z.infer<typeof searchTermSchema>;
 // Filtros declarativos (D-32; T-03-01-03: arrays/tamanhos limitados).
 // ---------------------------------------------------------------------------
 
-export const docTypeSchema = z.enum(['masterThesis', 'doctoralThesis']);
+export const docTypeSchema = z.enum(['masterThesis', 'doctoralThesis', 'professionalMaster']);
+// Decisão Paulo 12/09/2026 DEFINITIVA (08-09): Mestrado Profissional é terceiro
+// valor SEPARADO (visível/selecionável na UI), nunca absorvido por
+// masterThesis. Aditivo §19: a coluna `doc_type` é `text` nullable — SEM
+// migration; servidor revalida este enum.
 
 export type DocType = z.infer<typeof docTypeSchema>;
 
@@ -55,7 +59,7 @@ export const searchFiltersSchema = z
   .object({
     yearFrom: z.number().int().min(1800).max(2100).optional(),
     yearTo: z.number().int().min(1800).max(2100).optional(),
-    docTypes: z.array(docTypeSchema).max(2).optional(),
+    docTypes: z.array(docTypeSchema).max(3).optional(),
     source: z.enum(['bdtd', 'capes']).optional(),
     area: z.string().trim().max(200).optional(),
     institution: z.string().trim().max(300).optional(),
@@ -147,6 +151,12 @@ export interface PerSourceMetrics {
   total: number;
   returned: number;
   durationMs: number;
+  // 08-06 (busca completa, decisão Paulo 12/09): progresso aditivo do loop de
+  // páginas (§19 permite campo aditivo; métricas são JSON, sem migration).
+  // pagesFetched = páginas ok coletadas; pagesTotal = teto estimado
+  // (ceil(total/50), null quando a fonte não declara total).
+  pagesFetched?: number;
+  pagesTotal?: number | null;
 }
 
 export interface RunCoverage {
@@ -187,6 +197,11 @@ export interface ResultDTO {
   title: string;
   authors: string[];
   year: number | null;
+  // UI-31 (§14-5, regra D-35): derivado on-read — true quando
+  // (source,sourceId) está ausente em TODOS os runs anteriores da mesma
+  // search (anti-join). NUNCA persistido (sem coluna): estado que envelhece.
+  // Consistência obrigatória: newCount === count(isNew===true) no run.
+  isNew: boolean;
   docType: DocType | null;
   institution: string | null;
   program: string | null;
@@ -336,6 +351,19 @@ export const createTagSchema = z.object({
 
 export type CreateTagInput = z.infer<typeof createTagSchema>;
 
+// UI-20 (08-01): rename/delete de tag do projeto. Reusa tagNameSchema
+// (1..100) — nunca schema novo de nome. Pelo menos um campo presente.
+export const updateTagSchema = z
+  .object({
+    name: tagNameSchema.optional(),
+    color: z.string().trim().max(20).nullable().optional(),
+  })
+  .refine((o) => o.name !== undefined || o.color !== undefined, {
+    message: 'Nada para atualizar.',
+  });
+
+export type UpdateTagInput = z.infer<typeof updateTagSchema>;
+
 /** D-46: anotacao por origem, sem mudar a decisao; sanitizacao baseline §2.5. */
 export const divergenceInputSchema = z.object({
   source: executableSourceSchema,
@@ -399,6 +427,13 @@ export interface DedupGroupDTO {
   decision: 'eligible' | 'ineligible' | 'undecided';
   originCount: number;
   origins: Array<'bdtd' | 'capes'>;
+  // UI-18/19/20 (08-01, lado servidor): tags do grupo (nomes, ordenados),
+  // divergências por origem e quando foi decidido (ISO de
+  // labGroupDecisions.updatedAt; null = nunca decidido = "não triado" do
+  // filtro D-17; distingue indeciso-explícito de não-triado).
+  tags: string[];
+  divergences: Array<{ source: ExecutableSource; note: string }>;
+  decidedAt: string | null;
 }
 
 /** LAB-08: entrada do corpus = registro canonico vigente do grupo eligible. */
@@ -428,4 +463,39 @@ export interface CompareDTO {
   yearHistogram: Record<string, number>;
   bySource: Record<string, Record<'bdtd' | 'capes', number>>;
   pairwiseOverlap: Record<string, number>;
+}
+
+// ---------------------------------------------------------------------------
+// Fetch-more incremental (08-07, decisão Paulo 12/09 REVISADA — substitui o
+// eager 08-06): run inicial traz 1 lote (100/fonte + totalKnown); BUSCAR MAIS
+// puxa +100/fonte sob demanda (contrato §10 capability + §18 métricas).
+// `total` de PerSourceMetrics = totalKnown da fonte (page.total da pág. 1:
+// BDTD resultCount, CAPES total); `returned` = armazenados; hasMore implícito:
+// stored < total. Offset é SEMPRE count armazenado no servidor (T-08-07-02).
+// ---------------------------------------------------------------------------
+
+export const fetchMoreSourcesSchema = z.array(executableSourceSchema).min(1).max(2);
+
+export const fetchMoreRunsSchema = z.object({
+  sources: fetchMoreSourcesSchema.optional(),
+});
+
+export type FetchMoreInput = z.infer<typeof fetchMoreRunsSchema>;
+
+export interface FetchMoreAdded {
+  bdtd: number;
+  capes: number;
+}
+
+export interface FetchMoreHasMore {
+  bdtd: boolean;
+  capes: boolean;
+}
+
+export interface FetchMoreResult {
+  added: FetchMoreAdded;
+  hasMore: FetchMoreHasMore;
+  newCount: number;
+  returned: number;
+  total: number;
 }

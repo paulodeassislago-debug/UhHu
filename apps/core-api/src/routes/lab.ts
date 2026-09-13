@@ -35,13 +35,16 @@ import {
   decisionInputSchema,
   divergenceInputSchema,
   exportQuerySchema,
+  fetchMoreRunsSchema,
   labSourceSchema,
   paginationQuerySchema,
   pinInputSchema,
   resultsQuerySchema,
   updateSearchSchema,
+  updateTagSchema,
   type CompareDTO,
   type DedupGroupDTO,
+  type FetchMoreResult,
   type JobDTO,
   type ProjectDTO,
   type ResultDTO,
@@ -157,6 +160,11 @@ const projectIdParamsSchema = z.object({
 
 const groupTagParamsSchema = z.object({
   groupId: z.string().uuid(),
+  tagId: z.string().uuid(),
+});
+
+const projectTagParamsSchema = z.object({
+  projectId: z.string().uuid(),
   tagId: z.string().uuid(),
 });
 
@@ -647,6 +655,58 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
     },
   );
 
+  // 08-07 BUSCAR MAIS (decisão Paulo 12/09 REVISADA): lote incremental
+  // +100/fonte sob demanda. Molde das rotas de run (requireAuth + 404
+  // idêntico fora do escopo + Zod na fronteira). Body opcional `{sources?}`
+  // (default: fontes com hasMore); offset sempre server-side (T-08-07-02);
+  // parcial honesto 200 (nunca 500 por fonte caída no lote).
+  app.post(
+    '/api/v1/lab/runs/:runId/fetch-more',
+    { preHandler: requireAuth(db) },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const requestId = resolveRequestId(request);
+      reply.header('x-request-id', requestId);
+      const actor = request.actor;
+      if (actor === undefined) {
+        await reply.code(401).send(buildEnvelope('UNAUTHENTICATED', requestId, {}));
+        return;
+      }
+      const params = runIdParamsSchema.safeParse(request.params);
+      if (!params.success) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      const body = request.body === undefined || request.body === null ? {} : request.body;
+      const parsed = fetchMoreRunsSchema.safeParse(body);
+      if (!parsed.success) {
+        await reply
+          .code(400)
+          .send(buildEnvelope('VALIDATION_ERROR', requestId, parsed.error.flatten()));
+        return;
+      }
+      const got = await callCapability<FetchMoreResult | null>(
+        execute(
+          'lab.run.fetchMore',
+          {
+            id: params.data.runId,
+            ...(parsed.data.sources === undefined ? {} : { sources: parsed.data.sources }),
+          },
+          actor,
+        ),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
+      if (got.value === null) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      await reply.code(200).send(got.value);
+    },
+  );
+
   app.get(
     '/api/v1/lab/results/:resultId',
     { preHandler: requireAuth(db) },
@@ -1072,6 +1132,109 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
         return;
       }
       await reply.code(201).send(got.value);
+    },
+  );
+
+  // UI-20 (08-01): gestão de tags do projeto — rename + delete, molde das
+  // rotas de tag existentes (requireAuth + resolveRequestId + header
+  // x-request-id + 404 idêntico fora do escopo).
+  app.patch(
+    '/api/v1/lab/projects/:projectId/tags/:tagId',
+    { preHandler: requireAuth(db) },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const requestId = resolveRequestId(request);
+      reply.header('x-request-id', requestId);
+      const actor = request.actor;
+      if (actor === undefined) {
+        await reply.code(401).send(buildEnvelope('UNAUTHENTICATED', requestId, {}));
+        return;
+      }
+      const params = projectTagParamsSchema.safeParse(request.params);
+      if (!params.success) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      const body = updateTagSchema.safeParse(request.body);
+      if (!body.success) {
+        await reply
+          .code(400)
+          .send(buildEnvelope('VALIDATION_ERROR', requestId, body.error.flatten()));
+        return;
+      }
+      // Colisão de nome: o lib lança TagNameConflictError. Rotas NÃO importam
+      // `lib/*` (gate 05-02), logo o estreitamento é por `error.name` (nome
+      // estável, documentado em corpus.ts). Catálogo intocado — detalhe livre
+      // como `parsed.error.flatten()`.
+      let got: { replied: true } | { replied: false; value: ProjectTag | null };
+      try {
+        got = await callCapability<ProjectTag | null>(
+          execute(
+            'lab.tag.rename',
+            {
+              projectId: params.data.projectId,
+              tagId: params.data.tagId,
+              input: body.data,
+            },
+            actor,
+          ),
+          reply,
+          requestId,
+        );
+      } catch (error) {
+        if (error instanceof Error && error.name === 'TagNameConflictError') {
+          await reply.code(400).send(
+            buildEnvelope('VALIDATION_ERROR', requestId, {
+              name: 'Já existe uma tag com este nome.',
+            }),
+          );
+          return;
+        }
+        throw error;
+      }
+      if (got.replied) {
+        return;
+      }
+      if (got.value === null) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      await reply.code(200).send(got.value);
+    },
+  );
+
+  app.delete(
+    '/api/v1/lab/projects/:projectId/tags/:tagId',
+    { preHandler: requireAuth(db) },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const requestId = resolveRequestId(request);
+      reply.header('x-request-id', requestId);
+      const actor = request.actor;
+      if (actor === undefined) {
+        await reply.code(401).send(buildEnvelope('UNAUTHENTICATED', requestId, {}));
+        return;
+      }
+      const params = projectTagParamsSchema.safeParse(request.params);
+      if (!params.success) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      const got = await callCapability<boolean>(
+        execute(
+          'lab.tag.delete',
+          { projectId: params.data.projectId, tagId: params.data.tagId },
+          actor,
+        ),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
+      if (!got.value) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      await reply.code(204).send();
     },
   );
 

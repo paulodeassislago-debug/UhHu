@@ -27,6 +27,11 @@ const envSchema = z.object({
   SMTP_USER: z.string().min(1).optional(),
   SMTP_PASS: z.string().min(1).optional(),
   SMTP_FROM: z.string().max(254).optional(),
+  // UI-32 (D-03/D-04): allowlist exata de origens do web beta, comma-separated
+  // (ex.: `https://beta.tailnet...,http://tablet.tailnet...`). Ausente →
+  // lista vazia → CORS reflete nenhuma origem (fail-closed). Nenhuma origem
+  // secreta em código — só env.
+  CORS_ALLOWED_ORIGINS: z.string().trim().max(2000).optional(),
 });
 
 export type AppEnv = z.infer<typeof envSchema>;
@@ -34,3 +39,16 @@ export type AppEnv = z.infer<typeof envSchema>;
 // Falha dura no boot quando o ambiente esta incompleto (fail-closed).
 // ZodError nao inclui valores — seguro para logs de inicializacao.
 export const env: AppEnv = envSchema.parse(process.env);
+
+// UI-32: parse da allowlist CORS. Split por vírgula, trim, remove vazios e
+// valida cada item como `^https?://[^/]+$` (sem path, sem wildcard, sem `*`).
+// Item inválido é descartado (fail-closed por origem, nunca fail-open).
+const CORS_ORIGIN_PATTERN = /^https?:\/\/[^/]+$/;
+
+export function corsAllowedOrigins(raw?: string): string[] {
+  const value = raw ?? env.CORS_ALLOWED_ORIGINS ?? '';
+  return value
+    .split(',')
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0 && CORS_ORIGIN_PATTERN.test(part));
+}

@@ -26,10 +26,13 @@ const ABSTRACT_MAX_LENGTH = 8000;
 const TITLE_MAX_LENGTH = 500;
 const AUTHORS_MAX_COUNT = 50;
 const PER_PAGE_MIN = 5;
-const PER_PAGE_MAX = 50;
+// 08-07 (lote incremental, decisão Paulo 12/09 REVISADA): BDTD honra
+// `limit=100` em 1 chamada (medido) — teto 100 para o lote de 100/fonte;
+// CAPES segue com teto 50 (teto interno: 60+ retorna 20) em 2×50.
+const PER_PAGE_MAX = 100;
 const PER_PAGE_DEFAULT = 20;
 
-/** Paginação da busca (perPage com clamp 5..50, default 20). */
+/** Paginação da busca (perPage com clamp 5..100, default 20). */
 export interface SourcePagination {
   page: number;
   perPage: number;
@@ -194,7 +197,9 @@ function yearFromValue(value: unknown): number | null {
   return null;
 }
 
-/** docType canônico a partir de rótulos VuFind/PT-BR; desconhecido → null. */
+/** docType canônico a partir de rótulos VuFind/PT-BR; desconhecido → null.
+ * Decisão Paulo 12/09/2026 DEFINITIVA (08-09): 'Mestrado Profissional' é
+ * categoria própria (`professionalMaster`), checada ANTES do mestrado comum. */
 function canonicalDocType(value: unknown): string | null {
   const candidates: unknown[] = Array.isArray(value) ? (value as unknown[]) : [value];
   for (const raw of candidates) {
@@ -202,6 +207,13 @@ function canonicalDocType(value: unknown): string | null {
       continue;
     }
     const normalized = norm(raw);
+    if (
+      normalized === 'professionalmaster' ||
+      normalized === 'mestrado profissional' ||
+      normalized === 'professional master'
+    ) {
+      return 'professionalMaster';
+    }
     if (
       normalized === 'masterthesis' ||
       normalized === 'mestrado' ||
@@ -356,7 +368,11 @@ export function buildBdtdSearchUrl(def: SearchDef, page: number, perPage: number
   const formats = canonicalDocTypes(def.docTypes);
   if (formats.length === 1) {
     const only = formats[0];
-    if (only !== undefined) {
+    // Só formatos VuFind verificados vão à fonte. `professionalMaster`
+    // (08-09, decisão Paulo 12/09) não tem formato VuFind conhecido — enviar
+    // zeraria a fonte; omitido aqui e garantido pelo pós-filtro do Core
+    // (D-32, mesmo molde do caso 2-formatos abaixo).
+    if (only === 'masterThesis' || only === 'doctoralThesis') {
       url.searchParams.append('filter[]', `format:"${only}"`);
     }
   }
