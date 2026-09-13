@@ -26,12 +26,22 @@ function norm(value: string): string {
     .trim();
 }
 
-/** docType do item ou do filtro → canônico; desconhecido → null. */
+/** docType do item ou do filtro → canônico; desconhecido → null.
+ * Decisão Paulo 12/09/2026 DEFINITIVA (08-09): `professionalMaster` casa
+ * SOMENTE com `professionalMaster` (tese+dissertação excluem MP; sem filtro
+ * de tipo, MP passa com rótulo próprio). */
 function canonicalDocType(value: string | null): string | null {
   if (value === null) {
     return null;
   }
   const normalized = norm(value);
+  if (
+    normalized === 'professionalmaster' ||
+    normalized === 'mestrado profissional' ||
+    normalized === 'professional master'
+  ) {
+    return 'professionalMaster';
+  }
   if (
     normalized === 'masterthesis' ||
     normalized === 'mestrado' ||
@@ -147,7 +157,13 @@ function describeDocTypes(docTypes: string[] | undefined): string | null {
   for (const raw of docTypes) {
     const mapped = canonicalDocType(raw);
     const label =
-      mapped === 'masterThesis' ? 'Mestrado' : mapped === 'doctoralThesis' ? 'Doutorado' : null;
+      mapped === 'masterThesis'
+        ? 'Mestrado'
+        : mapped === 'doctoralThesis'
+          ? 'Doutorado'
+          : mapped === 'professionalMaster'
+            ? 'Mestrado Profissional'
+            : null;
     if (label !== null && !labels.includes(label)) {
       labels.push(label);
     }

@@ -197,7 +197,9 @@ function yearFromValue(value: unknown): number | null {
   return null;
 }
 
-/** docType canônico a partir de rótulos VuFind/PT-BR; desconhecido → null. */
+/** docType canônico a partir de rótulos VuFind/PT-BR; desconhecido → null.
+ * Decisão Paulo 12/09/2026 DEFINITIVA (08-09): 'Mestrado Profissional' é
+ * categoria própria (`professionalMaster`), checada ANTES do mestrado comum. */
 function canonicalDocType(value: unknown): string | null {
   const candidates: unknown[] = Array.isArray(value) ? (value as unknown[]) : [value];
   for (const raw of candidates) {
@@ -205,6 +207,13 @@ function canonicalDocType(value: unknown): string | null {
       continue;
     }
     const normalized = norm(raw);
+    if (
+      normalized === 'professionalmaster' ||
+      normalized === 'mestrado profissional' ||
+      normalized === 'professional master'
+    ) {
+      return 'professionalMaster';
+    }
     if (
       normalized === 'masterthesis' ||
       normalized === 'mestrado' ||

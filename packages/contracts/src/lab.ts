@@ -47,7 +47,11 @@ export type SearchTerm = z.infer<typeof searchTermSchema>;
 // Filtros declarativos (D-32; T-03-01-03: arrays/tamanhos limitados).
 // ---------------------------------------------------------------------------
 
-export const docTypeSchema = z.enum(['masterThesis', 'doctoralThesis']);
+export const docTypeSchema = z.enum(['masterThesis', 'doctoralThesis', 'professionalMaster']);
+// Decisão Paulo 12/09/2026 DEFINITIVA (08-09): Mestrado Profissional é terceiro
+// valor SEPARADO (visível/selecionável na UI), nunca absorvido por
+// masterThesis. Aditivo §19: a coluna `doc_type` é `text` nullable — SEM
+// migration; servidor revalida este enum.
 
 export type DocType = z.infer<typeof docTypeSchema>;
 
@@ -55,7 +59,7 @@ export const searchFiltersSchema = z
   .object({
     yearFrom: z.number().int().min(1800).max(2100).optional(),
     yearTo: z.number().int().min(1800).max(2100).optional(),
-    docTypes: z.array(docTypeSchema).max(2).optional(),
+    docTypes: z.array(docTypeSchema).max(3).optional(),
     source: z.enum(['bdtd', 'capes']).optional(),
     area: z.string().trim().max(200).optional(),
     institution: z.string().trim().max(300).optional(),

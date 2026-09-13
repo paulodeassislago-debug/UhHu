@@ -155,13 +155,23 @@ function yearFromValue(value: unknown): number | null {
   return null;
 }
 
-/** Grau acadêmico → docType canônico; desconhecido → null. */
+/** Grau acadêmico → docType canônico; desconhecido → null.
+ * Decisão Paulo 12/09/2026 DEFINITIVA (08-09): 'Mestrado Profissional' é
+ * categoria própria (`professionalMaster`), nunca `masterThesis`. Checado
+ * ANTES do mestrado comum para não ser absorvido. */
 function canonicalDocType(value: unknown): string | null {
   const raw = Array.isArray(value) ? (value as unknown[])[0] : value;
   if (typeof raw !== 'string') {
     return null;
   }
   const normalized = norm(raw);
+  if (
+    normalized === 'mestrado profissional' ||
+    normalized === 'professionalmaster' ||
+    normalized === 'professional master'
+  ) {
+    return 'professionalMaster';
+  }
   if (
     normalized === 'mestrado' ||
     normalized === 'masterthesis' ||
@@ -270,14 +280,20 @@ export interface CapesSearchPayload {
 
 /**
  * Monta o payload rest/busca. `Ano` expande um filtro por ano; range >30 anos
- * lança RangeTooWideError ANTES de qualquer rede (T-03-03-03). `institution`
- * NÃO vai à fonte — só pós-filtro do Core (D-32).
+ * ou invertido lança RangeTooWideError ANTES de qualquer rede (T-03-03-03),
+ * SEMPRE — em todos os ramos abaixo. `institution` e `area` NÃO vão à fonte:
+ * só pós-filtro do Core (D-32).
  *
+ * Decisão Paulo 12/09/2026 DEFINITIVA (08-09, revisa o Grau-only do 08-08).
  * Evidência viva 12/09/2026 (API real): sem filtros 2936 | só Ano 3 |
  * só Grau 1777 | Ano+Grau SEMPRE 0. A fonte zera ao combinar campos
- * DIFERENTES — por isso, com filtro de Grau presente, NENHUM `Ano` é enviado
- * e o período fica 100% com o postFilter do Core (D-32: fonte aproxima,
- * Core garante). Sem Grau, `Ano` expande normal (só-Ano retorna).
+ * DIFERENTES — por isso, com ano E tipo presentes, SÓ `Ano` é enviado e o
+ * tipo fica 100% com o postFilter do Core (D-32: fonte aproxima, Core
+ * garante). Só-tipo → `Grau Acadêmico` (Mestrado/Doutorado/Mestrado
+ * Profissional); só-ano → `Ano`; sem ambos → nenhum filtro; NUNCA Ano+Grau
+ * juntos. `area` NUNCA vai à fonte: cai no
+ * pós-filtro heurístico instituição/programa do Core (D-32); `program`
+ * segue como `Área Conhecimento`.
  */
 export function buildCapesPayload(
   def: SearchDef,
@@ -289,9 +305,11 @@ export function buildCapesPayload(
     throw new Error('Adapter CAPES: termo de busca vazio.');
   }
   const filtros: CapesFiltro[] = [];
-  const hasDegree = canonicalDocTypes(def.docTypes).length > 0;
+  const degrees = canonicalDocTypes(def.docTypes);
+  const hasDegree = degrees.length > 0;
   const yearFrom = def.yearFrom;
   const yearTo = def.yearTo;
+  const hasYear = yearFrom !== undefined || yearTo !== undefined;
   if (yearFrom !== undefined && yearTo !== undefined) {
     if (yearFrom > yearTo) {
       throw new RangeTooWideError(
@@ -304,32 +322,27 @@ export function buildCapesPayload(
         `Intervalo de ${String(count)} anos excede o máximo de ${String(YEAR_RANGE_MAX)} por busca; refine o período.`,
       );
     }
-    // Com Grau presente, Ano NÃO é enviado (fonte zera Ano×Grau, 12/09/2026).
-    // A validação acima continua lançando antes da rede — o período do usuário
-    // segue valendo para o postFilter do Core.
-    if (!hasDegree) {
-      for (let year = yearFrom; year <= yearTo; year += 1) {
-        filtros.push({ campo: 'Ano', valor: String(year) });
-      }
+    // Ano-only com ambos (decisão 12/09/2026): a validação acima continua
+    // lançando antes da rede — o período do usuário segue valendo para o
+    // postFilter do Core, e o tipo também (100% pós-filtro neste ramo).
+    for (let year = yearFrom; year <= yearTo; year += 1) {
+      filtros.push({ campo: 'Ano', valor: String(year) });
     }
   } else if (yearFrom !== undefined) {
-    if (!hasDegree) {
-      filtros.push({ campo: 'Ano', valor: String(yearFrom) });
-    }
+    filtros.push({ campo: 'Ano', valor: String(yearFrom) });
   } else if (yearTo !== undefined) {
-    if (!hasDegree) {
-      filtros.push({ campo: 'Ano', valor: String(yearTo) });
-    }
+    filtros.push({ campo: 'Ano', valor: String(yearTo) });
   }
   // Limite unilateral vira filtro do ano informado; o pós-filtro do Core aplica
   // o intervalo real (D-32: fonte aproxima, Core garante).
-  for (const docType of canonicalDocTypes(def.docTypes)) {
-    filtros.push({ campo: 'Grau Acadêmico', valor: degreeLabel(docType) });
+  // Grau SÓ vai à fonte sem ano junto (fonte zera Ano×Grau, 12/09/2026).
+  if (!hasYear) {
+    for (const docType of degrees) {
+      filtros.push({ campo: 'Grau Acadêmico', valor: degreeLabel(docType) });
+    }
   }
-  const area = def.area?.trim();
-  if (area !== undefined && area.length > 0) {
-    filtros.push({ campo: 'Grande Área Conhecimento', valor: area });
-  }
+  // `area` NUNCA vai à fonte: cai no
+  // pós-filtro heurístico instituição/programa do Core (D-32).
   const program = def.program?.trim();
   if (program !== undefined && program.length > 0) {
     filtros.push({ campo: 'Área Conhecimento', valor: program });
@@ -342,9 +355,16 @@ export function buildCapesPayload(
   };
 }
 
-/** Mapeia docType canônico → rótulo da fonte antes de montar o filtro. */
+/** Mapeia docType canônico → rótulo da fonte antes de montar o filtro
+ * (decisão Paulo 12/09/2026: MP tem rótulo próprio, nunca 'Mestrado'). */
 function degreeLabel(docType: string): string {
-  return docType === 'masterThesis' ? 'Mestrado' : 'Doutorado';
+  if (docType === 'masterThesis') {
+    return 'Mestrado';
+  }
+  if (docType === 'professionalMaster') {
+    return 'Mestrado Profissional';
+  }
+  return 'Doutorado';
 }
 
 /** Sinal de trabalho sem divulgação autorizada (sem link quando sem divulgação). */
