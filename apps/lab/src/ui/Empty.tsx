@@ -12,6 +12,7 @@
 
 import type { JSX } from 'react';
 import { Button, Text, View } from 'react-native';
+import { theme } from './theme';
 
 export interface EmptyProps {
   title: string;
@@ -31,8 +32,11 @@ export function Empty({
   disabledHint,
 }: EmptyProps): JSX.Element {
   return (
-    <View testID="empty-state" style={{ borderWidth: 1, padding: 16, gap: 8 }}>
-      <Text style={{ fontSize: 18, fontWeight: '600' }}>{title}</Text>
+    <View
+      testID="empty-state"
+      style={{ borderWidth: theme.border.thin, padding: theme.space.xl, gap: theme.space.md }}
+    >
+      <Text style={{ fontSize: theme.type.subtitle, fontWeight: '600' }}>{title}</Text>
       <Text>{message}</Text>
       {actionLabel !== undefined ? (
         <Button
@@ -42,7 +46,7 @@ export function Empty({
         />
       ) : null}
       {disabled && disabledHint !== undefined ? (
-        <Text style={{ fontSize: 12 }}>{disabledHint}</Text>
+        <Text style={{ fontSize: theme.type.caption }}>{disabledHint}</Text>
       ) : null}
     </View>
   );

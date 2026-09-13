@@ -26,6 +26,7 @@ import { labApi } from '../api/lab';
 import { useAuth } from '../auth/session';
 import { ErrorBanner } from '../ui/ErrorBanner';
 import { CardSkeleton } from '../ui/Skeleton';
+import { theme } from '../ui/theme';
 
 export interface DedupGroupSectionProps {
   group: DedupGroupDTO;
@@ -291,7 +292,7 @@ export function DedupGroupSection({
       }
       if (found === null) {
         memberRows.push(
-          <View key={memberId} style={{ gap: 2 }}>
+          <View key={memberId} style={{ gap: theme.space.xxs }}>
             <Text>origem indisponível</Text>
           </View>,
         );
@@ -307,7 +308,7 @@ export function DedupGroupSection({
       const httpsSource: string | null = isHttpsUrl(member.sourceUrl) ? member.sourceUrl : null;
       const rawSource: string | null = httpsSource === null ? member.sourceUrl : null;
       memberRows.push(
-        <View key={member.id} style={{ gap: 2 }}>
+        <View key={member.id} style={{ gap: theme.space.xxs }}>
           <Text style={{ fontWeight: '600' }}>
             {sourceLabel(member.source)} · {member.title}
           </Text>
@@ -360,10 +361,10 @@ export function DedupGroupSection({
   }
 
   return (
-    <View style={{ gap: 8 }}>
+    <View style={{ gap: theme.space.md }}>
       <Button title={toggleLabel} onPress={handleToggle} />
       {expanded ? (
-        <View style={{ gap: 8 }}>
+        <View style={{ gap: theme.space.md }}>
           {loadingMembers && members === null ? <CardSkeleton count={2} /> : null}
           {membersError !== null && members === null ? (
             <ErrorBanner
@@ -373,41 +374,45 @@ export function DedupGroupSection({
             />
           ) : null}
           {members !== null ? (
-            <View style={{ gap: 8 }}>
-              <View style={{ gap: 8 }}>{memberRows}</View>
-              <View style={{ gap: 4 }}>
+            <View style={{ gap: theme.space.md }}>
+              <View style={{ gap: theme.space.md }}>{memberRows}</View>
+              <View style={{ gap: theme.space.xs }}>
                 <Text style={{ fontWeight: '600' }}>Diferenças</Text>
                 {diffRows.length > 0 ? (
-                  <View style={{ gap: 2 }}>{diffRows}</View>
+                  <View style={{ gap: theme.space.xxs }}>{diffRows}</View>
                 ) : (
                   <Text>sem diferenças</Text>
                 )}
               </View>
-              <View style={{ gap: 4 }}>
+              <View style={{ gap: theme.space.xs }}>
                 <Text style={{ fontWeight: '600' }}>Divergências</Text>
                 {divergenceRows.length > 0 ? (
-                  <View style={{ gap: 2 }}>{divergenceRows}</View>
+                  <View style={{ gap: theme.space.xxs }}>{divergenceRows}</View>
                 ) : (
                   <Text>sem divergências</Text>
                 )}
               </View>
-              <View style={{ gap: 4 }}>
+              <View style={{ gap: theme.space.xs }}>
                 <Text style={{ fontWeight: '600' }}>Anotar divergência</Text>
-                <View style={{ flexDirection: 'row', gap: 8 }}>{originButtons}</View>
+                <View style={{ flexDirection: 'row', gap: theme.space.md }}>{originButtons}</View>
                 <TextInput
                   value={note}
                   onChangeText={setNote}
                   placeholder="nota da divergência"
                   maxLength={1000}
                   multiline={true}
-                  style={{ borderWidth: 1, padding: 8 }}
+                  style={{ borderWidth: theme.border.thin, padding: theme.space.md }}
                 />
-                {noteError !== null ? <Text style={{ color: '#dc2626' }}>{noteError}</Text> : null}
+                {noteError !== null ? (
+                  <Text style={{ color: theme.colors.danger }}>{noteError}</Text>
+                ) : null}
                 {divError !== null ? (
-                  <View style={{ gap: 2 }}>
-                    <Text style={{ color: '#dc2626' }}>{divError.message}</Text>
+                  <View style={{ gap: theme.space.xxs }}>
+                    <Text style={{ color: theme.colors.danger }}>{divError.message}</Text>
                     {divError.requestId !== null ? (
-                      <Text style={{ fontSize: 12 }}>(req {divError.requestId})</Text>
+                      <Text style={{ fontSize: theme.type.caption }}>
+                        (req {divError.requestId})
+                      </Text>
                     ) : null}
                   </View>
                 ) : null}

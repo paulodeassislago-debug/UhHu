@@ -32,6 +32,7 @@ import { Empty } from '../src/ui/Empty';
 import { ErrorBanner } from '../src/ui/ErrorBanner';
 import { CardSkeleton } from '../src/ui/Skeleton';
 import { ProjectModal } from '../src/ui/ProjectModal';
+import { theme } from '../src/ui/theme';
 
 type LoadState = 'loading' | 'ready' | 'error';
 type StatusFilter = 'active' | 'archived';
@@ -217,8 +218,8 @@ export default function ProjectsScreen(): JSX.Element {
 
   if (authLoading || (user !== null && state === 'loading')) {
     return (
-      <View style={{ flex: 1, padding: 24, gap: 12 }}>
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Projetos</Text>
+      <View style={{ flex: 1, padding: theme.space.xxl, gap: theme.space.lg }}>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Projetos</Text>
         <CardSkeleton count={2} />
       </View>
     );
@@ -226,8 +227,8 @@ export default function ProjectsScreen(): JSX.Element {
 
   if (user === null) {
     return (
-      <View style={{ flex: 1, padding: 24, gap: 12 }}>
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Projetos</Text>
+      <View style={{ flex: 1, padding: theme.space.xxl, gap: theme.space.lg }}>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Projetos</Text>
         <Text>Redirecionando para o login…</Text>
         <Link href="/login">Ir para login</Link>
       </View>
@@ -236,9 +237,9 @@ export default function ProjectsScreen(): JSX.Element {
 
   if (state === 'error') {
     return (
-      <View style={{ flex: 1, padding: 24, gap: 12 }}>
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Projetos</Text>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
+      <View style={{ flex: 1, padding: theme.space.xxl, gap: theme.space.lg }}>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Projetos</Text>
+        <View style={{ flexDirection: 'row', gap: theme.space.md }}>
           <Button
             title="Ativos"
             onPress={() => handleSelectFilter('active')}
@@ -268,9 +269,9 @@ export default function ProjectsScreen(): JSX.Element {
 
   if (items.length === 0) {
     return (
-      <View style={{ flex: 1, padding: 24, gap: 12 }}>
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Projetos</Text>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
+      <View style={{ flex: 1, padding: theme.space.xxl, gap: theme.space.lg }}>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Projetos</Text>
+        <View style={{ flexDirection: 'row', gap: theme.space.md }}>
           <Button
             title="Ativos"
             onPress={() => handleSelectFilter('active')}
@@ -310,7 +311,9 @@ export default function ProjectsScreen(): JSX.Element {
         const toggleError = toggleErrors[project.id];
         const toggleTitle = project.status === 'active' ? 'Arquivar' : 'Reativar';
         return (
-          <View style={{ borderWidth: 1, padding: 12, gap: 4 }}>
+          <View
+            style={{ borderWidth: theme.border.thin, padding: theme.space.lg, gap: theme.space.xs }}
+          >
             <Link
               href={{
                 pathname: '/project/[id]',
@@ -325,9 +328,9 @@ export default function ProjectsScreen(): JSX.Element {
             <Text>Status: {project.status}</Text>
             {typeof countLabel === 'string' ? <Text>{countLabel}</Text> : null}
             {typeof toggleError === 'string' ? (
-              <Text style={{ color: '#dc2626' }}>{toggleError}</Text>
+              <Text style={{ color: theme.colors.danger }}>{toggleError}</Text>
             ) : null}
-            <View style={{ flexDirection: 'row', gap: 8 }}>
+            <View style={{ flexDirection: 'row', gap: theme.space.md }}>
               <Link
                 href={{
                   pathname: '/project/[id]',
@@ -346,11 +349,11 @@ export default function ProjectsScreen(): JSX.Element {
         );
       }}
       style={{ flex: 1 }}
-      contentContainerStyle={{ padding: 24, gap: 12, flexGrow: 1 }}
+      contentContainerStyle={{ padding: theme.space.xxl, gap: theme.space.lg, flexGrow: 1 }}
       ListHeaderComponent={
-        <View style={{ gap: 12 }}>
-          <Text style={{ fontSize: 24, fontWeight: '600' }}>Projetos</Text>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
+        <View style={{ gap: theme.space.lg }}>
+          <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Projetos</Text>
+          <View style={{ flexDirection: 'row', gap: theme.space.md }}>
             <Button
               title="Ativos"
               onPress={() => handleSelectFilter('active')}
@@ -374,7 +377,7 @@ export default function ProjectsScreen(): JSX.Element {
         />
       }
       ListFooterComponent={
-        <View style={{ gap: 12 }}>
+        <View style={{ gap: theme.space.lg }}>
           <ProjectModal
             visible={modalVisible}
             onClose={() => setModalVisible(false)}

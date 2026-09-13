@@ -25,6 +25,7 @@ import type { ProjectTag } from '../api/lab';
 import { useAuth } from '../auth/session';
 import { ErrorBanner } from '../ui/ErrorBanner';
 import { CardSkeleton } from '../ui/Skeleton';
+import { theme } from '../ui/theme';
 
 export interface TagManagerModalProps {
   visible: boolean;
@@ -292,16 +293,18 @@ export function TagManagerModal({
     const deleting: boolean = busyDelete === item.id;
     const armed: boolean = confirmDelete === item.id;
     return (
-      <View style={{ gap: 4, borderWidth: 1, padding: 8 }}>
+      <View
+        style={{ gap: theme.space.xs, borderWidth: theme.border.thin, padding: theme.space.md }}
+      >
         <TextInput
           value={draft}
           onChangeText={(text: string): void => handleEditChange(item.id, text)}
           placeholder="nome da tag"
           editable={!saving && !deleting}
-          style={{ borderWidth: 1, padding: 8 }}
+          style={{ borderWidth: theme.border.thin, padding: theme.space.md }}
         />
         {typeof lineError === 'string' ? (
-          <Text style={{ color: '#dc2626' }}>{lineError}</Text>
+          <Text style={{ color: theme.colors.danger }}>{lineError}</Text>
         ) : null}
         <Button
           title={saving ? 'Salvando…' : 'Salvar'}
@@ -323,13 +326,19 @@ export function TagManagerModal({
         style={{
           flex: 1,
           justifyContent: 'center',
-          padding: 24,
+          padding: theme.space.xxl,
           backgroundColor: 'rgba(0,0,0,0.4)',
         }}
       >
-        <View style={{ backgroundColor: '#ffffff', padding: 16, gap: 12 }}>
-          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-            <Text style={{ fontSize: 20, fontWeight: '600' }}>Gerenciar tags</Text>
+        <View
+          style={{
+            backgroundColor: theme.colors.surface,
+            padding: theme.space.xl,
+            gap: theme.space.lg,
+          }}
+        >
+          <View style={{ flexDirection: 'row', gap: theme.space.md, alignItems: 'center' }}>
+            <Text style={{ fontSize: theme.type.title, fontWeight: '600' }}>Gerenciar tags</Text>
             <Button title="X" onPress={handleClose} />
           </View>
           {loading && tags === null ? <CardSkeleton count={2} /> : null}
@@ -345,27 +354,29 @@ export function TagManagerModal({
               data={tags}
               keyExtractor={(entry: ProjectTag): string => entry.id}
               renderItem={renderRow}
-              contentContainerStyle={{ gap: 8 }}
+              contentContainerStyle={{ gap: theme.space.md }}
               ListEmptyComponent={<Text>Nenhuma tag — crie abaixo.</Text>}
             />
           ) : null}
-          <View style={{ gap: 4 }}>
+          <View style={{ gap: theme.space.xs }}>
             <Text style={{ fontWeight: '600' }}>Nova tag</Text>
             <TextInput
               value={createName}
               onChangeText={setCreateName}
               placeholder="nome da tag"
               editable={!busyCreate}
-              style={{ borderWidth: 1, padding: 8 }}
+              style={{ borderWidth: theme.border.thin, padding: theme.space.md }}
             />
             <TextInput
               value={createColor}
               onChangeText={setCreateColor}
               placeholder="cor opcional (ex. vermelho)"
               editable={!busyCreate}
-              style={{ borderWidth: 1, padding: 8 }}
+              style={{ borderWidth: theme.border.thin, padding: theme.space.md }}
             />
-            {createError !== null ? <Text style={{ color: '#dc2626' }}>{createError}</Text> : null}
+            {createError !== null ? (
+              <Text style={{ color: theme.colors.danger }}>{createError}</Text>
+            ) : null}
             <Button
               title={busyCreate ? 'Criando…' : 'Criar'}
               onPress={handleCreatePress}

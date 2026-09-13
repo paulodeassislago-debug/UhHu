@@ -26,6 +26,7 @@ import { SearchCard } from '../../../src/search/SearchCard';
 import { Empty } from '../../../src/ui/Empty';
 import { ErrorBanner } from '../../../src/ui/ErrorBanner';
 import { CardSkeleton } from '../../../src/ui/Skeleton';
+import { theme } from '../../../src/ui/theme';
 
 type LoadState = 'loading' | 'ready' | 'error';
 
@@ -155,8 +156,8 @@ export default function StrategiesScreen(): JSX.Element {
 
   if (authLoading || (user !== null && state === 'loading')) {
     return (
-      <View style={{ flex: 1, padding: 24, gap: 12 }}>
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Estratégias</Text>
+      <View style={{ flex: 1, padding: theme.space.xxl, gap: theme.space.lg }}>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Estratégias</Text>
         <CardSkeleton count={2} />
       </View>
     );
@@ -164,8 +165,8 @@ export default function StrategiesScreen(): JSX.Element {
 
   if (user === null) {
     return (
-      <View style={{ flex: 1, padding: 24, gap: 12 }}>
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Estratégias</Text>
+      <View style={{ flex: 1, padding: theme.space.xxl, gap: theme.space.lg }}>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Estratégias</Text>
         <Text>Redirecionando para o login…</Text>
       </View>
     );
@@ -173,8 +174,8 @@ export default function StrategiesScreen(): JSX.Element {
 
   if (state === 'error') {
     return (
-      <View style={{ flex: 1, padding: 24, gap: 12 }}>
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Estratégias</Text>
+      <View style={{ flex: 1, padding: theme.space.xxl, gap: theme.space.lg }}>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Estratégias</Text>
         <ErrorBanner
           message={errorMessage ?? 'Erro interno. Tente novamente.'}
           requestId={errorRequestId}
@@ -200,10 +201,10 @@ export default function StrategiesScreen(): JSX.Element {
         />
       )}
       style={{ flex: 1 }}
-      contentContainerStyle={{ padding: 24, gap: 12, flexGrow: 1 }}
+      contentContainerStyle={{ padding: theme.space.xxl, gap: theme.space.lg, flexGrow: 1 }}
       ListHeaderComponent={
-        <View style={{ gap: 12 }}>
-          <Text style={{ fontSize: 24, fontWeight: '600' }}>Estratégias</Text>
+        <View style={{ gap: theme.space.lg }}>
+          <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Estratégias</Text>
           <Button title="Nova estratégia (+)" onPress={handleNewStrategy} />
           {referenceError !== null ? (
             <ErrorBanner

@@ -22,6 +22,7 @@ import { labApi } from '../api/lab';
 import type { ProjectTag } from '../api/lab';
 import { useAuth } from '../auth/session';
 import { resolveTagAction, suggestTags } from './tags';
+import { theme } from '../ui/theme';
 
 export { resolveTagAction, suggestTags } from './tags';
 export type { TagAction } from './tags';
@@ -230,14 +231,14 @@ export function TagInput({
 
   if (group === null) {
     return (
-      <View style={{ gap: 4 }}>
+      <View style={{ gap: theme.space.xs }}>
         <Text>grupo indisponível</Text>
         <TextInput
           value=""
           onChangeText={() => undefined}
           placeholder="adicionar tag"
           editable={false}
-          style={{ borderWidth: 1, padding: 8, opacity: 0.5 }}
+          style={{ borderWidth: theme.border.thin, padding: theme.space.md, opacity: 0.5 }}
         />
       </View>
     );
@@ -249,7 +250,7 @@ export function TagInput({
   for (const name of group.tags) {
     const detaching: boolean = busyDetach === name;
     chipRows.push(
-      <View key={name} style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
+      <View key={name} style={{ flexDirection: 'row', gap: theme.space.xs, alignItems: 'center' }}>
         <Text>{name}</Text>
         <Button
           title={detaching ? '…' : `× ${name}`}
@@ -274,19 +275,23 @@ export function TagInput({
   }
 
   return (
-    <View style={{ gap: 4 }}>
-      {chipRows.length > 0 ? <View style={{ gap: 4 }}>{chipRows}</View> : <Text>sem tags</Text>}
+    <View style={{ gap: theme.space.xs }}>
+      {chipRows.length > 0 ? (
+        <View style={{ gap: theme.space.xs }}>{chipRows}</View>
+      ) : (
+        <Text>sem tags</Text>
+      )}
       <TextInput
         value={input}
         onChangeText={setInput}
         placeholder="adicionar tag"
         editable={!busySubmit}
-        style={{ borderWidth: 1, padding: 8 }}
+        style={{ borderWidth: theme.border.thin, padding: theme.space.md }}
       />
       {suggestionRows.length > 0 ? (
-        <View style={{ gap: 4 }}>
+        <View style={{ gap: theme.space.xs }}>
           <Text style={{ fontWeight: '600' }}>Sugestões</Text>
-          <View style={{ gap: 4 }}>{suggestionRows}</View>
+          <View style={{ gap: theme.space.xs }}>{suggestionRows}</View>
         </View>
       ) : null}
       <Button
@@ -295,10 +300,10 @@ export function TagInput({
         disabled={busySubmit}
       />
       {error !== null ? (
-        <View style={{ gap: 2 }}>
-          <Text style={{ color: '#dc2626' }}>{error.message}</Text>
+        <View style={{ gap: theme.space.xxs }}>
+          <Text style={{ color: theme.colors.danger }}>{error.message}</Text>
           {error.requestId !== null ? (
-            <Text style={{ fontSize: 12 }}>(req {error.requestId})</Text>
+            <Text style={{ fontSize: theme.type.caption }}>(req {error.requestId})</Text>
           ) : null}
         </View>
       ) : null}

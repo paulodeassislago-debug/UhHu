@@ -35,6 +35,7 @@ import { useAuth } from '../auth/session';
 import { DeleteSearchDialog } from './DeleteSearchDialog';
 import { RunHistory } from './RunHistory';
 import { newIdempotencyKey } from '../utils/uuid';
+import { theme } from '../ui/theme';
 
 export interface SearchCardProps {
   search: SearchDTO;
@@ -248,7 +249,7 @@ export function SearchCard({
   }
 
   return (
-    <View style={{ borderWidth: 1, padding: 12, gap: 4 }}>
+    <View style={{ borderWidth: theme.border.thin, padding: theme.space.lg, gap: theme.space.xs }}>
       <Text numberOfLines={2} style={{ fontWeight: '600' }}>
         {search.term}
       </Text>
@@ -258,7 +259,7 @@ export function SearchCard({
       {runsState === 'unavailable' ? (
         <Text>histórico indisponível</Text>
       ) : (
-        <View style={{ gap: 2 }}>
+        <View style={{ gap: theme.space.xxs }}>
           <Text>{runsLine}</Text>
           {lastLine !== null ? <Text>{lastLine}</Text> : null}
         </View>
@@ -273,27 +274,27 @@ export function SearchCard({
         />
       )}
       {actionError !== null ? (
-        <View style={{ gap: 2 }}>
-          <Text style={{ color: '#dc2626' }}>{actionError.message}</Text>
+        <View style={{ gap: theme.space.xxs }}>
+          <Text style={{ color: theme.colors.danger }}>{actionError.message}</Text>
           {actionError.requestId !== null ? (
-            <Text style={{ fontSize: 12 }}>(req {actionError.requestId})</Text>
+            <Text style={{ fontSize: theme.type.caption }}>(req {actionError.requestId})</Text>
           ) : null}
         </View>
       ) : null}
-      <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+      <View style={{ flexDirection: 'row', gap: theme.space.md, alignItems: 'center' }}>
         <Button
           title={busy ? 'Executando…' : 'Executar'}
           onPress={() => void handleExecute()}
           disabled={busy}
         />
-        <View style={{ gap: 2 }}>
+        <View style={{ gap: theme.space.xxs }}>
           <Button title="Comparar" disabled />
-          <Text style={{ fontSize: 12 }}>disponível na fase 9</Text>
+          <Text style={{ fontSize: theme.type.caption }}>disponível na fase 9</Text>
         </View>
         <Button title="⋯" onPress={() => setMenuOpen((prev: boolean): boolean => !prev)} />
       </View>
       {menuOpen ? (
-        <View style={{ gap: 8 }}>
+        <View style={{ gap: theme.space.md }}>
           <Button title="Editar" onPress={handleEdit} disabled={busy} />
           <Button title="Duplicar" onPress={() => void handleDuplicate()} disabled={busy} />
           <Button title="Excluir" onPress={() => setDeleteOpen(true)} disabled={busy} />

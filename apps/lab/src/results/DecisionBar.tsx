@@ -22,6 +22,7 @@ import { labApi } from '../api/lab';
 import { useAuth } from '../auth/session';
 import { decisionForButton, formatDecidedAt } from './decision';
 import type { DecisionButtonId } from './decision';
+import { theme } from '../ui/theme';
 
 export { decisionForButton, decisionLabel, formatDecidedAt } from './decision';
 export type { DecisionButtonId } from './decision';
@@ -81,8 +82,8 @@ export function DecisionBar({ group, getToken, onDecided }: DecisionBarProps): J
 
   if (group === null) {
     return (
-      <View style={{ gap: 4 }}>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
+      <View style={{ gap: theme.space.xs }}>
+        <View style={{ flexDirection: 'row', gap: theme.space.md }}>
           <Button title="elegível" disabled onPress={handleNoop} />
           <Button title="não" disabled onPress={handleNoop} />
           <Button title="indeciso" disabled onPress={handleNoop} />
@@ -96,8 +97,8 @@ export function DecisionBar({ group, getToken, onDecided }: DecisionBarProps): J
   const statusLine: string = formatDecidedAt(group.decidedAt);
 
   return (
-    <View style={{ gap: 4 }}>
-      <View style={{ flexDirection: 'row', gap: 8 }}>
+    <View style={{ gap: theme.space.xs }}>
+      <View style={{ flexDirection: 'row', gap: theme.space.md }}>
         <Button
           title={group.decision === 'eligible' ? '• elegível' : 'elegível'}
           onPress={() => void handleDecide('elegivel')}
@@ -117,10 +118,10 @@ export function DecisionBar({ group, getToken, onDecided }: DecisionBarProps): J
       <Text>{statusLine}</Text>
       {busy ? <Text>decidindo…</Text> : null}
       {error !== null ? (
-        <View style={{ gap: 2 }}>
-          <Text style={{ color: '#dc2626' }}>{error.message}</Text>
+        <View style={{ gap: theme.space.xxs }}>
+          <Text style={{ color: theme.colors.danger }}>{error.message}</Text>
           {error.requestId !== null ? (
-            <Text style={{ fontSize: 12 }}>(req {error.requestId})</Text>
+            <Text style={{ fontSize: theme.type.caption }}>(req {error.requestId})</Text>
           ) : null}
         </View>
       ) : null}

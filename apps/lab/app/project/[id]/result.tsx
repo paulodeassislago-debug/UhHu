@@ -31,6 +31,7 @@ import { TagInput } from '../../../src/results/TagInput';
 import { docTypeLabel, formatProvenance } from '../../../src/results/triage';
 import { ErrorBanner } from '../../../src/ui/ErrorBanner';
 import { CardSkeleton } from '../../../src/ui/Skeleton';
+import { theme } from '../../../src/ui/theme';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const GROUPS_PAGE_SIZE = 100;
@@ -205,10 +206,10 @@ export default function ResultScreen(): JSX.Element {
     return (
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+        contentContainerStyle={{ flexGrow: 1, padding: theme.space.xxl, gap: theme.space.lg }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Ficha</Text>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Ficha</Text>
         <CardSkeleton count={2} />
       </ScrollView>
     );
@@ -218,10 +219,10 @@ export default function ResultScreen(): JSX.Element {
     return (
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+        contentContainerStyle={{ flexGrow: 1, padding: theme.space.xxl, gap: theme.space.lg }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Ficha</Text>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Ficha</Text>
         <Text>Redirecionando para o login…</Text>
       </ScrollView>
     );
@@ -231,10 +232,10 @@ export default function ResultScreen(): JSX.Element {
     return (
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+        contentContainerStyle={{ flexGrow: 1, padding: theme.space.xxl, gap: theme.space.lg }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Ficha</Text>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Ficha</Text>
         <ErrorBanner message="Ficha inválida." onBack={handleBack} />
       </ScrollView>
     );
@@ -244,10 +245,10 @@ export default function ResultScreen(): JSX.Element {
     return (
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+        contentContainerStyle={{ flexGrow: 1, padding: theme.space.xxl, gap: theme.space.lg }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Ficha</Text>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Ficha</Text>
         <CardSkeleton count={2} />
       </ScrollView>
     );
@@ -257,10 +258,10 @@ export default function ResultScreen(): JSX.Element {
     return (
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+        contentContainerStyle={{ flexGrow: 1, padding: theme.space.xxl, gap: theme.space.lg }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Ficha</Text>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Ficha</Text>
         <ErrorBanner
           message={error.message}
           requestId={error.requestId}
@@ -275,10 +276,10 @@ export default function ResultScreen(): JSX.Element {
     return (
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+        contentContainerStyle={{ flexGrow: 1, padding: theme.space.xxl, gap: theme.space.lg }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Ficha</Text>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Ficha</Text>
         <ErrorBanner message="Ficha inválida." onBack={handleBack} />
       </ScrollView>
     );
@@ -302,11 +303,13 @@ export default function ResultScreen(): JSX.Element {
   return (
     <ScrollView
       style={{ flex: 1 }}
-      contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+      contentContainerStyle={{ flexGrow: 1, padding: theme.space.xxl, gap: theme.space.lg }}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={{ fontSize: 24, fontWeight: '600' }}>Ficha</Text>
-      <View style={{ borderWidth: 1, padding: 12, gap: 4 }}>
+      <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Ficha</Text>
+      <View
+        style={{ borderWidth: theme.border.thin, padding: theme.space.lg, gap: theme.space.xs }}
+      >
         <Text style={{ fontWeight: '600' }}>{result.title}</Text>
         <Text>{metaLine}</Text>
         {result.institution !== null ? <Text>{result.institution}</Text> : null}
