@@ -10,8 +10,8 @@
 // string vazia salva null (limpa a pergunta); sem botão separado de edição.
 // Menu do cabeçalho: botões Arquivar/Reativar (update status + setProject
 // local) — sem tela de configurações. Abaixo do cabeçalho, TabBar com 3 itens:
-// [Estratégias] (Link /project/[id]/strategies), [Comparação] (botão disabled
-// com hint de etapa futura), [Corpus: N] (Link /project/[id]/corpus) onde N é
+// [Estratégias] (Link /project/[id]/strategies), [Comparação] (Link
+// /project/[id]/compare, 09-04), [Corpus: N] (Link /project/[id]/corpus) onde N é
 // o contador vivo via labApi.getCorpus(projectId, { limit: 100 }) — número
 // reflete o GET corpus; erro do contador mostra "Corpus" sem número (nunca
 // quebra o cabeçalho). Contagem é enriquecimento de leitura; nunca decide
@@ -417,10 +417,14 @@ export default function ProjectDetailScreen({ activeTab = 'none' }: ProjectDetai
         >
           <Text style={{ fontWeight: activeTab === 'strategies' ? '700' : '400' }}>Estratégias</Text>
         </Link>
-        <View style={{ gap: 2 }}>
-          <Button title="Comparação" disabled />
-          <Text style={{ fontSize: 12 }}>disponível na fase 9</Text>
-        </View>
+        <Link
+          href={{
+            pathname: '/project/[id]/compare',
+            params: { id: projectId },
+          }}
+        >
+          <Text style={{ fontWeight: activeTab === 'compare' ? '700' : '400' }}>Comparação</Text>
+        </Link>
         <Link
           href={{
             pathname: '/project/[id]/corpus',
