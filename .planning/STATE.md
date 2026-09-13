@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Lab UI v1
-status: "executing — phase 8 extended (8/8 plans: 08-01 CORE + 08-02 client/lista + 08-03 decisão/grupo + 08-04 tags/ficha + gap 08-05 + 08-06 busca completa SUPERSEDED + 08-07 lote incremental + gap 08-08 CAPES Ano+Grau done, phase 9 unblocked)"
-stopped_at: Phase 8 plan 08-08 complete
-last_updated: "2026-09-13T02:12:00Z"
-last_activity: "2026-09-13 — Phase 8 plan 08-08 complete (gap-closure auditoria Hermes 12/09: payload CAPES sem combo Ano+Grau + year dataDefesa ISO, 08-06 SUPERSEDED; d92b50f, e663c8b; contrato 21/21, monorepo 209/209)"
+status: "executing — phase 8 extended (9/9 plans: 08-01 CORE + 08-02 client/lista + 08-03 decisão/grupo + 08-04 tags/ficha + gap 08-05 + 08-06 busca completa SUPERSEDED + 08-07 lote incremental + gap 08-08 CAPES Ano+Grau + 08-09 decisões Paulo definitivas done, phase 9 unblocked)"
+stopped_at: Phase 8 plan 08-09 complete
+last_updated: "2026-09-13T03:05:00Z"
+last_activity: "2026-09-13 — Phase 8 plan 08-09 complete (decisões Paulo 12/09 DEFINITIVAS: MP terceiro valor + termo cru + payload Ano-only sem Grande Área + checkbox MP + hint 2026; c677872, 538299c, 90255bd; pnpm test 214/214, lab 100/100)"
 progress:
   total_phases: 4
   completed_phases: 0
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-09-11)
 
 ## Current Position
 
-Phase: 8 of 9 (Executed 9/9 incl. gaps 08-05/08-06 + revisão 08-07 + gap CAPES 08-08 — phase NOT closed pending UAT tablet + audit sign-off)
-Plan: 08-08 of 8 done (gap-closure auditoria externa Hermes 12/09, 08-06 SUPERSEDED)
-Status: CI unblocked (root tsc 0, contrato CAPES 21/21, monorepo 209/209 com PG-skips offline; runs 9/9 + isnew 2/2 + lab 99/99 herdados sem regressão); awaiting human UAT + Hermes audit approval
-Last activity: 2026-09-13 — Plan 08-08 done (payload CAPES sem Ano×Grau + year dataDefesa-first, 6 casos de contrato)
+Phase: 8 of 9 (Executed 10/10 incl. gaps 08-05/08-06 + revisão 08-07 + gap CAPES 08-08 + decisões definitivas 08-09 — phase NOT closed pending UAT tablet + audit sign-off)
+Plan: 08-09 of 9 done (decisões Paulo 12/09 DEFINITIVAS: MP separado + termo cru + Ano-only)
+Status: CI unblocked (root tsc 0, contrato CAPES 26/26, monorepo 214/214 com PG-skips offline; lab 100/100 + runs 9/9 + isnew 2/2 herdados sem regressão); awaiting human UAT + Hermes audit approval
+Last activity: 2026-09-13 — Plan 08-09 done (MP terceiro valor + termo cru + Ano-only sem Grande Área, 6 novos casos de contrato)
 Resume file: .planning/phases/08-resultados-triagem/08-HUMAN-UAT.md
 
 Progress: [██████████████████] 5/5 plans executed (phase open, UAT + audit pending)
@@ -45,9 +45,9 @@ Progress: [████████░░] 6/6 plans phase 7 + UAT approved (mil
 
 **Velocity:**
 
-- Total plans completed: 13
+- Total plans completed: 14
 - Average duration: ~8min
-- Total execution time: ~84min
+- Total execution time: ~92min
 
 **By Phase:**
 
@@ -57,7 +57,7 @@ Progress: [████████░░] 6/6 plans phase 7 + UAT approved (mil
 | 3. Buscas e adapters | 6 | ~74min+40min | ~19min |
 | 4. Corpus e exportação | 5 | ~150min (executor + checkpoint/fixes) | ~30min |
 | 7. Projetos, buscas e execução | 6 (07-01, 07-02, 07-03, 07-04, gap 07-05, UX 07-06) | ~43min | ~7min |
-| 8. Resultados e triagem | 8 (08-01, 08-02, 08-03, 08-04, gap 08-05, 08-06 SUPERSEDED, 08-07, gap 08-08) | ~55min | ~7min |
+| 8. Resultados e triagem | 9 (08-01, 08-02, 08-03, 08-04, gap 08-05, 08-06 SUPERSEDED, 08-07, gap 08-08, 08-09) | ~63min | ~7min |
 
 **Recent Trend:**
 
@@ -106,6 +106,7 @@ Recent decisions affecting current work:
 - 08-06: busca completa Paulo 12/09 (UI-14 fim-a-fim, caf30b6+09f8a90+639bafb): engine loop 50/pág até o total (paradas vazia/repetida/abort/cancel, rank global, insert por página, 30min com trade-off documentado, challenge só p1, falha mid-loop preserva) + parseOne repassa pagesFetched/pagesTotal ao DTO (Rule 2) + fetch p1 dentro do loop checado (Rule 1: cancel em voo preserva) + prova PG real 120/120 rank 0..119 + rerun newCount 0 + cancel determinístico 50/cancelled (full 2/2) + UI teto 720 polls com página X de ~Y (pageProgress.ts puro, precedente 08-03) + Cancelar sempre vivo + D-08 intacto; lab 91/91 (82+9), runs 9/9 + isnew 2/2 sem regressão; tsc raiz+pacotes+app + eslint verdes, any 0; auditoria 0 crit/0 high — SUPERSEDED por 08-07 (decisão Paulo 12/09 REVISADA: eager sem teto → lote incremental)
 - 08-07: lote incremental Paulo 12/09 REVISADA (UI-14/UI-17 fim-a-fim, 294d305+a9e792f+f8093e7): fetchBatch reusável (BDTD 1×100 + CAPES 2×50, totalKnown da pág.1, timeout 60s de volta, rank storedBefore+i, cancel/página, anti-loop) + POST /runs/:runId/fetch-more com lab.run.fetchMore (Zod, 404 idêntico, offset server-side, +100/fonte, newCount recomputado/lote D-15, parcial honesto) + BDTD PER_PAGE_MAX 50→100 (Rule 3) + prova PG real 250 em 100+100+50 com hasMore/isNew/newCount por lote + 4º fetch idempotente + IDOR/401 (fetch-more 2/2) + lote inicial 100+100 com totalKnown 250/120 + cancel de batch (full 2/2) + UI BUSCAR MAIS (label/loading/retry, reload superset sem pular topo, X de Y totalKnown) + polling 240 de volta + fetchMore puro 8/8; lab 99/99 (91+8), runs 9/9 + isnew 2/2 sem regressão; tsc+eslint verdes, any 0; auditoria 0 crit/0 high
 - 08-08: gap-closure auditoria externa Hermes 12/09 (UI-14 lado CAPES, d92b50f+e663c8b): payload sem combo Ano×Grau (hasDegree via canonicalDocTypes — só Grau efetivo suprime Ano; validação range/invertido mantida antes da rede nos dois ramos) + mapper year dataDefesa-first ISO com fallback ano/year (yearFromValue NÃO estendido — YEAR_PATTERN já extrai, provado por teste) + 6 casos de contrato (período+tipo sem Ano/com Grau; só-período com Ano; dataDefesa→2024 + postFilter in/out; sem-ano→null + null passa; range>30a e invertido com Grau); contrato 21/21 + monorepo 209/209 (PG-skips offline) + tsc raiz + eslint verdes, any 0; auditoria 0 crit/0 high
+- 08-09: decisões Paulo 12/09 DEFINITIVAS (UI-13/UI-14, c677872+538299c+90255bd): MP terceiro valor separado fim-a-fim (contrato enum+max3 sem migration; canonical MP-first em capes/postFilter/bdtd; degreeLabel/labels UI próprios; tese/dissertação nunca absorvem MP) + payload CAPES Ano-only (REVISÃO do Grau-only 08-08: ano+tipo e unilateral+tipo → só Ano, só-tipo → Grau, nunca combo, área nunca à fonte, validações mantidas) + termo cru sem auto-aspas (aspas explícitas intactas, D-09 intacto) + checkbox MP + hint 2026 (CAPES total 0 + yearTo≥2026, só dados da tela) + BDTD MP-only sem format[] (Rule 1, molde 2-formatos); contrato 26/26 + monorepo 214/214 (PG-skips offline) + lab 100/100 + tsc raiz/lab + eslint verdes, any 0; auditoria 0 crit/0 high (T-08-09-01/02 mitigados)
 
 ### Pending Todos
 
@@ -128,6 +129,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-13T02:12:00Z
-Stopped at: Phase 8 plan 08-08 complete (payload CAPES sem Ano×Grau + year dataDefesa + contrato 21/21, monorepo 209/209) — Phase 8 ESTENDIDA 8/8, next phase 9. Nota: re-teste humano UAT 07-HUMAN-UAT item 1 (EXECUTAR AGORA via tailnet) segue pendente em paralelo, junto com 06-HUMAN-UAT; UAT da fase 8 (autocomplete/criar/modal/ficha/retry + BUSCAR MAIS/loading/retry/scroll + cancel de lote + busca período+tipo Paulo) entra na fila.
+Last session: 2026-09-13T03:05:00Z
+Stopped at: Phase 8 plan 08-09 complete (decisões Paulo definitivas: MP separado + termo cru + Ano-only sem Grande Área + checkbox MP + hint 2026, monorepo 214/214 + lab 100/100) — Phase 8 ESTENDIDA 9/9, next phase 9. Nota: re-teste humano UAT 07-HUMAN-UAT item 1 (EXECUTAR AGORA via tailnet) segue pendente em paralelo, junto com 06-HUMAN-UAT; UAT da fase 8 (autocomplete/criar/modal/ficha/retry + BUSCAR MAIS/loading/retry/scroll + cancel de lote + busca período+tipo Paulo + MP + termo multi-palavra) entra na fila.
 Resume file: none (Phase 8 complete; 08-04 SUMMARY em .planning/phases/08-resultados-triagem/08-04-SUMMARY.md). Nota: re-teste humano UAT 06-HUMAN-UAT (LISTA ROLA web+nativo) segue pendente em paralelo.

@@ -70,7 +70,7 @@ Plans:
   2. User decide elegível/não/indeciso com reversão imediata e associa tags com autocomplete + gestão de tags
   3. User identifica itens novos pelo badge "NOVO" e abre ficha completa sob demanda sem travar a lista
   4. Busca 100% alcançável por puxadas SEM run longo (decisão Paulo 12/09 REVISADA 08-07, substitui 08-06): run inicial em lote 100/fonte + BUSCAR MAIS sob demanda, UI acompanha e cancela
-**Plans**: 8 plans in 8 waves
+**Plans**: 9 plans in 9 waves
 
 Plans:
 - [x] 08-01-PLAN.md — CORE: fix isNew só-anteriores + groups expõem tags/divergências/decidedAt + rename/delete de tags (Wave 1) — done 2026-09-12 (f13a482, d4c73c5)
@@ -81,6 +81,7 @@ Plans:
 - [x] 08-06-PLAN.md — Busca completa Paulo 12/09: loop 50/pág até o total + timeout 30min + progresso + UI 30min/cancela (Wave 6, depends on 08-01/08-03) — done 2026-09-13 (caf30b6, 09f8a90, 639bafb) — SUPERSEDED por 08-07 (decisão revisada)
 - [x] 08-07-PLAN.md — Lote incremental Paulo 12/09 REVISADA: run 1 lote 100/fonte + fetch-more/BUSCAR MAIS + newCount por lote + UI X de Y + polling 240 (Wave 7, depends on 08-01/08-02) — done 2026-09-13 (294d305, a9e792f, f8093e7)
 - [x] 08-08-PLAN.md — Gap-closure auditoria externa Hermes 12/09: payload CAPES sem combo Ano+Grau + year de dataDefesa + 6 casos de contrato (Wave 8, depends on 08-01) — done 2026-09-13 (d92b50f, e663c8b)
+- [x] 08-09-PLAN.md — Decisões Paulo 12/09 DEFINITIVAS: MP terceiro valor separado + termo cru sem auto-aspas + payload Ano-only (revisa Grau-only 08-08) + sem Grande Área + checkbox MP + hint 2026 (Wave 9, depends on 08-01/08-08) — done 2026-09-13 (c677872, 538299c, 90255bd)
 
 #### Phase 9: Corpus, exportação e comparação
 **Goal**: Pesquisador fecha o corpus derivado, exporta por grupo inteiro e escolhe a estratégia de referência
