@@ -3,7 +3,7 @@
 ## Milestones
 
 - ✅ **v1.0 CORE v1 + Lab v1** — Phases 1-5 (shipped 2026-09-11)
-- 🚧 **v1.1 Lab UI v1** — Phases 6-9 (in progress)
+- 🚧 **v1.1 Lab UI v1** — Phases 6-9 (shipped 2026-09-13)
 
 ## Phases
 
@@ -18,93 +18,21 @@
 
 </details>
 
-### 🚧 v1.1 Lab UI v1 (In Progress)
+### ✅ v1.1 Lab UI v1 (SHIPPED 2026-09-13)
 
 **Milestone Goal:** Pesquisador usa o Lab por interface tablet-first (web/PWA beta + nativo) consumindo SOMENTE o CORE — slice vertical login → corpus/export primeiro, comparação por último.
 
-#### Phase 6: Fundação do app + auth + suporte CORE — ✅ COMPLETE 2026-09-11
-**Goal**: App Expo abre na web e no tablet, autentica nos dois canais e o CORE expõe o que a UI precisa (§14)
-**Depends on**: Phase 5
-**Requirements**: UI-01, UI-02, UI-03, UI-04, UI-05, UI-06, UI-07, UI-08, UI-30, UI-31, UI-32
-**Success Criteria** (what must be TRUE):
-  1. User abre o app Expo na web (expo web) e no tablet sem erro de build, com navegação entre telas e estados vazio/carregando/erro/parcial
-  2. User faz login na web (cookie httpOnly) e no nativo (PAT em secure storage), registra-se por convite e cai no login com aviso ao expirar a sessão
-  3. `referenceSearchId` persiste por migration e `isNew` aparece no GET results sem coluna nova (testes de isolamento/IDOR verdes)
-  4. Web beta carrega dados da API via CORS a partir da origem aprovada; gates do app verdes (typecheck strict, lint, testes, bundle sem segredos)
-**Plans**: 4 plans in 3 waves + 1 gap-closure plan (UAT)
+<details>
+<summary>✅ v1.1 Lab UI v1 (Phases 6-9) — SHIPPED 2026-09-13 (26 plans, UATs approved, audit tech_debt)</summary>
 
-Plans:
-- [x] 06-01: Suporte CORE — referenceSearchId + isNew + CORS (Wave 1) — done 2026-09-11 (a2f12d5, dbd02b5, b293c3c)
-- [x] 06-02: Scaffold Expo + client tipado + navegação esqueleto (Wave 1) — done 2026-09-11 (bef85d9, aad160f)
-- [x] 06-03: Auth web cookie + PAT nativo + convite + expiração (Wave 2, blocked on 06-02) — done 2026-09-11 (83527eb, d60f213)
-- [x] 06-04: Estados §11 + gates + prova beta com dados reais (Wave 3, blocked on 06-03) — done 2026-09-11 (37ef874, 768135c)
-- [x] 06-05: Gap-closure UAT — lista rolável FlatList + ScrollView + tripwire (Wave 4, gap 06-HUMAN-UAT) — done 2026-09-11 (4592cd3, ee663f1)
+- [x] Phase 6: Fundação do app + auth + suporte CORE (5/5 plans) — completed 2026-09-11
+- [x] Phase 7: Projetos, buscas e execução (6/6 plans) — completed 2026-09-12 (UAT 4/4 tablet Paulo)
+- [x] Phase 8: Resultados e triagem (9/9 plans) — completed 2026-09-13 (UAT 3/3 tablet Paulo)
+- [x] Phase 9: Corpus, exportação e comparação (6/6 plans) — completed 2026-09-13 (UAT 7/7)
 
-Cross-cutting constraints: CORS allowlist exata sem espelho (06-01, 06-04); `any` proibido + `import type` de contracts (todos); ownerId sempre do ator no servidor (06-01, 06-03).
+Full details: milestones/v1.1-ROADMAP.md
 
-#### Phase 7: Projetos, buscas e execução — ✅ COMPLETE 2026-09-12 (UAT 4/4 tablet Paulo)
-**Goal**: Pesquisador organiza projetos, define estratégias e executa buscas com acompanhamento do run
-**Depends on**: Phase 6
-**Requirements**: UI-09, UI-10, UI-11, UI-12, UI-13, UI-14, UI-15, UI-16
-**Success Criteria** (what must be TRUE):
-  1. User cria/arquiva/reativa projetos, edita a pergunta e navega por abas com contador de corpus vivo
-  2. User salva estratégia (só salvar ou salvar-e-executar) com selo de filtro garantido pelo Core e status das fontes
-  3. User executa busca, acompanha progresso por fonte (cancelável) e entende banners ok/parcial/falha/cancelled
-  4. User exclui busca somente após diálogo listando a cascata; histórico de runs consultável
-**Plans**: 5 plans in 4 waves + 1 gap-closure (UAT) + 1 UX request (Paulo 12/09)
-
-Plans:
-- [x] 07-01-PLAN.md — Projetos: modal criar + lista gerenciável + cabeçalho editável com abas (Wave 1) — done 2026-09-12 (1965da1, 4817ef0)
-- [x] 07-02-PLAN.md — Estratégias: cards + formulário §6 salvar/salvar-e-executar (Wave 1) — done 2026-09-12 (df7c5e1, 76bdd54)
-- [x] 07-03-PLAN.md — Execução: polling por fonte + cancelar + banners (Wave 2, blocked on 07-02) — done 2026-09-12 (637b0ca, e585c41)
-- [x] 07-04-PLAN.md — Cascata de exclusão + histórico expansível no card (Wave 3, blocked on 07-02, 07-03) — done 2026-09-12 (89841a3, 4e114b1)
-- [x] 07-05-PLAN.md — Gap-closure UAT: wrapper UUID cross-platform (expo-crypto + fallback) + migração dos 3 toques + tripwire (Wave 4, gap 07-HUMAN-UAT item 1) — done 2026-09-12 (d84025d, eb6b2c2)
-- [x] 07-06-PLAN.md — UX Paulo 12/09: lápis ✎ inline no cabeçalho (título + pergunta, PATCH existente) (Wave 5, depends on 07-01) — done 2026-09-12 (e758388, c43ea39)
-
-#### Phase 8: Resultados e triagem — ✅ COMPLETE 2026-09-13 (UAT 3/3 tablet Paulo)
-**Goal**: Pesquisador tria resultados item a item com decisão mutável, tags e transparência de dedup
-**Depends on**: Phase 7
-**Requirements**: UI-17, UI-18, UI-19, UI-20, UI-21, UI-22, UI-14 (busca completa)
-**Success Criteria** (what must be TRUE):
-  1. User lê cards com proveniência completa e expande grupos deduplicados (origens, links, diferenças, divergência por fonte)
-  2. User decide elegível/não/indeciso com reversão imediata e associa tags com autocomplete + gestão de tags
-  3. User identifica itens novos pelo badge "NOVO" e abre ficha completa sob demanda sem travar a lista
-  4. Busca 100% alcançável por puxadas SEM run longo (decisão Paulo 12/09 REVISADA 08-07, substitui 08-06): run inicial em lote 100/fonte + BUSCAR MAIS sob demanda, UI acompanha e cancela
-**Plans**: 9 plans in 9 waves
-
-Plans:
-- [x] 08-01-PLAN.md — CORE: fix isNew só-anteriores + groups expõem tags/divergências/decidedAt + rename/delete de tags (Wave 1) — done 2026-09-12 (f13a482, d4c73c5)
-- [x] 08-02-PLAN.md — Client triagem + lista infinita com filtros + cards proveniência/NOVO + run linkado (Wave 2, blocked on 08-01) — done 2026-09-12 (e8da752, 940f4be)
-- [x] 08-03-PLAN.md — Decisão mutável + grupo expansível com divergência (Wave 3, blocked on 08-02) — done 2026-09-12 (62b9f47, 28c3cff)
-- [x] 08-04-PLAN.md — Tags autocomplete + modal gestão + ficha sob demanda (Wave 4, blocked on 08-03) — done 2026-09-12 (44443b3, 143a3a1, 223d68e)
-- [x] 08-05-PLAN.md — Gap-closure auditoria: fix TS2345 closures isNew + typecheck raiz verde + revalidação 12/12 (Wave 5, gap audit) — done 2026-09-12 (92f806f)
-- [x] 08-06-PLAN.md — Busca completa Paulo 12/09: loop 50/pág até o total + timeout 30min + progresso + UI 30min/cancela (Wave 6, depends on 08-01/08-03) — done 2026-09-13 (caf30b6, 09f8a90, 639bafb) — SUPERSEDED por 08-07 (decisão revisada)
-- [x] 08-07-PLAN.md — Lote incremental Paulo 12/09 REVISADA: run 1 lote 100/fonte + fetch-more/BUSCAR MAIS + newCount por lote + UI X de Y + polling 240 (Wave 7, depends on 08-01/08-02) — done 2026-09-13 (294d305, a9e792f, f8093e7)
-- [x] 08-08-PLAN.md — Gap-closure auditoria externa Hermes 12/09: payload CAPES sem combo Ano+Grau + year de dataDefesa + 6 casos de contrato (Wave 8, depends on 08-01) — done 2026-09-13 (d92b50f, e663c8b)
-- [x] 08-09-PLAN.md — Decisões Paulo 12/09 DEFINITIVAS: MP terceiro valor separado + termo cru sem auto-aspas + payload Ano-only (revisa Grau-only 08-08) + sem Grande Área + checkbox MP + hint 2026 (Wave 9, depends on 08-01/08-08) — done 2026-09-13 (c677872, 538299c, 90255bd)
-
-#### Phase 9: Corpus, exportação e comparação
-**Goal**: Pesquisador fecha o corpus derivado, exporta por grupo inteiro e escolhe a estratégia de referência
-**Depends on**: Phase 8
-**Requirements**: UI-23, UI-24, UI-25, UI-26, UI-27, UI-28, UI-29
-**Success Criteria** (what must be TRUE):
-  1. User vê o corpus como view derivada consistente após cada decisão, filtra por tag/fonte/ano e exporta seleção (grupo inteiro) ou corpus completo em CSV/BibTeX/JSON
-  2. User compara 2–4 buscas lado a lado, vê o destaque "mais inclusiva" e marca manualmente a referência do projeto (persistida)
-  3. Gate do milestone: slice vertical completo login → corpus/export provado na web beta + auditoria adversarial do app + revisão humana
-**Plans**: 6 plans in 3 waves
-
-Plans:
-**Wave 1** (parallel, zero file overlap):
-- [x] 09-01-PLAN.md — CORE BibTeX MP: `type={Mestrado profissional}` em `exports.ts:117` + 3 casos smoke (Wave 1) — done 2026-09-13 (8e1c6be, 0a27e8d)
-- [x] 09-02-PLAN.md — Corpus real: contador vivo + filtros tag/fonte/ano + FlatList + selecao por grupo inteiro (Wave 1) — done 2026-09-13 (51f3cc2, a7d1aca)
-- [x] 09-04-PLAN.md — Compare 2-4 lado a lado + helpers + ★ mais inclusiva + rota na TabBar (Wave 1) — done 2026-09-13 (865c0e3, 0488c2c, cc46067)
-**Wave 2** *(blocked on Wave 1 completion)*:
-- [x] 09-03-PLAN.md — Export UI: selecao/grupo-inteiro + completo nos 3 formatos, blob+anchor web e Share nativo, BibTeX vazio avisa (Wave 2, blocked on 09-02) — done 2026-09-13 (ce583cb, c36892d)
-- [x] 09-05-PLAN.md — Referencia manual: selo no card + troca 1 toque + coluna destacada, sem efeito funcional (Wave 2, blocked on 09-04) — done 2026-09-13 (3a98c1e, f3f27ff)
-**Wave 3** *(blocked on Wave 2 completion)*:
-- [x] 09-06-PLAN.md — Gate do milestone: gates + prova beta slice vertical + IDOR 4x4 + auditoria + UAT humana (Wave 3, blocked on 09-01/09-03/09-05, has checkpoint) — done 2026-09-13 (d72b6ab, UAT approved)
-
-Cross-cutting constraints: `any` proibido + `import type` de contracts (todos); ownerId sempre do ator no servidor + 401 expired+next (09-02..09-06); grupo inteiro = uma referencia (09-02, 09-03); referencia so memoria sem efeito funcional (09-02, 09-05); sem `menos ruido` em codigo ou texto (09-04, 09-06); zero dep nova expo-sharing/file-system (09-03, 09-06).
+</details>
 
 ## Progress
 

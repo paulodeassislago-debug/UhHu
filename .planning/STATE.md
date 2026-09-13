@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Lab UI v1
-status: "executing — phase 9 COMPLETE (09-01 CORE BibTeX MP done, 09-02 Corpus real done, 09-03 Export UI done, 09-04 Compare done, 09-05 Referencia done, 09-06 Gate done + UAT approved)"
-stopped_at: Phase 9 plan 09-06 complete (milestone v1.1 ready to close)
-last_updated: "2026-09-13T15:30:00Z"
-last_activity: "2026-09-13 — Phase 9 plan 09-06 complete (Gate: beta LIVE API :3009/web :8081 Projeto Corpus 90, 3 attachments, compare 4 blocos, IDOR 16/16, audit 0 crit/0 high, UAT approved; d72b6ab parseDocType MP fix)"
+status: "v1.1 Lab UI v1 SHIPPED 2026-09-13 (tag v1.1) — planning next milestone"
+stopped_at: Milestone v1.1 archived (milestones/v1.1-ROADMAP.md + v1.1-REQUIREMENTS.md; REQUIREMENTS.md removed fresh for next)
+last_updated: "2026-09-13T16:00:00Z"
+last_activity: "2026-09-13 — Milestone v1.1 closed (26/26 plans phases 6-9, UATs approved, audit tech_debt, tag v1.1)"
 progress:
   total_phases: 4
   completed_phases: 0
@@ -18,18 +18,20 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-09-11)
+See: .planning/PROJECT.md (updated 2026-09-13)
 
 **Core value:** Um pesquisador usa o Lab por interface tablet-first (web/PWA beta + nativo) consumindo SOMENTE o CORE — do login ao corpus exportado.
-**Current focus:** Defining requirements for v1.1 Lab UI v1 (research skipped; esqueleto §14 + spec §9 as base)
+**Current focus:** Planning next milestone (`/gsd-new-milestone`; REQUIREMENTS.md fresh)
 
 ## Current Position
 
-Phase: 9 of 9 (Wave 1 done — 09-01, 09-02, 09-04; Wave 2 done — 09-03, 09-05; Wave 3 done — 09-06 Gate + UAT approved)
-Plan: 06 complete
-Status: Phase 9 COMPLETE 6/6, milestone v1.1 ready to close
-Last activity: 2026-09-13 — Phase 9 plan 09-06 complete (Gate beta LIVE + IDOR 16/16 + audit 0 crit/0 high + UAT approved; d72b6ab)
-Resume file: .planning/phases/09-corpus-exportacao-comparacao/09-06-SUMMARY.md
+Phase: — (v1.1 phases 6–9 all complete, milestone archived)
+Plan: —
+Status: v1.1 SHIPPED 2026-09-13, tag v1.1
+Last activity: 2026-09-13 — Milestone v1.1 archived + tagged
+Resume file: None (next: `/gsd-new-milestone`)
+
+Progress: [████████████████████] v1.1 COMPLETE 26/26 plans (phases 6-9) + UATs approved + audit tech_debt
 
 Progress: [████████████████████░░] 9/9 plans phase 8 + UAT approved (milestone v1.1 phases 6-8/9 done)
 
