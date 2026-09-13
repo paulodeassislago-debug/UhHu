@@ -97,7 +97,7 @@ Plans:
 **Wave 1** (parallel, zero file overlap):
 - [x] 09-01-PLAN.md — CORE BibTeX MP: `type={Mestrado profissional}` em `exports.ts:117` + 3 casos smoke (Wave 1) — done 2026-09-13 (8e1c6be, 0a27e8d)
 - [x] 09-02-PLAN.md — Corpus real: contador vivo + filtros tag/fonte/ano + FlatList + selecao por grupo inteiro (Wave 1) — done 2026-09-13 (51f3cc2, a7d1aca)
-- [ ] 09-04-PLAN.md — Compare 2-4 lado a lado + helpers + ★ mais inclusiva + rota na TabBar (Wave 1)
+- [x] 09-04-PLAN.md — Compare 2-4 lado a lado + helpers + ★ mais inclusiva + rota na TabBar (Wave 1) — done 2026-09-13 (865c0e3, 0488c2c, cc46067)
 **Wave 2** *(blocked on Wave 1 completion)*:
 - [ ] 09-03-PLAN.md — Export UI: selecao/grupo-inteiro + completo nos 3 formatos, blob+anchor web e Share nativo, BibTeX vazio avisa (Wave 2, blocked on 09-02)
 - [ ] 09-05-PLAN.md — Referencia manual: selo no card + troca 1 toque + coluna destacada, sem efeito funcional (Wave 2, blocked on 09-04)
@@ -121,4 +121,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 6. Fundação do app + auth + suporte CORE | v1.1 | 5/5 | Complete | 2026-09-11 |
 | 7. Projetos, buscas e execução | v1.1 | 6/6 | Complete | 2026-09-12 |
 | 8. Resultados e triagem | v1.1 | 8/8 | Complete | 2026-09-13 |
-| 9. Corpus, exportação e comparação | v1.1 | 2/6 | Executing (Wave 1) | - |
+| 9. Corpus, exportação e comparação | v1.1 | 3/6 | Executing (Wave 1 done, Wave 2 ready) | - |
