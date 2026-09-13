@@ -23,6 +23,7 @@ import {
   type DocType,
   type ExecutableSource,
   type PageInfo,
+  type PerSourceMetrics,
   type ResultDTO,
   type RunErrorInfo,
   type RunMetrics,
@@ -136,14 +137,7 @@ function parseRunMetrics(value: unknown): RunMetrics {
   if (typeof bdtd !== 'object' || bdtd === null || typeof capes !== 'object' || capes === null) {
     return fallback;
   }
-  const parseOne = (
-    entry: Record<string, unknown>,
-  ): {
-    status: 'ok' | 'failed' | 'skipped';
-    total: number;
-    returned: number;
-    durationMs: number;
-  } | null => {
+  const parseOne = (entry: Record<string, unknown>): PerSourceMetrics | null => {
     const status = entry['status'];
     const total = entry['total'];
     const returned = entry['returned'];
@@ -160,7 +154,31 @@ function parseRunMetrics(value: unknown): RunMetrics {
     if (typeof durationMs !== 'number' || !Number.isSafeInteger(durationMs) || durationMs < 0) {
       return null;
     }
-    return { status, total, returned, durationMs };
+    const out: PerSourceMetrics = { status, total, returned, durationMs };
+    // 08-06 (busca completa): progresso aditivo do loop de páginas (§19).
+    // Ausente = linha legada (sem fallback); presente mas malformado = linha
+    // suspeita → fallback fail-closed como os campos centrais.
+    const pagesFetched = entry['pagesFetched'];
+    if (pagesFetched !== undefined) {
+      if (
+        typeof pagesFetched !== 'number' ||
+        !Number.isSafeInteger(pagesFetched) ||
+        pagesFetched < 0
+      ) {
+        return null;
+      }
+      out.pagesFetched = pagesFetched;
+    }
+    const pagesTotal = entry['pagesTotal'];
+    if (pagesTotal !== undefined && pagesTotal !== null) {
+      if (typeof pagesTotal !== 'number' || !Number.isSafeInteger(pagesTotal) || pagesTotal < 0) {
+        return null;
+      }
+      out.pagesTotal = pagesTotal;
+    } else if (pagesTotal === null) {
+      out.pagesTotal = null;
+    }
+    return out;
   };
   const bdtdParsed = parseOne(bdtd as Record<string, unknown>);
   const capesParsed = parseOne(capes as Record<string, unknown>);

@@ -402,52 +402,27 @@ export async function executeSearchRun(
         }
       };
 
-      // D-38: retry de challenge SÓ na página 1 (jar já renovado pelo
-      // SourceClient) — 1 retry único com jar novo; demais páginas têm
-      // tentativa única (08-06).
-      let firstPage = await attemptPage(1);
-      let challengeSeen = firstPage.sourceStatus === 'challenge';
-      if (challengeSeen && !controller.signal.aborted) {
-        firstPage = await attemptPage(1);
-        challengeSeen = true;
-      }
-
-      if (firstPage.sourceStatus !== 'ok') {
-        const durationMs = Date.now() - startedSource;
-        perSource[source] = {
-          status: 'failed',
-          total: 0,
-          returned: 0,
-          durationMs,
-          pagesFetched: 0,
-          pagesTotal: null,
-        };
-        const reason = controller.signal.aborted
-          ? 'tempo esgotado'
-          : challengeSeen
-            ? 'bloqueio anti-robô'
-            : 'indisponível';
-        failParts.push(`${source} ${reason}`);
-        await recordSourceEvent(db, source, false, challengeSeen);
-        continue;
-      }
-
       // Loop de páginas 08-06 (busca COMPLETA, sem teto): `perPage: 50` até
       // `coletados >= total` OU página vazia (total mentiroso/infinito) OU
       // página só com itens já vistos (anti-loop) OU abort/cancel.
-      // Cancelamento (`readRunStatus`) e `aborted` checados A CADA página —
-      // run longo cancelável de verdade. Falha após a página 1 preserva o
-      // coletado e marca a fonte failed → run parcial (D-37), nunca apaga.
+      // Cancelamento (`readRunStatus`) e `aborted` checados A CADA página,
+      // ANTES do fetch — run longo cancelável de verdade. A página em voo
+      // quando o cancel chega ainda é processada (coletado preservado, nunca
+      // apagado). Falha após a página 1 preserva o coletado e marca a fonte
+      // failed → run parcial (D-37). Retry de challenge (D-38) SÓ na página 1
+      // (jar já renovado pelo SourceClient — 1 retry único; demais páginas
+      // têm tentativa única).
       let fetchedRaw = 0;
       let keptTotal = 0;
       let lastTotal: number | null = null;
       let pagesFetched = 0;
+      let challengeSeen = false;
       const seenIds = new Set<string>();
-      let pageNum = 1;
-      let current = firstPage;
+      let pageNum = 0;
       let stoppedByCancel = false;
       let abortedMidLoop = false;
       let midLoopFailed = false;
+      let pageOneFailed = false;
 
       while (true) {
         const statusNow = await readRunStatus(db, runId);
@@ -460,8 +435,21 @@ export async function executeSearchRun(
           abortedMidLoop = true;
           break;
         }
+        pageNum += 1;
+        let current = await attemptPage(pageNum);
+        if (pageNum === 1) {
+          challengeSeen = current.sourceStatus === 'challenge';
+          if (challengeSeen && !controller.signal.aborted) {
+            current = await attemptPage(1);
+            challengeSeen = true;
+          }
+        }
         if (current.sourceStatus !== 'ok') {
-          midLoopFailed = true;
+          if (pageNum === 1) {
+            pageOneFailed = true;
+          } else {
+            midLoopFailed = true;
+          }
           break;
         }
         if (current.items.length === 0) {
@@ -519,12 +507,28 @@ export async function executeSearchRun(
         if (fetchedRaw >= (lastTotal ?? fetchedRaw)) {
           break;
         }
-        pageNum += 1;
-        current = await attemptPage(pageNum);
       }
 
       const durationMs = Date.now() - startedSource;
       const pagesTotal = lastTotal === null ? null : Math.ceil(lastTotal / RUN_FETCH_PER_PAGE);
+      if (pageOneFailed) {
+        perSource[source] = {
+          status: 'failed',
+          total: 0,
+          returned: 0,
+          durationMs,
+          pagesFetched: 0,
+          pagesTotal: null,
+        };
+        const reason = controller.signal.aborted
+          ? 'tempo esgotado'
+          : challengeSeen
+            ? 'bloqueio anti-robô'
+            : 'indisponível';
+        failParts.push(`${source} ${reason}`);
+        await recordSourceEvent(db, source, false, challengeSeen);
+        continue;
+      }
       if (stoppedByCancel) {
         // Cancel no meio do loop: preserva o coletado (métricas aterrissam no
         // update complementar final); o status final fica `cancelled`.
