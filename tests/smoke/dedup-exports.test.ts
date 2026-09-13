@@ -252,3 +252,23 @@ describe('toBibTeX entry types + toExportJSON', () => {
     expect(JSON.stringify(prov)).toContain('r1');
   });
 });
+
+describe('toBibTeX professionalMaster (D-26)', () => {
+  it("docType 'professionalMaster' gera @mastersthesis com Mestrado profissional", () => {
+    const out = toBibTeX([makeEntry({ docType: 'professionalMaster' })]);
+    expect(out).toContain('@mastersthesis{');
+    expect(out).toContain('Mestrado profissional');
+  });
+
+  it("docType 'masterThesis' gera @mastersthesis sem Mestrado profissional", () => {
+    const out = toBibTeX([makeEntry({ docType: 'masterThesis' })]);
+    expect(out).toContain('@mastersthesis{');
+    expect(out).not.toContain('Mestrado profissional');
+  });
+
+  it("docType 'doctoralThesis' gera @phdthesis sem Mestrado profissional", () => {
+    const out = toBibTeX([makeEntry({ docType: 'doctoralThesis' })]);
+    expect(out).toContain('@phdthesis{');
+    expect(out).not.toContain('Mestrado profissional');
+  });
+});
