@@ -272,6 +272,12 @@ export interface CapesSearchPayload {
  * Monta o payload rest/busca. `Ano` expande um filtro por ano; range >30 anos
  * lança RangeTooWideError ANTES de qualquer rede (T-03-03-03). `institution`
  * NÃO vai à fonte — só pós-filtro do Core (D-32).
+ *
+ * Evidência viva 12/09/2026 (API real): sem filtros 2936 | só Ano 3 |
+ * só Grau 1777 | Ano+Grau SEMPRE 0. A fonte zera ao combinar campos
+ * DIFERENTES — por isso, com filtro de Grau presente, NENHUM `Ano` é enviado
+ * e o período fica 100% com o postFilter do Core (D-32: fonte aproxima,
+ * Core garante). Sem Grau, `Ano` expande normal (só-Ano retorna).
  */
 export function buildCapesPayload(
   def: SearchDef,
@@ -283,6 +289,7 @@ export function buildCapesPayload(
     throw new Error('Adapter CAPES: termo de busca vazio.');
   }
   const filtros: CapesFiltro[] = [];
+  const hasDegree = canonicalDocTypes(def.docTypes).length > 0;
   const yearFrom = def.yearFrom;
   const yearTo = def.yearTo;
   if (yearFrom !== undefined && yearTo !== undefined) {
@@ -297,13 +304,22 @@ export function buildCapesPayload(
         `Intervalo de ${String(count)} anos excede o máximo de ${String(YEAR_RANGE_MAX)} por busca; refine o período.`,
       );
     }
-    for (let year = yearFrom; year <= yearTo; year += 1) {
-      filtros.push({ campo: 'Ano', valor: String(year) });
+    // Com Grau presente, Ano NÃO é enviado (fonte zera Ano×Grau, 12/09/2026).
+    // A validação acima continua lançando antes da rede — o período do usuário
+    // segue valendo para o postFilter do Core.
+    if (!hasDegree) {
+      for (let year = yearFrom; year <= yearTo; year += 1) {
+        filtros.push({ campo: 'Ano', valor: String(year) });
+      }
     }
   } else if (yearFrom !== undefined) {
-    filtros.push({ campo: 'Ano', valor: String(yearFrom) });
+    if (!hasDegree) {
+      filtros.push({ campo: 'Ano', valor: String(yearFrom) });
+    }
   } else if (yearTo !== undefined) {
-    filtros.push({ campo: 'Ano', valor: String(yearTo) });
+    if (!hasDegree) {
+      filtros.push({ campo: 'Ano', valor: String(yearTo) });
+    }
   }
   // Limite unilateral vira filtro do ano informado; o pós-filtro do Core aplica
   // o intervalo real (D-32: fonte aproxima, Core garante).
@@ -359,7 +375,9 @@ function mapCapesRecord(record: Record<string, unknown>): NormalizedItem | null 
     sourceId,
     title: truncate(title, TITLE_MAX_LENGTH),
     authors: authorsFrom(record['autor'] ?? record['autores'] ?? record['authors']),
-    year: yearFromValue(record['ano'] ?? record['year']),
+    // dataDefesa primeiro: a fonte devolve ISO ("2024-01-26T00:00:00.000Z") e
+    // YEAR_PATTERN já extrai os 4 dígitos; fallback em `ano`/`year` legado.
+    year: yearFromValue(record['dataDefesa'] ?? record['ano'] ?? record['year']),
     docType: canonicalDocType(
       record['grauAcademico'] ?? record['grau'] ?? record['degree'] ?? record['docType'],
     ),
