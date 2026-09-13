@@ -10,6 +10,7 @@ import {
   createTagSchema,
   decisionInputSchema,
   divergenceInputSchema,
+  fetchMoreRunsSchema,
   updateSearchSchema,
   updateTagSchema,
 } from '@uhhu/contracts';
@@ -21,6 +22,8 @@ import type {
   DecisionInput,
   DedupGroupDTO,
   DivergenceInput,
+  ExecutableSource,
+  FetchMoreResult,
   JobDTO,
   LabSource,
   PageInfo,
@@ -204,6 +207,24 @@ export const labApi = {
     return apiFetch<SearchRunDTO>(`/api/v1/jobs/${encodeURIComponent(jobId)}/cancel`, {
       ...toRequestOptions(opts),
       method: 'POST',
+    });
+  },
+
+  // -- BUSCAR MAIS incremental (08-07, decisão Paulo 12/09 REVISADA) --
+  // Lote +100/fonte sob demanda; offset sempre server-side (nunca input).
+  // `sources` opcional (default: fontes com hasMore no servidor).
+  async fetchMore(
+    runId: string,
+    input?: { sources?: ExecutableSource[] },
+    opts?: LabRequestOptions,
+  ): Promise<FetchMoreResult> {
+    const body = fetchMoreRunsSchema.parse(
+      input?.sources === undefined ? {} : { sources: input.sources },
+    );
+    return apiFetch<FetchMoreResult>(`/api/v1/lab/runs/${encodeURIComponent(runId)}/fetch-more`, {
+      ...toRequestOptions(opts),
+      method: 'POST',
+      body,
     });
   },
 

@@ -3,9 +3,11 @@
 // Rota /project/[id]/results?runId=<uuid>&searchId=<uuid> (o run concluído
 // abre aqui via botão Ver resultados). Blocos:
 // - Cabeçalho com contadores: `N NOVOS desde a última execução` (newCount da
-//   primeira página) mais `mostrando X de Y` (visíveis após filtro sobre
-//   carregados, com overrides aplicados) + botão `[Tags]` que abre o
-//   `TagManagerModal` sem sair da triagem (D-21).
+//   primeira página, atualizado a cada BUSCAR MAIS) mais `mostrando X de Y`
+//   (visíveis após filtro sobre carregados, com overrides aplicados; Y =
+//   totalKnown do servidor — soma dos `total` das fontes executadas, não
+//   armazenados) + botão `[Tags]` que abre o `TagManagerModal` sem sair da
+//   triagem (D-21).
 // - Barra de filtros combináveis client-side (D-17): estado com cinco
 //   opções, tag via lista horizontal do projeto mais todas, fonte com três
 //   opções, ano via campo numérico onde vazio vale todos. Filtros operam sobre
@@ -28,7 +30,14 @@
 //   do result, onEndReached com threshold 0.5 e guarda de loadingMore, sem
 //   botão de paginar e sem páginas numeradas.
 // - Pagina por page.nextCursor com append na ordem do servidor.
-// - Segue hasMore até esgotar; nextCursor nulo marca o fim.
+// - Segue hasMore até esgotar; nextCursor nulo marca o fim do ESTOQUE LOCAL.
+// - BUSCAR MAIS incremental (08-07, decisão Paulo 12/09 REVISADA): ao fim do
+//   estoque, se o run tem hasMore em qualquer fonte (totalKnown do servidor),
+//   o rodapé mostra "BUSCAR MAIS — mais 100 de ~Y"; loading desabilita
+//   ("buscando mais 100…", double-tap não duplica — guarda no hook + servidor
+//   com onConflictDoNothing); erro mostra retry local; sucesso anexa o lote e
+//   o scroll continua de onde parou (replace por superset com mesmo prefixo).
+//   Sem hasMore → fim silencioso ("fim da lista").
 // - Estados §11: skeleton triplo no início, ErrorBanner com repetir no erro,
 //   Empty orientador no vazio, aviso de fim ao esgotar.
 // - runId fora de uuid mostra `Resultados inválidos` com Voltar e sem
@@ -44,6 +53,7 @@ import type { DedupGroupDTO, ResultDTO } from '@uhhu/contracts';
 import { ApiError } from '../../../src/api/client';
 import { useAuth } from '../../../src/auth/session';
 import { useResultsList } from '../../../src/results/useResultsList';
+import { fetchMoreLabel } from '../../../src/results/fetchMore';
 import { ResultCard } from '../../../src/results/ResultCard';
 import { TagManagerModal } from '../../../src/results/TagManagerModal';
 import { applyResultFilters } from '../../../src/results/triage';
@@ -122,6 +132,10 @@ export default function ResultsScreen(): JSX.Element {
 
   function handleEndReached(): void {
     void list.loadMore();
+  }
+
+  function handleFetchMore(): void {
+    void list.fetchMore();
   }
 
   function handleRefresh(): void {
@@ -317,7 +331,7 @@ export default function ResultsScreen(): JSX.Element {
             {list.newCount} NOVOS desde a última execução
           </Text>
           <Text>
-            mostrando {visibleItems.length} de {effectiveAllItems.length}
+            mostrando {visibleItems.length} de {list.runInfo?.totalKnown ?? list.total}
           </Text>
           <View style={{ gap: 8 }}>
             <Text style={{ fontWeight: '600' }}>Estado</Text>
@@ -398,7 +412,28 @@ export default function ResultsScreen(): JSX.Element {
         <View style={{ gap: 8, paddingVertical: 12 }}>
           {list.loadingMore ? <Text>carregando…</Text> : null}
           {list.loadMoreError !== null ? <Text>{list.loadMoreError.message}</Text> : null}
-          {!list.hasMore && list.allItems.length > 0 && !list.loadingMore ? (
+          {list.fetchMoreError !== null && !list.fetchMoreLoading ? (
+            <View style={{ gap: 8 }}>
+              <Text>{list.fetchMoreError.message}</Text>
+              <Button title="tentar de novo" onPress={handleFetchMore} />
+            </View>
+          ) : null}
+          {list.runInfo?.hasMore === true && list.fetchMoreError === null ? (
+            <Button
+              title={
+                list.fetchMoreLoading
+                  ? 'buscando mais 100…'
+                  : fetchMoreLabel(list.runInfo.remainingKnown)
+              }
+              disabled={list.fetchMoreLoading}
+              onPress={handleFetchMore}
+            />
+          ) : null}
+          {!list.hasMore &&
+          list.runInfo?.hasMore !== true &&
+          list.allItems.length > 0 &&
+          !list.loadingMore &&
+          !list.fetchMoreLoading ? (
             <Text>fim da lista</Text>
           ) : null}
         </View>

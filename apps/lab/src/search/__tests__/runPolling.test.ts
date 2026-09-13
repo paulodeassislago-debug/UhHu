@@ -75,14 +75,14 @@ describe('formatDurationMs (duração do cabeçalho)', () => {
   });
 });
 
-describe('RUN_POLL_MAX_POLLS (teto 30min da 08-06, cobre o servidor)', () => {
-  it('720 polls × 2.5s = 30min (teto do RUN_QUEUE_TIMEOUT_MS)', () => {
-    expect(RUN_POLL_MAX_POLLS).toBe(720);
-    expect(RUN_POLL_INTERVAL_MS * RUN_POLL_MAX_POLLS).toBe(30 * 60_000);
+describe('RUN_POLL_MAX_POLLS (teto 10min da 08-07, runs curtos de novo)', () => {
+  it('240 polls × 2.5s = 10min (cobre os lotes de 60s com folga)', () => {
+    expect(RUN_POLL_MAX_POLLS).toBe(240);
+    expect(RUN_POLL_INTERVAL_MS * RUN_POLL_MAX_POLLS).toBe(10 * 60_000);
   });
 
-  it('sobrevive além dos 240 polls antigos sem timeout falso', () => {
-    expect(RUN_POLL_MAX_POLLS).toBeGreaterThan(240);
+  it('voltou aos 240 (o eager 08-06 de 720 foi substituído pelo lote 08-07)', () => {
+    expect(RUN_POLL_MAX_POLLS).toBeLessThanOrEqual(240);
   });
 });
 

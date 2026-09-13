@@ -19,8 +19,10 @@
 // - Rodapé terminal com contagem de novos + botão Ver resultados para a
 //   lista real da fase 8 (destino /project/[id]/results?runId=<uuid>,
 //   succeeded/partial; failed/cancelled mantêm fluxos).
-// - Polling via useRunPolling (2500ms, teto 720 ≈ 30min, para em terminal/timeout/unmount;
+// - Polling via useRunPolling (2500ms, teto 240 ≈ 10min, para em terminal/timeout/unmount;
 //   cleanup nunca encerra no servidor — D-08: sair no meio e voltar retoma).
+//   Runs são curtos na 08-07 (lote 100/fonte, 60s no servidor); o Botão
+//   cancela-run segue vivo enquanto o run vive (lotes curtos cancelam rápido).
 // - runId ausente ou fora do formato uuid → ErrorBanner "Execução inválida" +
 //   Voltar, SEM request (query é hostil; T-07-03-01). 401 → expired/next com runId.
 // Guards são UX; autorização real continua no CORE (AGENTS.md). Text escapa por
