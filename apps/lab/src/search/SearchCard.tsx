@@ -41,6 +41,9 @@ export interface SearchCardProps {
   getToken: TokenProvider;
   onChanged: () => void;
   onDeleted: (searchId: string) => void;
+  projectId: string;
+  isReference: boolean;
+  onSetReference: (searchId: string) => void;
 }
 
 type RunsState = 'loading' | 'ready' | 'unavailable';
@@ -112,7 +115,15 @@ function formatRunDate(iso: string): string {
   return `${dd}/${mo}`;
 }
 
-export function SearchCard({ search, getToken, onChanged, onDeleted }: SearchCardProps): JSX.Element {
+export function SearchCard({
+  search,
+  getToken,
+  onChanged,
+  onDeleted,
+  projectId,
+  isReference,
+  onSetReference,
+}: SearchCardProps): JSX.Element {
   const router = useRouter();
   const { markExpired } = useAuth();
   const [runsState, setRunsState] = useState<RunsState>('loading');
@@ -158,9 +169,10 @@ export function SearchCard({ search, getToken, onChanged, onDeleted }: SearchCar
 
   function handleUnauthorized(): void {
     markExpired();
+    const nextProjectId = projectId.length > 0 ? projectId : search.projectId;
     router.replace({
       pathname: '/login',
-      params: { expired: '1', next: `/project/${search.projectId}/strategies` },
+      params: { expired: '1', next: `/project/${nextProjectId}/strategies` },
     });
   }
 
@@ -249,6 +261,15 @@ export function SearchCard({ search, getToken, onChanged, onDeleted }: SearchCar
           <Text>{runsLine}</Text>
           {lastLine !== null ? <Text>{lastLine}</Text> : null}
         </View>
+      )}
+      {isReference ? (
+        <Text style={{ fontWeight: '700' }}>Referência</Text>
+      ) : (
+        <Button
+          title="Usar como referência"
+          onPress={() => onSetReference(search.id)}
+          disabled={busy}
+        />
       )}
       {actionError !== null ? (
         <View style={{ gap: 2 }}>
