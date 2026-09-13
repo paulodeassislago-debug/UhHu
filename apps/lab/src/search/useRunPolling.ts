@@ -2,8 +2,8 @@
 //
 // `useRunPolling(runId, getToken)` acompanha o run no servidor via labApi.getRun:
 // getRun imediato + intervalo fixo de 2500ms; para (clearInterval) em estado
-// terminal, no teto de 240 tentativas (240 × 2500ms = 10 min → 'timeout') e no
-// unmount.
+// terminal, no teto de 720 tentativas (720 × 2500ms = 30 min → 'timeout',
+// cobre o teto do servidor da 08-06) e no unmount.
 // - Helpers testáveis desta unidade:
 //   isTerminalStatus (os 4 estados terminais do contrato),
 //   runStatusLabel (os 6 rótulos PT da tela),
@@ -27,9 +27,11 @@ import { labApi } from '../api/lab';
 // Intervalo fixo de polling: 2500ms (D-07; sem backoff nesta versão).
 export const RUN_POLL_INTERVAL_MS = 2500;
 
-// Teto de acompanhamento: 240 tentativas ≈ 10 min → pollState 'timeout'
-// ("Acompanhamento excedido — reabra a tela"; T-07-03-01).
-export const RUN_POLL_MAX_POLLS = 240;
+// Teto de acompanhamento: 720 tentativas ≈ 30 min → pollState 'timeout'
+// ("Acompanhamento excedido — reabra a tela"; T-07-03-01). Cobre o teto do
+// servidor da 08-06 (RUN_QUEUE_TIMEOUT_MS 30min): o acompanhamento continua
+// existindo com timeout, só maior — sem backoff nesta versão.
+export const RUN_POLL_MAX_POLLS = 720;
 
 // Falhas de rede seguidas antes de desistir de polir sozinho (a 3ª vira 'error'
 // com Repetir manual; o último run conhecido é preservado).
@@ -84,6 +86,23 @@ export function formatDurationMs(
 }
 
 export type RunPollState = 'loading' | 'polling' | 'terminal' | 'timeout' | 'error';
+
+// Progresso de páginas (08-06, busca completa): "buscando página X de ~Y"
+// quando o servidor traz pagesFetched/pagesTotal nas métricas; null = sem
+// métricas (a tela mantém o "buscando…" anterior). Pura, testável sem rede.
+export function formatPageProgress(
+  pagesFetched: number | undefined,
+  pagesTotal: number | null | undefined,
+): string | null {
+  if (typeof pagesFetched !== 'number' || pagesFetched <= 0) {
+    return null;
+  }
+  const current: number = pagesFetched + 1;
+  if (typeof pagesTotal === 'number' && pagesTotal > 0) {
+    return `buscando página ${current} de ~${pagesTotal}`;
+  }
+  return `buscando página ${current}`;
+}
 
 export interface RunPolling {
   run: SearchRunDTO | null;

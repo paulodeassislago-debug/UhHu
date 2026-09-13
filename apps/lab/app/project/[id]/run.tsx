@@ -4,10 +4,13 @@
 // form criam o run e chegam aqui). Blocos fiéis ao esqueleto §7:
 // - Cabeçalho: `Execução #<curta> — "<termo>"` + fontes + data + total + duração.
 // - Progresso por fonte sempre visível (pedidas em sourcesSnapshot × estado em
-//   perSource): "buscando…" no não-terminal, "<n> itens · <ms>ms" no terminal,
-//   "pulada"/"falhou" conforme a fonte. Blocos explícitos por fonte (BDTD/CAPES),
-//   sem iteração genérica sobre a lista (tripwire scroll-containers).
-// - Botão Cancelar visível SÓ em polling (D-07): cancelJob + estado local imediato;
+//   perSource, linha pura em src/search/pageProgress): "buscando…" no
+//   não-terminal, "buscando página X de ~Y" com métricas de páginas (08-06),
+//   "<n> itens · <ms>ms" no terminal, "pulada"/"falhou" conforme a fonte.
+//   Blocos explícitos por fonte (BDTD/CAPES), sem iteração genérica sobre a
+//   lista (tripwire scroll-containers).
+// - Botão Cancelar visível enquanto o run está vivo (08-06: sempre — inclui
+//   loading/timeout/erro de acompanhamento, quando o servidor ainda executa);
 //   some no terminal (o servidor rejeita terminar run terminal). Erro → banner.
 // - Banners por desfecho: succeeded → "ok" discreto; partial → PartialBanner âmbar
 //   (o que veio + o que faltou com o motivo); failed → ErrorBanner com o motivo
@@ -16,7 +19,7 @@
 // - Rodapé terminal com contagem de novos + botão Ver resultados para a
 //   lista real da fase 8 (destino /project/[id]/results?runId=<uuid>,
 //   succeeded/partial; failed/cancelled mantêm fluxos).
-// - Polling via useRunPolling (2500ms, teto 240, para em terminal/timeout/unmount;
+// - Polling via useRunPolling (2500ms, teto 720 ≈ 30min, para em terminal/timeout/unmount;
 //   cleanup nunca encerra no servidor — D-08: sair no meio e voltar retoma).
 // - runId ausente ou fora do formato uuid → ErrorBanner "Execução inválida" +
 //   Voltar, SEM request (query é hostil; T-07-03-01). 401 → expired/next com runId.
@@ -27,11 +30,12 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import type { JSX } from 'react';
 import { Button, ScrollView, Text, View } from 'react-native';
-import type { ExecutableSource, SearchRunDTO } from '@uhhu/contracts';
+import type { SearchRunDTO } from '@uhhu/contracts';
 import { ApiError } from '../../../src/api/client';
 import { labApi } from '../../../src/api/lab';
 import { useAuth } from '../../../src/auth/session';
 import { formatDurationMs, isTerminalStatus, useRunPolling } from '../../../src/search/useRunPolling';
+import { sourceProgressLine } from '../../../src/search/pageProgress';
 import { ErrorBanner } from '../../../src/ui/ErrorBanner';
 import { PartialBanner } from '../../../src/ui/PartialBanner';
 import { CardSkeleton } from '../../../src/ui/Skeleton';
@@ -60,21 +64,8 @@ function formatExecutedAt(iso: string): string {
   return `${dd}/${mo}`;
 }
 
-// Linha de progresso de UMA fonte (sourcesSnapshot × perSource): skipped→pulada,
-// failed→falhou, ok + run em andamento→buscando…, ok + terminal→contagem real.
-function sourceProgressLine(source: ExecutableSource, run: SearchRunDTO): string {
-  const metrics = run.metrics.perSource[source];
-  if (metrics.status === 'skipped') {
-    return 'pulada';
-  }
-  if (metrics.status === 'failed') {
-    return 'falhou';
-  }
-  if (!isTerminalStatus(run.status)) {
-    return 'buscando…';
-  }
-  return `${metrics.returned} itens · ${metrics.durationMs}ms`;
-}
+// Linha de progresso por fonte vive em src/search/pageProgress (pura,
+// testável sem react-native); a tela só monta o JSX com a string.
 
 function toBanner(error: unknown): { message: string; requestId: string | null } {
   if (error instanceof ApiError) {
@@ -337,10 +328,12 @@ export default function RunScreen(): JSX.Element {
   const showsBdtd: boolean = effectiveRun.sourcesSnapshot.includes('bdtd');
   const showsCapes: boolean = effectiveRun.sourcesSnapshot.includes('capes');
   const terminal: boolean = isTerminalStatus(effectiveRun.status);
-  // Botão Cancelar visível SÓ em polling (D-07); some no terminal, no erro e no
-  // teto de acompanhamento (sem estado confirmado para terminar).
-  const cancellable: boolean =
-    pollState === 'polling' && !terminal && !cancelling;
+  // Botão Cancelar visível enquanto o run está vivo (08-06: sempre — inclui
+  // loading/timeout/erro de acompanhamento, quando o servidor ainda executa).
+  // Some no terminal (o servidor rejeita terminar run terminal), no
+  // cancelamento em voo e sem estado confirmado. D-08 preservado: sair da
+  // tela nunca cancela no servidor (o hook limpa só o timer).
+  const cancellable: boolean = !terminal && !cancelling;
 
   const okLabels: string[] = [];
   const missedLabels: string[] = [];

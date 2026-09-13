@@ -5,8 +5,16 @@
 // sem início. Sem timers, sem rede, sem `any` (string + narrowing).
 
 import { describe, expect, it } from 'vitest';
-import type { RunStatus } from '@uhhu/contracts';
-import { formatDurationMs, isTerminalStatus, runStatusLabel } from '../useRunPolling';
+import type { RunStatus, SearchRunDTO } from '@uhhu/contracts';
+import { sourceProgressLine } from '../pageProgress';
+import {
+  RUN_POLL_INTERVAL_MS,
+  RUN_POLL_MAX_POLLS,
+  formatDurationMs,
+  formatPageProgress,
+  isTerminalStatus,
+  runStatusLabel,
+} from '../useRunPolling';
 
 describe('isTerminalStatus (queued/running seguem; demais param)', () => {
   it('queued e running não são terminais', () => {
@@ -64,5 +72,98 @@ describe('formatDurationMs (duração do cabeçalho)', () => {
       Date.parse('2026-09-11T10:00:05Z'),
     );
     expect(out).toBe('5s');
+  });
+});
+
+describe('RUN_POLL_MAX_POLLS (teto 30min da 08-06, cobre o servidor)', () => {
+  it('720 polls × 2.5s = 30min (teto do RUN_QUEUE_TIMEOUT_MS)', () => {
+    expect(RUN_POLL_MAX_POLLS).toBe(720);
+    expect(RUN_POLL_INTERVAL_MS * RUN_POLL_MAX_POLLS).toBe(30 * 60_000);
+  });
+
+  it('sobrevive além dos 240 polls antigos sem timeout falso', () => {
+    expect(RUN_POLL_MAX_POLLS).toBeGreaterThan(240);
+  });
+});
+
+describe('formatPageProgress (página X de ~Y, 08-06)', () => {
+  it('com páginas e total → "buscando página X de ~Y"', () => {
+    expect(formatPageProgress(2, 3)).toBe('buscando página 3 de ~3');
+  });
+
+  it('sem total declarado → só a página corrente', () => {
+    expect(formatPageProgress(1, null)).toBe('buscando página 2');
+    expect(formatPageProgress(1, undefined)).toBe('buscando página 2');
+  });
+
+  it('sem páginas ou sem métricas → null (tela mantém "buscando…")', () => {
+    expect(formatPageProgress(0, 3)).toBeNull();
+    expect(formatPageProgress(undefined, undefined)).toBeNull();
+    expect(formatPageProgress(undefined, 3)).toBeNull();
+  });
+});
+
+function testRun(status: SearchRunDTO['status'], bdtdPages: number | undefined): SearchRunDTO {
+  const base = {
+    status: 'skipped' as const,
+    total: 0,
+    returned: 0,
+    durationMs: 0,
+  };
+  return {
+    id: 'run-teste',
+    searchId: 'search-teste',
+    status,
+    termSnapshot: '"teste"',
+    filtersSnapshot: {},
+    sourcesSnapshot: ['bdtd'],
+    executedAt: '2026-09-12T10:00:00Z',
+    startedAt: '2026-09-12T10:00:00Z',
+    finishedAt: null,
+    metrics: {
+      perSource: {
+        bdtd: {
+          status: 'ok' as const,
+          total: 120,
+          returned: 120,
+          durationMs: 5,
+          ...(bdtdPages !== undefined ? { pagesFetched: bdtdPages, pagesTotal: 3 } : {}),
+        },
+        capes: base,
+      },
+      newCount: 120,
+      coverage: { bdtd: 120, capes: 0 },
+    },
+    error: null,
+  };
+}
+
+describe('sourceProgressLine (progresso por fonte na tela, 08-06)', () => {
+  it('pulada/falhou conforme a fonte', () => {
+    const skipped: SearchRunDTO = {
+      ...testRun('running', undefined),
+      metrics: {
+        ...testRun('running', undefined).metrics,
+        perSource: {
+          bdtd: { status: 'skipped', total: 0, returned: 0, durationMs: 0 },
+          capes: { status: 'failed', total: 0, returned: 0, durationMs: 1 },
+        },
+      },
+    };
+    expect(sourceProgressLine('bdtd', skipped)).toBe('pulada');
+    expect(sourceProgressLine('capes', skipped)).toBe('falhou');
+  });
+
+  it('run em andamento sem métricas → "buscando…" (comportamento anterior)', () => {
+    expect(sourceProgressLine('bdtd', testRun('running', undefined))).toBe('buscando…');
+  });
+
+  it('run em andamento com métricas → "buscando página X de ~Y"', () => {
+    expect(sourceProgressLine('bdtd', testRun('running', 2))).toBe('buscando página 3 de ~3');
+  });
+
+  it('terminal com métricas → contagem + páginas; sem → só contagem', () => {
+    expect(sourceProgressLine('bdtd', testRun('succeeded', 3))).toBe('120 itens · 5ms · 3 página(s)');
+    expect(sourceProgressLine('bdtd', testRun('succeeded', undefined))).toBe('120 itens · 5ms');
   });
 });
