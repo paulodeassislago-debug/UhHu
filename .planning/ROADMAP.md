@@ -91,10 +91,20 @@ Plans:
   1. User vê o corpus como view derivada consistente após cada decisão, filtra por tag/fonte/ano e exporta seleção (grupo inteiro) ou corpus completo em CSV/BibTeX/JSON
   2. User compara 2–4 buscas lado a lado, vê o destaque "mais inclusiva" e marca manualmente a referência do projeto (persistida)
   3. Gate do milestone: slice vertical completo login → corpus/export provado na web beta + auditoria adversarial do app + revisão humana
-**Plans**: TBD
+**Plans**: 6 plans in 3 waves
 
 Plans:
-- [ ] 09-01: TBD during `/gsd-plan-phase 9`
+**Wave 1** (parallel, zero file overlap):
+- [ ] 09-01-PLAN.md — CORE BibTeX MP: `type={Mestrado profissional}` em `exports.ts:117` + 3 casos smoke (Wave 1)
+- [ ] 09-02-PLAN.md — Corpus real: contador vivo + filtros tag/fonte/ano + FlatList + selecao por grupo inteiro (Wave 1)
+- [ ] 09-04-PLAN.md — Compare 2-4 lado a lado + helpers + ★ mais inclusiva + rota na TabBar (Wave 1)
+**Wave 2** *(blocked on Wave 1 completion)*:
+- [ ] 09-03-PLAN.md — Export UI: selecao/grupo-inteiro + completo nos 3 formatos, blob+anchor web e Share nativo, BibTeX vazio avisa (Wave 2, blocked on 09-02)
+- [ ] 09-05-PLAN.md — Referencia manual: selo no card + troca 1 toque + coluna destacada, sem efeito funcional (Wave 2, blocked on 09-04)
+**Wave 3** *(blocked on Wave 2 completion)*:
+- [ ] 09-06-PLAN.md — Gate do milestone: gates + prova beta slice vertical + IDOR 4x4 + auditoria + UAT humana (Wave 3, blocked on 09-01/09-03/09-05, has checkpoint)
+
+Cross-cutting constraints: `any` proibido + `import type` de contracts (todos); ownerId sempre do ator no servidor + 401 expired+next (09-02..09-06); grupo inteiro = uma referencia (09-02, 09-03); referencia so memoria sem efeito funcional (09-02, 09-05); sem `menos ruido` em codigo ou texto (09-04, 09-06); zero dep nova expo-sharing/file-system (09-03, 09-06).
 
 ## Progress
 
@@ -111,4 +121,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 6. Fundação do app + auth + suporte CORE | v1.1 | 5/5 | Complete | 2026-09-11 |
 | 7. Projetos, buscas e execução | v1.1 | 6/6 | Complete | 2026-09-12 |
 | 8. Resultados e triagem | v1.1 | 8/8 | Complete | 2026-09-13 |
-| 9. Corpus, exportação e comparação | v1.1 | 0/TBD | Not started | - |
+| 9. Corpus, exportação e comparação | v1.1 | 0/6 | Ready to execute | - |
