@@ -31,7 +31,7 @@ Requirements for this milestone. Each maps to roadmap phases 6–9.
 
 - [x] **UI-12**: User vê os cards de estratégia (termos legíveis, filtros, fontes, runs, última execução com contagem) e o estado vazio — done 07-02 (SearchCard com runs reais + strategies FlatList + vazio verbatim)
 - [x] **UI-13**: User salva estratégia (só salvar) ou salva-e-executa, com selo "filtro garantido pelo Core" e status das fontes visível — done 07-02 (SearchForm §6 + search-form com saúde via listSources/getSourceHealth + Idempotency-Key por toque)
-- [x] **UI-14**: User executa busca e acompanha o run com progresso por fonte (cancelável) até ok / parcial (banner âmbar com o que faltou) / falha (motivo + repetir) / cancelled — done 07-03 (useRunPolling 2500ms/teto 240 + run.tsx §7 + tripwire 6/6)
+- [x] **UI-14**: User executa busca e acompanha o run com progresso por fonte (cancelável) até ok / parcial (banner âmbar com o que faltou) / falha (motivo + repetir) / cancelled — done 07-03 (useRunPolling 2500ms/teto 240 + run.tsx §7 + tripwire 6/6) + busca COMPLETA 08-06 (decisão Paulo 12/09: loop 50/pág até o total, timeout 30min, UI 720 polls + página X de ~Y + cancela sempre; prova 120/120 + rerun 0 + cancel 50/cancelled)
 - [x] **UI-15**: User exclui busca via diálogo que lista a cascata (nº de runs, resultados e decisões perdidas) antes do hard-delete — done 07-04 (DeleteSearchDialog com contagens honestas + Excluir explícito + remoção local do card)
 - [x] **UI-16**: User consulta o histórico de execuções (runs) de uma busca — done 07-04 (RunHistory expansível no card, D-11/D-12, paginado 20 + Ver mais, toque abre o run)
 
@@ -119,7 +119,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | UI-11 | Phase 7 | Done (07-01, Comparação disabled fase 9; cabeçalho 07-06 intacto) |
 | UI-12 | Phase 7 | Done (07-02) |
 | UI-13 | Phase 7 | Done (07-02) |
-| UI-14 | Phase 7 | Done (07-03) |
+| UI-14 | Phase 7 + 8 | Done (07-03 + busca completa 08-06) |
 | UI-15 | Phase 7 | Done (07-04) |
 | UI-16 | Phase 7 | Done (07-04) |
 | UI-17 | Phase 8 | Done (08-02) |
