@@ -26,10 +26,13 @@ const ABSTRACT_MAX_LENGTH = 8000;
 const TITLE_MAX_LENGTH = 500;
 const AUTHORS_MAX_COUNT = 50;
 const PER_PAGE_MIN = 5;
-const PER_PAGE_MAX = 50;
+// 08-07 (lote incremental, decisão Paulo 12/09 REVISADA): BDTD honra
+// `limit=100` em 1 chamada (medido) — teto 100 para o lote de 100/fonte;
+// CAPES segue com teto 50 (teto interno: 60+ retorna 20) em 2×50.
+const PER_PAGE_MAX = 100;
 const PER_PAGE_DEFAULT = 20;
 
-/** Paginação da busca (perPage com clamp 5..50, default 20). */
+/** Paginação da busca (perPage com clamp 5..100, default 20). */
 export interface SourcePagination {
   page: number;
   perPage: number;

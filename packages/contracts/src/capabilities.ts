@@ -24,6 +24,7 @@ export const capabilityNameSchema = z.enum([
   'lab.run.get',
   'lab.run.list',
   'lab.run.results.list',
+  'lab.run.fetchMore',
   'lab.result.decision.update',
   'lab.result.duplicate.diverge',
   'lab.corpus.get',

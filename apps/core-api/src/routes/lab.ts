@@ -35,6 +35,7 @@ import {
   decisionInputSchema,
   divergenceInputSchema,
   exportQuerySchema,
+  fetchMoreRunsSchema,
   labSourceSchema,
   paginationQuerySchema,
   pinInputSchema,
@@ -43,6 +44,7 @@ import {
   updateTagSchema,
   type CompareDTO,
   type DedupGroupDTO,
+  type FetchMoreResult,
   type JobDTO,
   type ProjectDTO,
   type ResultDTO,
@@ -653,9 +655,58 @@ export async function buildLabRoutes(app: FastifyInstance, db: Db): Promise<void
     },
   );
 
-  app.get(
-    '/api/v1/lab/results/:resultId',
+  // 08-07 BUSCAR MAIS (decisão Paulo 12/09 REVISADA): lote incremental
+  // +100/fonte sob demanda. Molde das rotas de run (requireAuth + 404
+  // idêntico fora do escopo + Zod na fronteira). Body opcional `{sources?}`
+  // (default: fontes com hasMore); offset sempre server-side (T-08-07-02);
+  // parcial honesto 200 (nunca 500 por fonte caída no lote).
+  app.post(
+    '/api/v1/lab/runs/:runId/fetch-more',
     { preHandler: requireAuth(db) },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const requestId = resolveRequestId(request);
+      reply.header('x-request-id', requestId);
+      const actor = request.actor;
+      if (actor === undefined) {
+        await reply.code(401).send(buildEnvelope('UNAUTHENTICATED', requestId, {}));
+        return;
+      }
+      const params = runIdParamsSchema.safeParse(request.params);
+      if (!params.success) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      const body =
+        request.body === undefined || request.body === null ? {} : request.body;
+      const parsed = fetchMoreRunsSchema.safeParse(body);
+      if (!parsed.success) {
+        await reply
+          .code(400)
+          .send(buildEnvelope('VALIDATION_ERROR', requestId, parsed.error.flatten()));
+        return;
+      }
+      const got = await callCapability<FetchMoreResult | null>(
+        execute(
+          'lab.run.fetchMore',
+          { id: params.data.runId, ...(parsed.data.sources === undefined ? {} : { sources: parsed.data.sources }) },
+          actor,
+        ),
+        reply,
+        requestId,
+      );
+      if (got.replied) {
+        return;
+      }
+      if (got.value === null) {
+        await reply.code(404).send(buildEnvelope('NOT_FOUND', requestId, {}));
+        return;
+      }
+      await reply.code(200).send(got.value);
+    },
+  );
+
+  app.get(
+    '/api/v1/lab/results/:resultId',    { preHandler: requireAuth(db) },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const requestId = resolveRequestId(request);
       reply.header('x-request-id', requestId);

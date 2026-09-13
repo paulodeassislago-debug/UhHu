@@ -38,6 +38,7 @@ import {
   decisionInputSchema,
   divergenceInputSchema,
   exportQuerySchema,
+  fetchMoreRunsSchema,
   labSourceSchema,
   paginationQuerySchema,
   pinInputSchema,
@@ -80,6 +81,7 @@ import {
 import {
   cancelRunForActor,
   executeSearchRun,
+  fetchMoreForActor,
   IdempotencyConflictError,
   RunRateLimitedError,
 } from './lib/searchRuns.js';
@@ -114,6 +116,7 @@ import { exportFilename, toBibTeX, toCSV, toExportJSON } from './lib/exports.js'
 export type { ListProjectsResult } from './lib/projects.js';
 export type { ListResultsResult, ListRunsResult, ListSearchesResult } from './lib/searches.js';
 export type { CancelRunResult, ExecuteSearchRunResult } from './lib/searchRuns.js';
+export type { FetchMoreResult } from '@uhhu/contracts';
 export type {
   CorpusListResult,
   ExportMemberRaw,
@@ -203,6 +206,13 @@ const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9_.:~-]{1,128}$/;
 const searchExecuteInputSchema = z.object({
   searchId: z.string(),
   idempotencyKey: z.string().regex(IDEMPOTENCY_KEY_PATTERN).optional(),
+});
+
+// 08-07 BUSCAR MAIS (decisão Paulo 12/09 REVISADA): run + fontes opcionais
+// (default: fontes com hasMore). Offset sempre server-side (T-08-07-02).
+const runFetchMoreInputSchema = z.object({
+  id: z.string(),
+  sources: fetchMoreRunsSchema.shape.sources,
 });
 
 const compareInputSchema = z.object({
@@ -327,6 +337,14 @@ function registryHandlers(db: Db): Record<CapabilityName, CapabilityHandler> {
         limit: data.limit,
         cursor: data.cursor,
       });
+    },
+    // 08-07 BUSCAR MAIS: lote incremental +100/fonte com newCount recomputado
+    // por lote (D-15, badge≡contador). Null fora do escopo → rota vira 404.
+    'lab.run.fetchMore': async (input, actor) => {
+      const data = parseOrThrow(runFetchMoreInputSchema, input);
+      const sources =
+        data.sources === undefined ? {} : { sources: data.sources };
+      return fetchMoreForActor(db, actor, data.id, sources);
     },
     'lab.result.decision.update': async (input, actor) => {
       const data = parseOrThrow(decisionUpdateInputSchema, input);

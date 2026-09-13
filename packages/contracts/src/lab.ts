@@ -460,3 +460,38 @@ export interface CompareDTO {
   bySource: Record<string, Record<'bdtd' | 'capes', number>>;
   pairwiseOverlap: Record<string, number>;
 }
+
+// ---------------------------------------------------------------------------
+// Fetch-more incremental (08-07, decisão Paulo 12/09 REVISADA — substitui o
+// eager 08-06): run inicial traz 1 lote (100/fonte + totalKnown); BUSCAR MAIS
+// puxa +100/fonte sob demanda (contrato §10 capability + §18 métricas).
+// `total` de PerSourceMetrics = totalKnown da fonte (page.total da pág. 1:
+// BDTD resultCount, CAPES total); `returned` = armazenados; hasMore implícito:
+// stored < total. Offset é SEMPRE count armazenado no servidor (T-08-07-02).
+// ---------------------------------------------------------------------------
+
+export const fetchMoreSourcesSchema = z.array(executableSourceSchema).min(1).max(2);
+
+export const fetchMoreRunsSchema = z.object({
+  sources: fetchMoreSourcesSchema.optional(),
+});
+
+export type FetchMoreInput = z.infer<typeof fetchMoreRunsSchema>;
+
+export interface FetchMoreAdded {
+  bdtd: number;
+  capes: number;
+}
+
+export interface FetchMoreHasMore {
+  bdtd: boolean;
+  capes: boolean;
+}
+
+export interface FetchMoreResult {
+  added: FetchMoreAdded;
+  hasMore: FetchMoreHasMore;
+  newCount: number;
+  returned: number;
+  total: number;
+}
