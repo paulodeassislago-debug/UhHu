@@ -1,15 +1,14 @@
-// tests/integration — lote INICIAL por run (08-07, decisão Paulo 12/09
-// REVISADA — substitui o eager 08-06 sem teto).
+// tests/integration — BUSCAR MAIS incremental (08-07, decisão Paulo 12/09
+// REVISADA — substitui o eager 08-06).
 //
-// Run inicial = 1 lote: BDTD pág.1 limit=100 + CAPES págs.1-2 ×50 (=100 por
-// fonte) com totalKnown da fonte exposto (`perSource.total` = page.total da
-// pág.1: BDTD resultCount, CAPES total). Fixtures: BDTD total 250, CAPES
-// total 120 → run armazena 200 (100+100) com hasMore implícito
-// (stored < total). Rank contínuo por fonte 0..99. Cancel no meio do lote
-// preserva a página em voo e termina `cancelled` — disparo determinístico:
-// stub lento (400ms por página) + cancel após observar o run `running`.
-// Sem PG: pula com graça. NUNCA imprime connection string. `unknown` +
-// narrowing, nunca `any`.
+// Fonte BDTD fake com total 250 em páginas de 100 (100+100+50): run inicial
+// = 100 armazenados + totalKnown 250 + hasMore; fetch-more → 200;
+// fetch-more → 250 + hasMore false; 4º fetch-more → nada novo, hasMore false
+// (idempotente, sem dupes: count segue 250). isNew dos itens dos lotes 2-3 =
+// true (run corrente; D-15 só-anteriores) e newCount do run == count(isNew)
+// após CADA lote (recomputo provado). IDOR: estranho + fantasma → 404
+// idêntico no fetch-more; rota sem auth → 401. Sem PG: pula com graça.
+// NUNCA imprime connection string. `unknown` + narrowing, nunca `any`.
 
 import { execFileSync } from 'node:child_process';
 import cookie from '@fastify/cookie';
@@ -51,51 +50,29 @@ function readDatabaseUrl(name: 'APP_DATABASE_URL' | 'MIGRATION_DATABASE_URL'): s
 const APP_URL = readDatabaseUrl('APP_DATABASE_URL');
 const MIGRATION_URL = readDatabaseUrl('MIGRATION_DATABASE_URL');
 
-// Lote inicial 08-07: BDTD total 250 (pág.1 de 100 no lote inicial), CAPES
-// total 120 (págs.1-2 de 50 no lote inicial → 100).
-const BDTD_TOTAL = 250;
-const CAPES_TOTAL = 120;
+const GHOST_UUID = '00000000-0000-4000-8000-000000000000';
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
+// Incremental 08-07: 250 itens em páginas de 100 → 100+100+50 (3 lotes).
+const INCREMENTAL_TOTAL = 250;
+const BATCH_SIZE = 100;
 
-// Registros no shape REAL VuFind (primary-map + formats[] + urls[]).
-function fullBdtdRecords(count: number): Array<Record<string, unknown>> {
+function incrementalBdtdRecords(count: number): Array<Record<string, unknown>> {
   const records: Array<Record<string, unknown>> = [];
   for (let index = 0; index < count; index += 1) {
     const padded = String(index).padStart(3, '0');
     records.push({
-      id: `full-bdtd-${padded}`,
-      title: `Trabalho completo ${padded} sobre revisao sistematica`,
-      authors: { primary: { [`Autor, Numero${padded}`]: [] }, secondary: [], corporate: [] },
+      id: `incr-bdtd-${padded}`,
+      title: `Trabalho incremental ${padded} sobre revisao sistematica`,
+      authors: { primary: { [`Autor, Lote${padded}`]: [] }, secondary: [], corporate: [] },
       formats: ['masterThesis'],
-      urls: [{ url: `https://bdtd.ibict.br/vufind/Record/full-bdtd-${padded}`, desc: 'ficha' }],
+      urls: [{ url: `https://bdtd.ibict.br/vufind/Record/incr-bdtd-${padded}`, desc: 'ficha' }],
     });
   }
   return records;
 }
 
-// Registros no shape REAL CAPES rest/busca (id + titulo + autor).
-function fullCapesRecords(count: number): Array<Record<string, unknown>> {
-  const records: Array<Record<string, unknown>> = [];
-  for (let index = 0; index < count; index += 1) {
-    const padded = String(index).padStart(3, '0');
-    records.push({
-      id: `full-capes-${padded}`,
-      titulo: `Tese completa ${padded} sobre revisao sistematica`,
-      autor: `Autora Capes ${padded}`,
-    });
-  }
-  return records;
-}
+const INCREMENTAL_RECORDS = incrementalBdtdRecords(INCREMENTAL_TOTAL);
 
-const BDTD_RECORDS = fullBdtdRecords(BDTD_TOTAL);
-const CAPES_RECORDS = fullCapesRecords(CAPES_TOTAL);
-
-let fetchDelayMs = 0;
 const ORIGINAL_FETCH: typeof fetch = globalThis.fetch;
 
 function jsonFetchResponse(data: unknown, status = 200): Response {
@@ -105,13 +82,9 @@ function jsonFetchResponse(data: unknown, status = 200): Response {
   });
 }
 
-// Stub global server-side (só teste): BDTD pagina por `page`/`limit` da URL,
-// CAPES por `pagina`/`registrosPorPagina` do corpo POST; qualquer outro host
-// é erro (sem rede real no teste).
-async function fakeBatchFetch(input: string | URL | Request, init?: unknown): Promise<Response> {
-  if (fetchDelayMs > 0) {
-    await sleep(fetchDelayMs);
-  }
+// Stub global server-side (só teste): BDTD pagina por `page`/`limit` da URL
+// com total 250; qualquer outro host é erro (sem rede real no teste).
+async function fakeIncrementalFetch(input: string | URL | Request): Promise<Response> {
   const url =
     typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
   if (url.includes('bdtd.ibict.br')) {
@@ -119,42 +92,16 @@ async function fakeBatchFetch(input: string | URL | Request, init?: unknown): Pr
     const page = Number.parseInt(parsed.searchParams.get('page') ?? '1', 10);
     const limit = Number.parseInt(parsed.searchParams.get('limit') ?? '100', 10);
     const safePage = Number.isSafeInteger(page) && page > 0 ? page : 1;
-    const safeLimit = Number.isSafeInteger(limit) && limit > 0 ? limit : 100;
+    const safeLimit = Number.isSafeInteger(limit) && limit > 0 ? limit : BATCH_SIZE;
     const start = (safePage - 1) * safeLimit;
-    const slice = BDTD_RECORDS.slice(start, start + safeLimit);
-    return jsonFetchResponse({ resultCount: BDTD_TOTAL, records: slice, status: 'OK' }, 200);
+    const slice = INCREMENTAL_RECORDS.slice(start, start + safeLimit);
+    return jsonFetchResponse({ resultCount: INCREMENTAL_TOTAL, records: slice, status: 'OK' }, 200);
   }
-  if (url.includes('catalogodeteses.capes.gov.br')) {
-    let pagina = 1;
-    let porPagina = 50;
-    if (typeof init === 'object' && init !== null && 'body' in init) {
-      const body: unknown = (init as { body?: unknown }).body;
-      if (typeof body === 'string') {
-        try {
-          const payload = JSON.parse(body) as Record<string, unknown>;
-          const rawPag = payload['pagina'];
-          const rawPer = payload['registrosPorPagina'];
-          if (typeof rawPag === 'number' && Number.isSafeInteger(rawPag) && rawPag > 0) {
-            pagina = rawPag;
-          }
-          if (typeof rawPer === 'number' && Number.isSafeInteger(rawPer) && rawPer > 0) {
-            porPagina = rawPer;
-          }
-        } catch {
-          pagina = 1;
-        }
-      }
-    }
-    const start = (pagina - 1) * porPagina;
-    const slice = CAPES_RECORDS.slice(start, start + porPagina);
-    return jsonFetchResponse({ total: CAPES_TOTAL, tesesDissertacoes: slice }, 200);
-  }
-  throw new Error(`fakeBatchFetch: host inesperado (sem rede real no teste): ${url.slice(0, 80)}`);
+  throw new Error(`fakeIncrementalFetch: host inesperado (sem rede real no teste): ${url.slice(0, 80)}`);
 }
 
-function installBatchFake(delayMs = 0): void {
-  fetchDelayMs = delayMs;
-  globalThis.fetch = fakeBatchFetch as typeof fetch;
+function installIncrementalFake(): void {
+  globalThis.fetch = fakeIncrementalFetch as typeof fetch;
 }
 
 function errorText(err: unknown): string {
@@ -218,6 +165,10 @@ function requireSessionCookie(res: { headers: unknown }): string {
   return value;
 }
 
+function errorOf(body: unknown): { code: string; message: string; requestId: string } {
+  return (body as { error: { code: string; message: string; requestId: string } }).error;
+}
+
 function inviteOf(body: unknown): { inviteToken: string; expiresAt: string } {
   return body as { inviteToken: string; expiresAt: string };
 }
@@ -250,9 +201,43 @@ function runOf(body: unknown): TestRun {
   return body as TestRun;
 }
 
+interface TestFetchMore {
+  added: { bdtd: number; capes: number };
+  hasMore: { bdtd: boolean; capes: boolean };
+  newCount: number;
+  returned: number;
+  total: number;
+}
+
+function fetchMoreOf(body: unknown): TestFetchMore {
+  const record = body as Record<string, unknown>;
+  const added = record['added'] as { bdtd: number; capes: number };
+  const hasMore = record['hasMore'] as { bdtd: boolean; capes: boolean };
+  const newCount = record['newCount'];
+  const returned = record['returned'];
+  const total = record['total'];
+  if (
+    typeof added !== 'object' ||
+    added === null ||
+    typeof added.bdtd !== 'number' ||
+    typeof added.capes !== 'number' ||
+    typeof hasMore !== 'object' ||
+    hasMore === null ||
+    typeof hasMore.bdtd !== 'boolean' ||
+    typeof hasMore.capes !== 'boolean' ||
+    typeof newCount !== 'number' ||
+    typeof returned !== 'number' ||
+    typeof total !== 'number'
+  ) {
+    throw new Error('resposta do fetch-more com shape inesperado');
+  }
+  return { added, hasMore, newCount, returned, total };
+}
+
 interface TestResultItem {
   id: string;
   sourceId: string;
+  isNew: boolean;
 }
 
 interface TestResultPage {
@@ -275,10 +260,11 @@ function resultPageOf(body: unknown): TestResultPage {
     const row = entry as Record<string, unknown>;
     const id = row['id'];
     const sourceId = row['sourceId'];
-    if (typeof id !== 'string' || typeof sourceId !== 'string') {
-      throw new Error('item da pagina sem id/sourceId');
+    const isNew = row['isNew'];
+    if (typeof id !== 'string' || typeof sourceId !== 'string' || typeof isNew !== 'boolean') {
+      throw new Error('item da pagina sem id/sourceId/isNew');
     }
-    return { id, sourceId };
+    return { id, sourceId, isNew };
   });
   return { items, page, total, newCount };
 }
@@ -330,12 +316,35 @@ async function bootstrapAdmin(
   return { userId: userOf(reg.json()).id, cookie: requireSessionCookie(reg) };
 }
 
+async function createMember(
+  app: FastifyInstance,
+  adminCookie: string,
+  name: string,
+  email: string,
+): Promise<{ userId: string; cookie: string }> {
+  const inv = await apiRequest(app, 'POST', '/api/v1/auth/invites', {
+    body: {},
+    cookieValue: adminCookie,
+  });
+  expect(inv.statusCode).toBe(201);
+  const reg = await apiRequest(app, 'POST', '/api/v1/auth/register', {
+    body: {
+      name,
+      email,
+      password: 'SenhaForte123!',
+      inviteToken: inviteOf(inv.json()).inviteToken,
+    },
+  });
+  expect(reg.statusCode).toBe(201);
+  return { userId: userOf(reg.json()).id, cookie: requireSessionCookie(reg) };
+}
+
 // Prova que execFileSync foi importado do child_process (evita tree-shake
 // remover o import usado no beforeAll do migrate).
 void execFileSync;
 
 describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
-  'lab search runs PG real (lote inicial 08-07: 100/fonte + totalKnown, cancel de batch)',
+  'lab run fetch-more PG real (incremental 08-07: 250 em 100+100+50, isNew/newCount por lote, IDOR)',
   () => {
     let pgAvailable = true;
     let app: FastifyInstance | undefined;
@@ -350,7 +359,7 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
       } catch (err: unknown) {
         if (isConnectionFailure(errorText(err))) {
           pgAvailable = false;
-          console.warn('[lab-search-runs-full] PG inalcançavel no migrate — pulando (offline).');
+          console.warn('[lab-run-fetch-more] PG inalcançavel no migrate — pulando (offline).');
           return;
         }
         throw err;
@@ -408,25 +417,22 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
       await db.delete(sessions);
       await db.delete(invites);
       await db.delete(users);
-      installBatchFake(0);
+      installIncrementalFake();
     });
 
     afterEach(() => {
       globalThis.fetch = ORIGINAL_FETCH;
     });
 
-    it('08-07: run inicial armazena 1 lote (BDTD 100 + CAPES 2x50) com totalKnown e hasMore', async () => {
+    it('08-07: 250 via 3 lotes (100+100+50) com hasMore, isNew e newCount por lote', async () => {
       if (!pgAvailable || app === undefined || db === undefined) {
-        console.warn('[lab-search-runs-full] PG inalcançavel — teste pulado (offline).');
+        console.warn('[lab-run-fetch-more] PG inalcançavel — teste pulado (offline).');
         return;
       }
-      // Narrowing de `let` não sobrevive dentro de closures: captura em const
-      // para os helpers (TS2345 no typecheck raiz, gap 08-05).
       const api = app;
-      const database = db;
-      const owner = await bootstrapAdmin(api, 'Dona Lote', 'lote@example.com');
+      const owner = await bootstrapAdmin(api, 'Dono Incremental', 'incremental@example.com');
       const created = await apiRequest(api, 'POST', '/api/v1/projects', {
-        body: { title: 'Projeto lote inicial' },
+        body: { title: 'Projeto incremental' },
         cookieValue: owner.cookie,
       });
       expect(created.statusCode).toBe(201);
@@ -435,106 +441,7 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
       const searchRes = await apiRequest(api, 'POST', '/api/v1/lab/searches', {
         body: {
           projectId,
-          term: '"revisao sistematica em lote"',
-          filters: {},
-          sources: ['bdtd', 'capes'],
-        },
-        cookieValue: owner.cookie,
-      });
-      expect(searchRes.statusCode).toBe(201);
-      const searchId = (searchRes.json() as { id: string }).id;
-
-      installBatchFake(0);
-      const runRes = await apiRequest(api, 'POST', `/api/v1/lab/searches/${searchId}/runs`, {
-        cookieValue: owner.cookie,
-      });
-      expect(runRes.statusCode).toBe(201);
-      const run = runOf(runRes.json());
-      // Lote inicial completa `succeeded` bem abaixo do teto de 60s/lote.
-      expect(run.status).toBe('succeeded');
-      const bdtd = run.metrics.perSource.bdtd;
-      expect(bdtd.status).toBe('ok');
-      // totalKnown da fonte (BDTD resultCount da pág.1), 100 armazenados.
-      expect(bdtd.total).toBe(250);
-      expect(bdtd.returned).toBe(100);
-      expect(bdtd.pagesFetched).toBe(1);
-      expect(bdtd.pagesTotal).toBe(3);
-      const capes = run.metrics.perSource.capes;
-      expect(capes.status).toBe('ok');
-      // CAPES total da pág.1, 2×50 no lote inicial.
-      expect(capes.total).toBe(120);
-      expect(capes.returned).toBe(100);
-      expect(capes.pagesFetched).toBe(2);
-      expect(capes.pagesTotal).toBe(3);
-      expect(run.metrics.newCount).toBe(200);
-      expect(run.metrics.coverage.bdtd).toBe(100);
-      expect(run.metrics.coverage.capes).toBe(100);
-      // hasMore implícito: armazenados < totalKnown nas duas fontes.
-      expect(bdtd.returned).toBeLessThan(bdtd.total);
-      expect(capes.returned).toBeLessThan(capes.total);
-
-      // Coleta via GET results paginado (limit 100 → 2 páginas): 200 itens.
-      const seenIds: string[] = [];
-      let cursor: string | null = null;
-      let guard = 0;
-      do {
-        const suffix = cursor === null ? '' : `&cursor=${encodeURIComponent(cursor)}`;
-        const res = await apiRequest(
-          api,
-          'GET',
-          `/api/v1/lab/runs/${run.id}/results?limit=100${suffix}`,
-          { cookieValue: owner.cookie },
-        );
-        expect(res.statusCode).toBe(200);
-        const page = resultPageOf(res.json());
-        for (const item of page.items) {
-          seenIds.push(item.id);
-        }
-        cursor = page.page.nextCursor;
-        guard += 1;
-        if (guard > 5) {
-          throw new Error('paginacao de results nao terminou em 5 paginas');
-        }
-      } while (cursor !== null);
-      expect(seenIds.length).toBe(200);
-
-      // Rank contínuo por fonte 0..99 (leitura direta; rank não é DTO).
-      const allRows = await database.select().from(labResults);
-      const runRows = allRows.filter((row) => row.runId === run.id);
-      expect(runRows.length).toBe(200);
-      for (const source of ['bdtd', 'capes'] as const) {
-        const ranks = runRows
-          .filter((row) => row.source === source)
-          .map((row) => row.rank)
-          .sort((a, b) => a - b);
-        expect(ranks.length).toBe(100);
-        for (let index = 0; index < 100; index += 1) {
-          expect(ranks[index]).toBe(index);
-        }
-      }
-      const sourceIds = new Set(runRows.map((row) => `${row.source}|${row.sourceId}`));
-      expect(sourceIds.size).toBe(200);
-    });
-
-    it('08-07: cancel no meio do lote preserva a pagina em voo e termina cancelled', async () => {
-      if (!pgAvailable || app === undefined || db === undefined) {
-        console.warn('[lab-search-runs-full] PG inalcançavel — teste pulado (offline).');
-        return;
-      }
-      const api = app;
-      const database = db;
-      const owner = await bootstrapAdmin(api, 'Dono Cancela Lote', 'cancela-lote@example.com');
-      const created = await apiRequest(api, 'POST', '/api/v1/projects', {
-        body: { title: 'Projeto cancel de batch' },
-        cookieValue: owner.cookie,
-      });
-      expect(created.statusCode).toBe(201);
-      const projectId = (created.json() as { id: string }).id;
-
-      const searchRes = await apiRequest(api, 'POST', '/api/v1/lab/searches', {
-        body: {
-          projectId,
-          term: '"cancelamento no meio do lote"',
+          term: '"busca incremental sob demanda"',
           filters: {},
           sources: ['bdtd'],
         },
@@ -543,50 +450,138 @@ describe.skipIf(APP_URL === undefined || MIGRATION_URL === undefined)(
       expect(searchRes.statusCode).toBe(201);
       const searchId = (searchRes.json() as { id: string }).id;
 
-      // Stub lento: 400ms na página única do lote BDTD (100); o cancel abaixo
-      // cai dentro do fetch com folga (primeiro sleep de 100ms garante o
-      // motor já dentro do fetch da página 1).
-      installBatchFake(400);
-      const runPromise = apiRequest(api, 'POST', `/api/v1/lab/searches/${searchId}/runs`, {
-        cookieValue: owner.cookie,
-      });
-      await sleep(100);
-      let targetId: string | null = null;
-      for (let attempt = 0; attempt < 40 && targetId === null; attempt += 1) {
-        const rows = await database.select().from(labSearchRuns);
-        const found = rows.find((row) => row.searchId === searchId && row.status === 'running');
-        if (found !== undefined) {
-          targetId = found.id;
-        } else {
-          await sleep(50);
-        }
-      }
-      expect(targetId).not.toBeNull();
-      if (targetId === null) {
-        throw new Error('run running nao observado para cancel');
-      }
-      const cancelRes = await apiRequest(api, 'POST', `/api/v1/jobs/${targetId}/cancel`, {
-        cookieValue: owner.cookie,
-      });
-      expect(cancelRes.statusCode).toBe(200);
+      // Conta isNew em TODAS as páginas do run (badge≡contador por lote).
+      const countIsNew = async (runId: string): Promise<{ total: number; fresh: number }> => {
+        let cursor: string | null = null;
+        let total = 0;
+        let fresh = 0;
+        let guard = 0;
+        do {
+          const suffix = cursor === null ? '' : `&cursor=${encodeURIComponent(cursor)}`;
+          const res = await apiRequest(
+            api,
+            'GET',
+            `/api/v1/lab/runs/${runId}/results?limit=100${suffix}`,
+            { cookieValue: owner.cookie },
+          );
+          expect(res.statusCode).toBe(200);
+          const page = resultPageOf(res.json());
+          total = page.total;
+          for (const item of page.items) {
+            if (item.isNew) {
+              fresh += 1;
+            }
+          }
+          cursor = page.page.nextCursor;
+          guard += 1;
+          if (guard > 5) {
+            throw new Error('paginacao de results nao terminou em 5 paginas');
+          }
+        } while (cursor !== null);
+        return { total, fresh };
+      };
+      const fetchMore = async (runId: string): Promise<{ status: number; body: TestFetchMore }> => {
+        const res = await apiRequest(api, 'POST', `/api/v1/lab/runs/${runId}/fetch-more`, {
+          cookieValue: owner.cookie,
+        });
+        expect(res.statusCode).toBe(200);
+        return { status: res.statusCode, body: fetchMoreOf(res.json()) };
+      };
 
-      const runRes = await runPromise;
+      // Lote 1 (run inicial): 100 armazenados + totalKnown 250 + hasMore.
+      installIncrementalFake();
+      const runRes = await apiRequest(api, 'POST', `/api/v1/lab/searches/${searchId}/runs`, {
+        cookieValue: owner.cookie,
+      });
       expect(runRes.statusCode).toBe(201);
       const run = runOf(runRes.json());
-      expect(run.id).toBe(targetId);
-      expect(run.status).toBe('cancelled');
-      // Página em voo preservada (100 do lote BDTD).
+      expect(run.status).toBe('succeeded');
+      expect(run.metrics.perSource.bdtd.status).toBe('ok');
+      expect(run.metrics.perSource.bdtd.total).toBe(250);
       expect(run.metrics.perSource.bdtd.returned).toBe(100);
-      expect(run.metrics.perSource.bdtd.pagesFetched).toBe(1);
+      expect(run.metrics.newCount).toBe(100);
+      const lote1 = await countIsNew(run.id);
+      expect(lote1.total).toBe(100);
+      expect(lote1.fresh).toBe(100);
+      expect(lote1.fresh).toBe(run.metrics.newCount);
 
-      const resultsRes = await apiRequest(
-        api,
-        'GET',
-        `/api/v1/lab/runs/${targetId}/results?limit=100`,
-        { cookieValue: owner.cookie },
-      );
-      expect(resultsRes.statusCode).toBe(200);
-      expect(resultPageOf(resultsRes.json()).total).toBe(100);
+      // Lote 2: +100 → 200, hasMore segue true, isNew true nos novos.
+      const second = await fetchMore(run.id);
+      expect(second.body.added.bdtd).toBe(100);
+      expect(second.body.added.capes).toBe(0);
+      expect(second.body.hasMore.bdtd).toBe(true);
+      expect(second.body.returned).toBe(200);
+      expect(second.body.total).toBe(250);
+      expect(second.body.newCount).toBe(200);
+      const lote2 = await countIsNew(run.id);
+      expect(lote2.total).toBe(200);
+      expect(lote2.fresh).toBe(200);
+      expect(lote2.fresh).toBe(second.body.newCount);
+
+      // Lote 3: +50 → 250, hasMore false (fonte esgotada).
+      const third = await fetchMore(run.id);
+      expect(third.body.added.bdtd).toBe(50);
+      expect(third.body.hasMore.bdtd).toBe(false);
+      expect(third.body.returned).toBe(250);
+      expect(third.body.total).toBe(250);
+      expect(third.body.newCount).toBe(250);
+      const lote3 = await countIsNew(run.id);
+      expect(lote3.total).toBe(250);
+      expect(lote3.fresh).toBe(250);
+      expect(lote3.fresh).toBe(third.body.newCount);
+
+      // 4º fetch-more: idempotente — nada novo, hasMore false, sem dupes.
+      const fourth = await fetchMore(run.id);
+      expect(fourth.body.added.bdtd).toBe(0);
+      expect(fourth.body.hasMore.bdtd).toBe(false);
+      expect(fourth.body.returned).toBe(250);
+      expect(lote3.total).toBe(250);
+      const rows = await db.select().from(labResults);
+      expect(rows.filter((row) => row.runId === run.id).length).toBe(250);
+    });
+
+    it('08-07: IDOR no fetch-more (estranho + fantasma 404; sem auth 401)', async () => {
+      if (!pgAvailable || app === undefined || db === undefined) {
+        console.warn('[lab-run-fetch-more] PG inalcançavel — teste pulado (offline).');
+        return;
+      }
+      const api = app;
+      const owner = await bootstrapAdmin(api, 'Dona Fetch', 'fetch@example.com');
+      const stranger = await createMember(api, owner.cookie, 'Estranho Fetch', 'stranger-fetch@example.com');
+      const created = await apiRequest(api, 'POST', '/api/v1/projects', {
+        body: { title: 'Projeto fetch-more isolado' },
+        cookieValue: owner.cookie,
+      });
+      expect(created.statusCode).toBe(201);
+      const projectId = (created.json() as { id: string }).id;
+      const searchRes = await apiRequest(api, 'POST', '/api/v1/lab/searches', {
+        body: { projectId, term: '"isolamento fetch-more"', filters: {}, sources: ['bdtd'] },
+        cookieValue: owner.cookie,
+      });
+      expect(searchRes.statusCode).toBe(201);
+      const searchId = (searchRes.json() as { id: string }).id;
+
+      installIncrementalFake();
+      const runRes = await apiRequest(api, 'POST', `/api/v1/lab/searches/${searchId}/runs`, {
+        cookieValue: owner.cookie,
+      });
+      expect(runRes.statusCode).toBe(201);
+      const runId = (runRes.json() as { id: string }).id;
+
+      const foreign = await apiRequest(api, 'POST', `/api/v1/lab/runs/${runId}/fetch-more`, {
+        cookieValue: stranger.cookie,
+      });
+      expect(foreign.statusCode).toBe(404);
+      expect(errorOf(foreign.json()).code).toBe('NOT_FOUND');
+
+      const ghost = await apiRequest(api, 'POST', `/api/v1/lab/runs/${GHOST_UUID}/fetch-more`, {
+        cookieValue: owner.cookie,
+      });
+      expect(ghost.statusCode).toBe(404);
+      expect(errorOf(ghost.json()).code).toBe('NOT_FOUND');
+
+      const noAuth = await apiRequest(api, 'POST', `/api/v1/lab/runs/${runId}/fetch-more`);
+      expect(noAuth.statusCode).toBe(401);
     });
   },
 );
