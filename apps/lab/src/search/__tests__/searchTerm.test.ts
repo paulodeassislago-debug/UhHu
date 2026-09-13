@@ -1,6 +1,8 @@
-// apps/lab — testes do helper searchTerm (07-02 task 1, sem rede).
+// apps/lab — testes do helper searchTerm (07-02 task 1, sem rede; 08-09 sem auto-aspas).
 //
-// buildSearchTerm compõe linhas AND/OR/NOT no termo pass-through do contrato;
+// buildSearchTerm compõe linhas AND/OR/NOT no termo pass-through do contrato —
+// texto CRU (decisão Paulo 12/09/2026 DEFINITIVA: fidelidade ao site, sem
+// aspas automáticas; aspas digitadas explicitamente são preservadas verbatim);
 // splitSearchTerm faz o inverso aproximado para edição. Cada termo composto é
 // validado com `searchTermSchema.parse` (aspas balanceadas, 1..500) — o mesmo
 // schema que o servidor aplica. Sem `any` (string + narrowing); sem segredo.
@@ -17,12 +19,12 @@ describe('buildSearchTerm (linhas → termo do contrato)', () => {
     expect(searchTermSchema.parse(term)).toBe('química');
   });
 
-  it('2 linhas com espaço: primeira entre aspas, junção AND', () => {
+  it('2 linhas multi-palavra vão cruas, sem aspas automáticas (fidelidade ao site)', () => {
     const term: string = buildSearchTerm([
       { text: 'ensino de química', op: 'AND' },
       { text: 'gamificação', op: 'AND' },
     ]);
-    expect(term).toBe('"ensino de química" AND gamificação');
+    expect(term).toBe('ensino de química AND gamificação');
     expect(searchTermSchema.parse(term)).toBe(term);
   });
 
@@ -35,34 +37,34 @@ describe('buildSearchTerm (linhas → termo do contrato)', () => {
     expect(searchTermSchema.parse(term)).toBe(term);
   });
 
-  it('linha vazia é descartada; op da primeira é ignorado', () => {
+  it('linha vazia é descartada; op da primeira é ignorado; sem aspas', () => {
     const term: string = buildSearchTerm([
       { text: '   ', op: 'OR' },
       { text: 'química', op: 'NOT' },
       { text: 'ensino médio', op: 'OR' },
     ]);
-    expect(term).toBe('química OR "ensino médio"');
+    expect(term).toBe('química OR ensino médio');
     expect(searchTermSchema.parse(term)).toBe(term);
   });
 
-  it('texto já entre aspas não é re-envolvido; aspas seguem balanceadas', () => {
+  it('aspas digitadas explicitamente são preservadas verbatim', () => {
     const term: string = buildSearchTerm([{ text: '"ensino de química"', op: 'AND' }]);
     expect(term).toBe('"ensino de química"');
     expect(searchTermSchema.parse(term)).toBe(term);
   });
 
-  it('OR entre linhas compõe com OR', () => {
+  it('OR entre linhas compõe com OR, sem aspas', () => {
     const term: string = buildSearchTerm([
       { text: 'TDIC', op: 'AND' },
       { text: 'formação de professores', op: 'OR' },
     ]);
-    expect(term).toBe('TDIC OR "formação de professores"');
+    expect(term).toBe('TDIC OR formação de professores');
     expect(searchTermSchema.parse(term)).toBe(term);
   });
 });
 
 describe('splitSearchTerm (termo → linhas para edição)', () => {
-  it('round-trip build → split → build preserva o termo', () => {
+  it('round-trip build → split → build preserva o termo cru', () => {
     const original: string = buildSearchTerm([
       { text: 'ensino de química', op: 'AND' },
       { text: 'gamificação', op: 'AND' },
@@ -72,12 +74,20 @@ describe('splitSearchTerm (termo → linhas para edição)', () => {
     expect(buildSearchTerm(rows)).toBe(original);
   });
 
-  it('recupera o operador OR da 2ª linha', () => {
-    const rows: TermRow[] = splitSearchTerm('TDIC OR "formação de professores"');
+  it('round-trip preserva aspas explícitas', () => {
+    const original = '"ensino de química" AND gamificação';
+    const rows: TermRow[] = splitSearchTerm(original);
+    expect(rows.length).toBe(2);
+    expect(buildSearchTerm(rows)).toBe(original);
+  });
+
+  it('recupera o operador OR da 2ª linha (texto cru)', () => {
+    const rows: TermRow[] = splitSearchTerm('TDIC OR formação de professores');
     expect(rows.length).toBe(2);
     const second: TermRow | undefined = rows[1];
     expect(second?.op).toBe('OR');
-    expect(buildSearchTerm(rows)).toBe('TDIC OR "formação de professores"');
+    expect(second?.text).toBe('formação de professores');
+    expect(buildSearchTerm(rows)).toBe('TDIC OR formação de professores');
   });
 
   it('não divide AND dentro de frase exata entre aspas', () => {

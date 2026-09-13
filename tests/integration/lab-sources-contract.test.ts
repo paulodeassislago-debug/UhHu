@@ -28,6 +28,7 @@ import {
   searchCapes,
 } from '../../packages/integrations/src/capes.js';
 import { describePostFilter, postFilter } from '../../packages/integrations/src/postFilter.js';
+import { docTypeSchema, searchFiltersSchema } from '../../packages/contracts/src/lab.js';
 import { SourceDisabledError } from '../../packages/integrations/src/registry.js';
 import { SourceClient } from '../../packages/integrations/src/sourceClient.js';
 import type {
@@ -164,7 +165,7 @@ describe('contrato BDTD (fixture VuFind)', () => {
   });
 
   it('regressão shape real VuFind: primary-map, formats[], urls[], sem ano (04-05/1)', async () => {
-    const { fetchFn } = makeFakeFetch(() => jsonResponse(JSON.parse(BDTD_FIXTURE)));
+    const { fetchFn, requests } = makeFakeFetch(() => jsonResponse(JSON.parse(BDTD_FIXTURE)));
     const page = await searchBdtd(
       new SourceClient('bdtd'),
       { term: 'ensino de quimica' },
@@ -172,6 +173,10 @@ describe('contrato BDTD (fixture VuFind)', () => {
       testContext(fetchFn),
     );
     expect(page.sourceStatus).toBe('ok');
+    // Regressão 08-09: termo multi-palavra vai cru à fonte (sem aspas
+    // automáticas — BDTD nunca teve quoting próprio; fidelidade ao site).
+    const url = new URL(first(requests).url);
+    expect(url.searchParams.get('lookfor')).toBe('ensino de quimica');
     // Snapshot real 2026-09-11: 20/20 vinham com authors=[] e docType=null no
     // mapper antigo — agora o mapa primary vira autores e formats[] vira tipo.
     const [firstItem, secondItem] = page.items;
@@ -189,6 +194,19 @@ describe('contrato BDTD (fixture VuFind)', () => {
     const raw = firstItem.rawMetadata;
     expect(typeof raw['authors']).toBe('object');
     expect(Array.isArray(raw['formats'])).toBe(true);
+  });
+
+  it('MP-only na BDTD: sem filter[] de formato (fonte não conhece MP; Core garante)', async () => {
+    const { fetchFn, requests } = makeFakeFetch(() => jsonResponse(JSON.parse(BDTD_FIXTURE)));
+    const page = await searchBdtd(
+      new SourceClient('bdtd'),
+      { term: 'química', docTypes: ['professionalMaster'] },
+      { page: 1, perPage: 20 },
+      testContext(fetchFn),
+    );
+    const url = new URL(first(requests).url);
+    expect(url.searchParams.getAll('filter[]')).toEqual([]);
+    expect(page.sourceStatus).toBe('ok');
   });
 
   it('sem docTypes/anos não envia filter[] (fonte aberta, Core filtra depois)', async () => {
@@ -269,7 +287,7 @@ describe('contrato BDTD (fixture VuFind)', () => {
 });
 
 describe('contrato CAPES (fixture rest/busca)', () => {
-  it('período+tipo: payload SEM Ano e COM Grau (fonte zera Ano×Grau, 12/09/2026)', async () => {
+  it('período+tipo: payload SÓ Ano, SEM Grau (Ano-only, decisão 12/09/2026)', async () => {
     const { fetchFn, requests } = makeFakeFetch(() => jsonResponse(JSON.parse(CAPES_FIXTURE)));
     const def: SearchDef = {
       term: '"ensino de química"',
@@ -302,12 +320,18 @@ describe('contrato CAPES (fixture rest/busca)', () => {
     expect(payload.termo).toBe('"ensino de química"');
     expect(payload.pagina).toBe(1);
     expect(payload.registrosPorPagina).toBeGreaterThanOrEqual(5);
-    // Com Grau presente, NENHUM Ano é enviado — o período fica com o
+    // Decisão Paulo 12/09/2026 DEFINITIVA (08-09, revisa o Grau-only do
+    // 08-08): com ano E tipo, SÓ `Ano` vai à fonte — o tipo fica 100% com o
     // postFilter do Core (D-32). A fonte retorna 0 para Ano+Grau combinados.
     const anos = payload.filtros.filter((f) => f.campo === 'Ano').map((f) => f.valor);
-    expect(anos).toEqual([]);
-    expect(payload.filtros).toContainEqual({ campo: 'Grau Acadêmico', valor: 'Mestrado' });
-    expect(payload.filtros).toContainEqual({ campo: 'Grande Área Conhecimento', valor: 'Ensino' });
+    expect(anos).toEqual(['2020', '2021', '2022']);
+    const graus = payload.filtros.filter((f) => f.campo === 'Grau Acadêmico');
+    expect(graus).toEqual([]);
+    // `area` NUNCA vai à fonte — só pós-filtro heurístico D-32 do Core;
+    // `program` segue como filtro de área da fonte. Campos exatos travam
+    // qualquer reintrodução do filtro removido.
+    const campos = payload.filtros.map((f) => f.campo);
+    expect([...campos].sort()).toEqual(['Ano', 'Ano', 'Ano', 'Área Conhecimento']);
     expect(payload.filtros).toContainEqual({ campo: 'Área Conhecimento', valor: 'Química' });
 
     expect(page.sourceStatus).toBe('ok');
@@ -350,6 +374,127 @@ describe('contrato CAPES (fixture rest/busca)', () => {
     const anos = payload.filtros.filter((f) => f.campo === 'Ano').map((f) => f.valor);
     expect(anos).toEqual(['2020', '2021', '2022']);
     expect(page.sourceStatus).toBe('ok');
+  });
+
+  it('ano unilateral + tipo: payload SÓ Ano, SEM Grau (Ano-only)', async () => {
+    const { fetchFn, requests } = makeFakeFetch(() => jsonResponse(JSON.parse(CAPES_FIXTURE)));
+    const def: SearchDef = {
+      term: 'química',
+      yearFrom: 2024,
+      docTypes: ['doctoralThesis'],
+    };
+    const page = await searchCapes(
+      new SourceClient('capes'),
+      def,
+      { page: 1, perPage: 20 },
+      testContext(fetchFn),
+    );
+
+    const called = first(requests);
+    if (called.body === null) {
+      throw new Error('POST rest/busca sem corpo');
+    }
+    const raw: unknown = JSON.parse(called.body);
+    const payload = raw as {
+      termo: string;
+      filtros: { campo: string; valor: string }[];
+      pagina: number;
+      registrosPorPagina: number;
+    };
+    const anos = payload.filtros.filter((f) => f.campo === 'Ano').map((f) => f.valor);
+    expect(anos).toEqual(['2024']);
+    expect(payload.filtros.filter((f) => f.campo === 'Grau Acadêmico')).toEqual([]);
+    expect(page.sourceStatus).toBe('ok');
+  });
+
+  it('só-tipo (sem ano): payload COM Grau, SEM Ano — MP com rótulo próprio', async () => {
+    const { fetchFn, requests } = makeFakeFetch(() => jsonResponse(JSON.parse(CAPES_FIXTURE)));
+    const def: SearchDef = {
+      term: 'química',
+      docTypes: ['professionalMaster'],
+    };
+    const page = await searchCapes(
+      new SourceClient('capes'),
+      def,
+      { page: 1, perPage: 20 },
+      testContext(fetchFn),
+    );
+
+    const called = first(requests);
+    if (called.body === null) {
+      throw new Error('POST rest/busca sem corpo');
+    }
+    const raw: unknown = JSON.parse(called.body);
+    const payload = raw as {
+      termo: string;
+      filtros: { campo: string; valor: string }[];
+      pagina: number;
+      registrosPorPagina: number;
+    };
+    // Só-tipo → Grau vai à fonte (sem Ano junto, sem combo que zere).
+    expect(payload.filtros).toContainEqual({
+      campo: 'Grau Acadêmico',
+      valor: 'Mestrado Profissional',
+    });
+    expect(payload.filtros.filter((f) => f.campo === 'Ano')).toEqual([]);
+    expect(page.sourceStatus).toBe('ok');
+  });
+
+  it('record com grau Mestrado Profissional vira professionalMaster e filtra separado', async () => {
+    const envelope = {
+      pagina: 1,
+      total: 1,
+      tesesDissertacoes: [
+        {
+          id: 'capes-301',
+          titulo: 'Dissertação de mestrado profissional',
+          autor: 'Maria Prof',
+          ano: 2025,
+          grauAcademico: 'Mestrado Profissional',
+          instituicao: 'Universidade Federal do Vale',
+          link: 'https://catalogodeteses.capes.gov.br/catalogo-teses/ficha/301',
+        },
+      ],
+    };
+    const { fetchFn } = makeFakeFetch(() => jsonResponse(envelope));
+    const page = await searchCapes(
+      new SourceClient('capes'),
+      { term: 'química' },
+      { page: 1, perPage: 20 },
+      testContext(fetchFn),
+    );
+    expect(page.sourceStatus).toBe('ok');
+    expect(page.items).toHaveLength(1);
+    expect(first(page.items).docType).toBe('professionalMaster');
+    // MP casa SOMENTE com filtro professionalMaster (T-08-09-01).
+    const onlyMp = postFilter(page.items, { term: 'q', docTypes: ['professionalMaster'] });
+    expect(onlyMp.kept.map((kept) => kept.sourceId)).toEqual(['capes-301']);
+    const thesisOnly = postFilter(page.items, {
+      term: 'q',
+      docTypes: ['masterThesis', 'doctoralThesis'],
+    });
+    expect(thesisOnly.kept).toEqual([]);
+    // Sem filtro de tipo, MP passa com rótulo próprio no describe.
+    const noType = postFilter(page.items, { term: 'q' });
+    expect(noType.kept).toHaveLength(1);
+    expect(describePostFilter({ term: 'q', docTypes: ['professionalMaster'] })).toContain(
+      'Mestrado Profissional',
+    );
+  });
+
+  it('contrato: terceiro valor MP com max 3 (decisão Paulo 12/09/2026)', () => {
+    expect(docTypeSchema.parse('professionalMaster')).toBe('professionalMaster');
+    expect(docTypeSchema.parse('masterThesis')).toBe('masterThesis');
+    expect(docTypeSchema.parse('doctoralThesis')).toBe('doctoralThesis');
+    const three = searchFiltersSchema.parse({
+      docTypes: ['masterThesis', 'doctoralThesis', 'professionalMaster'],
+    });
+    expect(three.docTypes).toHaveLength(3);
+    expect(() =>
+      searchFiltersSchema.parse({
+        docTypes: ['masterThesis', 'doctoralThesis', 'professionalMaster', 'masterThesis'],
+      }),
+    ).toThrowError();
   });
 
   it('record com dataDefesa ISO recebe year real (mapper dataDefesa-first)', async () => {

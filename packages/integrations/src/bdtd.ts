@@ -368,7 +368,11 @@ export function buildBdtdSearchUrl(def: SearchDef, page: number, perPage: number
   const formats = canonicalDocTypes(def.docTypes);
   if (formats.length === 1) {
     const only = formats[0];
-    if (only !== undefined) {
+    // Só formatos VuFind verificados vão à fonte. `professionalMaster`
+    // (08-09, decisão Paulo 12/09) não tem formato VuFind conhecido — enviar
+    // zeraria a fonte; omitido aqui e garantido pelo pós-filtro do Core
+    // (D-32, mesmo molde do caso 2-formatos abaixo).
+    if (only === 'masterThesis' || only === 'doctoralThesis') {
       url.searchParams.append('filter[]', `format:"${only}"`);
     }
   }

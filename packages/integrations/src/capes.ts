@@ -306,7 +306,6 @@ export function buildCapesPayload(
   }
   const filtros: CapesFiltro[] = [];
   const degrees = canonicalDocTypes(def.docTypes);
-  const hasDegree = degrees.length > 0;
   const yearFrom = def.yearFrom;
   const yearTo = def.yearTo;
   const hasYear = yearFrom !== undefined || yearTo !== undefined;
