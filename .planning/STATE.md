@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Lab UI v1
-status: "executing — phase 9 (09-01 CORE BibTeX MP done, 09-02 Corpus real done, 09-03 Export UI done, 09-04 Compare done, 09-05 Referencia done, 09-06 ready)"
-stopped_at: Phase 9 plan 09-05 complete
-last_updated: "2026-09-13T14:33:00Z"
-last_activity: "2026-09-13 — Phase 9 plan 09-05 complete (Referencia manual: selo 1 toque + coluna destacada, sem efeito funcional; 3a98c1e, f3f27ff; lab 41/41 src/projects+search, tsc+lint exit 0)"
+status: "executing — phase 9 COMPLETE (09-01 CORE BibTeX MP done, 09-02 Corpus real done, 09-03 Export UI done, 09-04 Compare done, 09-05 Referencia done, 09-06 Gate done + UAT approved)"
+stopped_at: Phase 9 plan 09-06 complete (milestone v1.1 ready to close)
+last_updated: "2026-09-13T15:30:00Z"
+last_activity: "2026-09-13 — Phase 9 plan 09-06 complete (Gate: beta LIVE API :3009/web :8081 Projeto Corpus 90, 3 attachments, compare 4 blocos, IDOR 16/16, audit 0 crit/0 high, UAT approved; d72b6ab parseDocType MP fix)"
 progress:
   total_phases: 4
   completed_phases: 0
@@ -25,11 +25,11 @@ See: .planning/PROJECT.md (updated 2026-09-11)
 
 ## Current Position
 
-Phase: 9 of 9 (Wave 1 done — 09-01, 09-02, 09-04; Wave 2 done — 09-03, 09-05; Wave 3 09-06 ready)
-Plan: 05 complete
-Status: 09-05 done, 09-06 (Gate do milestone) ready
-Last activity: 2026-09-13 — Phase 9 plan 09-05 complete (Referencia selo 1 toque + coluna destacada, lab 41/41 + tsc/lint exit 0)
-Resume file: .planning/phases/09-corpus-exportacao-comparacao/09-05-SUMMARY.md
+Phase: 9 of 9 (Wave 1 done — 09-01, 09-02, 09-04; Wave 2 done — 09-03, 09-05; Wave 3 done — 09-06 Gate + UAT approved)
+Plan: 06 complete
+Status: Phase 9 COMPLETE 6/6, milestone v1.1 ready to close
+Last activity: 2026-09-13 — Phase 9 plan 09-06 complete (Gate beta LIVE + IDOR 16/16 + audit 0 crit/0 high + UAT approved; d72b6ab)
+Resume file: .planning/phases/09-corpus-exportacao-comparacao/09-06-SUMMARY.md
 
 Progress: [████████████████████░░] 9/9 plans phase 8 + UAT approved (milestone v1.1 phases 6-8/9 done)
 
@@ -45,9 +45,9 @@ Progress: [████████░░] 6/6 plans phase 7 + UAT approved (mil
 
 **Velocity:**
 
-- Total plans completed: 18
+- Total plans completed: 19
 - Average duration: ~8min
-- Total execution time: ~106min
+- Total execution time: ~151min
 
 **By Phase:**
 
@@ -58,7 +58,7 @@ Progress: [████████░░] 6/6 plans phase 7 + UAT approved (mil
 | 4. Corpus e exportação | 5 | ~150min (executor + checkpoint/fixes) | ~30min |
 | 7. Projetos, buscas e execução | 6 (07-01, 07-02, 07-03, 07-04, gap 07-05, UX 07-06) | ~43min | ~7min |
 | 8. Resultados e triagem | 9 (08-01, 08-02, 08-03, 08-04, gap 08-05, 08-06 SUPERSEDED, 08-07, gap 08-08, 08-09) | ~63min | ~7min |
-| 9. Corpus, exportação e comparação | 5 (09-01, 09-02, 09-03, 09-04, 09-05) | ~18min | ~4min |
+| 9. Corpus, exportação e comparação | 6 (09-01, 09-02, 09-03, 09-04, 09-05, 09-06 Gate) | ~63min (executor + beta + checkpoint/fixes) | ~11min |
 
 **Recent Trend:**
 
@@ -113,6 +113,7 @@ Recent decisions affecting current work:
 - 09-04: Compare 2-4 na UI (UI-27/UI-28, 865c0e3+0488c2c+cc46067): compareHelpers puros (mostInclusive determinística empate-primeiro + outsider ignorado, pairOverlap bidirecional, sortedYearRows com desconhecido por último, 8/8) + compare.tsx (seleção FlatList contador+N/Comparar 2..4 base=primeira, tabela ScrollView horizontal com Resultados/BDTD/CAPES/Sobreposição + Por ano (todas), ★ mais inclusiva única, vazio orientador, skeleton/verbatim+Repetir, 401 expired+next, UUID guard client-side; colunas em slots condicionais col0..col3 + anos em FlatList horizontal, zero .map) + Stack compare após corpus + TabBar Comparação disabled→Link (07-01/07-06 intactos); verify do plano adaptado p/ `exec vitest` (Rule 3: sem script vitest no lab); lab 115/115 + tsc/eslint exit 0, any 0, menos-ru 0; auditoria 0 crit/0 high (T-09-04-01/02 mitigados, T-09-04-03 aceito)
 - 09-03: Export UI (UI-25/UI-26, ce583cb+c36892d): exportDelivery puro (mimeForFormat 3 mimes + buildExportFilename slug ASCII fallback projeto + isExportEmpty + downloadExportFile Blob+anchor web e Share nativo, 6/6) + corpus.tsx com seção Exportar (3 formatos default csv, Seleção X de Y, Exportar seleção disabled sem seleção, Exportar corpus completo; BibTeX vazio avisa sem request; título via listById isolado sem quebrar lista; raw verbatim; Repetir do último escopo; 401 expired+next); `exec vitest` (Rule 3) + comentário sem literais proibidos p/ gate grep (Rule 1) + guarda geral anti-400 (Rule 2); lab 121/121 + tsc/eslint exit 0, any 0; auditoria 0 crit/0 high (T-09-03-01/02 mitigados, T-09-03-03 aceito)
 - 09-05: Referência manual na UI (UI-29, 3a98c1e+f3f27ff): SearchCard com props projectId/isReference/onSetReference (selo Referência ou botão 1 toque sem confirmação, sem API/Alert) + strategies Promise.all listSearches+listById com PATCH otimista revertido em erro verbatim no topo e 401 expired+next (exclusão da referência limpa local p/ null) + compare com fetch listById no mount e coluna referência com destaque peso/borda, vencedora ★ intacta; D-25 grep filter+reference = 0; typecheck quebrado na task 1 até a task 2 (TS2739 esperado); lab 41/41 src/projects+search + 8/8 compare + tsc/eslint exit 0, any 0; auditoria 0 crit/0 high (T-09-05-01 mitigado, T-09-05-02 aceito D-24)
+- 09-06: Gate do milestone (UI-23..UI-29, d72b6ab): beta LIVE API :3009/web :8081 Projeto Corpus 90 com 3 attachments `corpus-*` + BibTeX MP `type={Mestrado profissional}` + compare 4 blocos; gates literais (tsc exit 0, lint 0 errors, lab 121/121, smoke 28/28, 3 greps 0); IDOR 4x4 16/16 (200/404/404/401); audit toolchain 2 high dev-only aceitos (mesmo aceite 06-02); auditoria 0 crit/0 high; UAT approved — phase 9 6/6, milestone v1.1 pronto p/ encerrar
 
 ### Pending Todos
 
@@ -135,6 +136,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-13T14:33:00Z
-Stopped at: Phase 9 plan 09-05 complete (Referência manual: selo 1 toque + coluna destacada; 3a98c1e, f3f27ff) — 09-06 (Gate do milestone) ready. Nota: re-teste humano UAT 07-HUMAN-UAT item 1 (EXECUTAR AGORA via tailnet) segue pendente em paralelo, junto com 06-HUMAN-UAT; UAT da fase 8 (autocomplete/criar/modal/ficha/retry + BUSCAR MAIS/loading/retry/scroll + cancel de lote + busca período+tipo Paulo + MP + termo multi-palavra) entra na fila.
-Resume file: .planning/phases/09-corpus-exportacao-comparacao/09-05-SUMMARY.md. Nota: re-teste humano UAT 06-HUMAN-UAT (LISTA ROLA web+nativo) segue pendente em paralelo.
+Last session: 2026-09-13T15:30:00Z
+Stopped at: Phase 9 plan 09-06 complete — phase 9 6/6 COMPLETE, milestone v1.1 ready to close (encerrar via transicao/milestone). Nota: re-testes humanos UAT 07/06/08 seguem em fila paralela, junto com carry-over v1.0.
+Resume file: .planning/phases/09-corpus-exportacao-comparacao/09-06-SUMMARY.md. Nota: re-teste humano UAT 06-HUMAN-UAT (LISTA ROLA web+nativo) segue pendente em paralelo.
