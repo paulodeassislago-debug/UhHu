@@ -71,6 +71,12 @@ describe('AppShell (critérios 1/2/7/8)', () => {
     expect(source.includes('SIDEBAR_MAX_WIDTH')).toBe(true);
   });
 
+  it('trilha recolhida mantém o hambúrguer visível (dead-end do ☰, 14/09)', () => {
+    const source: string = readUi('../AppShell.tsx');
+    expect(source.includes('SIDEBAR_COLLAPSED_WIDTH')).toBe(true);
+    expect(source.includes('flex: 0')).toBe(false);
+  });
+
   it('hooks sempre antes do return condicional (F1: sem hook após return cedo)', () => {
     const source: string = readUi('../AppShell.tsx');
     const lines: string[] = source.split('\n');

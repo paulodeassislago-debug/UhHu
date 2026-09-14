@@ -10,6 +10,7 @@ import {
   DRAWER_MAX_WIDTH,
   SHELL_BREAKPOINT,
   SHELL_SECTIONS,
+  SIDEBAR_COLLAPSED_WIDTH,
   SIDEBAR_MAX_WIDTH,
   SIDEBAR_MIN_WIDTH,
   SIDEBAR_ROW_MIN_HEIGHT,
@@ -35,6 +36,10 @@ describe('constantes de layout do shell (spec §3/§6)', () => {
     expect(SIDEBAR_MIN_WIDTH).toBe(200);
     expect(SIDEBAR_MAX_WIDTH).toBe(280);
     expect(DRAWER_MAX_WIDTH).toBe(280);
+  });
+
+  it('trilha recolhida com largura que comporta o hambúrguer', () => {
+    expect(SIDEBAR_COLLAPSED_WIDTH).toBe(56);
   });
 });
 

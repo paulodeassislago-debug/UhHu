@@ -25,6 +25,7 @@ import {
   DRAWER_MAX_WIDTH,
   DRAWER_WIDTH_RATIO,
   SHELL_BREAKPOINT,
+  SIDEBAR_COLLAPSED_WIDTH,
   SIDEBAR_MAX_WIDTH,
   SIDEBAR_MIN_WIDTH,
   SIDEBAR_WIDTH_RATIO,
@@ -156,7 +157,7 @@ export function AppShell({ children }: AppShellProps): JSX.Element {
         testID="app-shell-sidebar-slot"
         style={
           collapsed
-            ? { flex: 0 }
+            ? { width: SIDEBAR_COLLAPSED_WIDTH }
             : {
                 width: SIDEBAR_WIDTH_RATIO,
                 minWidth: SIDEBAR_MIN_WIDTH,

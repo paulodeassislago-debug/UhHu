@@ -18,6 +18,10 @@ export const SIDEBAR_MIN_WIDTH = 200;
 
 export const SIDEBAR_MAX_WIDTH = 280;
 
+// Trilha do modo recolhido: mantém o hambúrguer visível (dead-end do ☰,
+// 14/09/2026). Comporta o alvo de toque da §6 com respiro.
+export const SIDEBAR_COLLAPSED_WIDTH = 56;
+
 export const DRAWER_WIDTH_RATIO = '80%';
 
 export const DRAWER_MAX_WIDTH = 280;
