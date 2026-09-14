@@ -24,6 +24,7 @@ const DETAIL_PATH = '../../../app/project/[id].tsx';
 const STRATEGIES_PATH = '../../../app/project/[id]/strategies.tsx';
 const SEARCHFORM_PATH = '../../../app/project/[id]/search-form.tsx';
 const RUN_PATH = '../../../app/project/[id]/run.tsx';
+const SIDEBAR_PATH = '../Sidebar.tsx';
 
 function assertImportsFromReactNative(source: string, name: string, file: string): void {
   const importPattern = new RegExp(
@@ -117,6 +118,16 @@ describe('scroll containers (tripwire UAT 11/09/2026)', () => {
     const source: string = readScreen(RUN_PATH);
     assertImportsFromReactNative(source, 'ScrollView', 'run.tsx');
     assertUsesComponent(source, 'ScrollView', 'run.tsx');
+  });
+
+  it('Sidebar.tsx importa e usa FlatList de react-native (W1)', () => {
+    const source: string = readScreen(SIDEBAR_PATH);
+    assertImportsFromReactNative(source, 'FlatList', 'Sidebar.tsx');
+    assertUsesComponent(source, 'FlatList', 'Sidebar.tsx');
+    expect(source.includes('keyExtractor'), 'Sidebar.tsx deve ter keyExtractor (id opaco)').toBe(
+      true,
+    );
+    expect(source.includes('renderItem'), 'Sidebar.tsx deve ter renderItem').toBe(true);
   });
 
   it('nenhum crypto.randomUUID nu fora de utils/uuid.ts (tripwire UAT 12/09/2026, 07-05)', () => {

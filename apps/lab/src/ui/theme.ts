@@ -8,6 +8,11 @@ export const theme = {
     surface: '#ffffff',
     skeletonStrong: '#e5e7eb',
     skeletonWeak: '#f3f4f6',
+    // W1 (spec UhHu_Lab_Tela_Shell_e_Primitivas §4): exatamente 2 tokens
+    // novos, valores provisórios — a fase visual os troca sem tocar nas
+    // telas. Nada mais entra aqui nesta wave.
+    sidebarSurface: '#f9fafb',
+    activeHighlight: '#dcfce7',
   },
   type: {
     caption: 12,
