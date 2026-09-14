@@ -6,11 +6,12 @@
 import { Link } from 'expo-router';
 import type { JSX } from 'react';
 import { Text, View } from 'react-native';
+import { theme } from '../src/ui/theme';
 
 export default function IndexScreen(): JSX.Element {
   return (
-    <View style={{ flex: 1, padding: 24, gap: 12 }}>
-      <Text style={{ fontSize: 24, fontWeight: '600' }}>UhHu Lab</Text>
+    <View style={{ flex: 1, padding: theme.space.xxl, gap: theme.space.lg }}>
+      <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>UhHu Lab</Text>
       <Text>Raiz — redireciona para /login ou /projects conforme sessão (auth em 06-03).</Text>
       <Link href="/login">Ir para login</Link>
       <Link href="/projects">Ir para projetos</Link>

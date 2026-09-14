@@ -23,6 +23,7 @@ import type { CreateProjectInput, ProjectDTO } from '@uhhu/contracts';
 import { ApiError } from '../api/client';
 import type { TokenProvider } from '../api/client';
 import { projectsApi } from '../api/projects';
+import { theme } from './theme';
 
 export interface ProjectModalProps {
   visible: boolean;
@@ -131,12 +132,18 @@ export function ProjectModal({
         style={{
           flex: 1,
           justifyContent: 'center',
-          padding: 24,
+          padding: theme.space.xxl,
           backgroundColor: 'rgba(0,0,0,0.4)',
         }}
       >
-        <View style={{ backgroundColor: '#ffffff', padding: 16, gap: 12 }}>
-          <Text style={{ fontSize: 20, fontWeight: '600' }}>Novo projeto</Text>
+        <View
+          style={{
+            backgroundColor: theme.colors.surface,
+            padding: theme.space.xl,
+            gap: theme.space.lg,
+          }}
+        >
+          <Text style={{ fontSize: theme.type.title, fontWeight: '600' }}>Novo projeto</Text>
           <Text>Título</Text>
           <TextInput
             value={title}
@@ -154,10 +161,14 @@ export function ProjectModal({
             maxLength={2000}
             editable={!submitting}
           />
-          {fieldError !== null ? <Text style={{ color: '#dc2626' }}>{fieldError}</Text> : null}
-          {apiMessage !== null ? <Text style={{ color: '#dc2626' }}>{apiMessage}</Text> : null}
+          {fieldError !== null ? (
+            <Text style={{ color: theme.colors.danger }}>{fieldError}</Text>
+          ) : null}
+          {apiMessage !== null ? (
+            <Text style={{ color: theme.colors.danger }}>{apiMessage}</Text>
+          ) : null}
           {apiRequestId !== null ? (
-            <Text style={{ fontSize: 12 }}>(req {apiRequestId})</Text>
+            <Text style={{ fontSize: theme.type.caption }}>(req {apiRequestId})</Text>
           ) : null}
           <Button
             title={submitting ? 'Criando…' : 'Criar projeto'}

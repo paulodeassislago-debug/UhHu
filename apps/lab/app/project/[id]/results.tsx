@@ -61,6 +61,7 @@ import type { TriagedItem } from '../../../src/results/triage';
 import { Empty } from '../../../src/ui/Empty';
 import { ErrorBanner } from '../../../src/ui/ErrorBanner';
 import { CardSkeleton } from '../../../src/ui/Skeleton';
+import { theme } from '../../../src/ui/theme';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -208,10 +209,10 @@ export default function ResultsScreen(): JSX.Element {
     return (
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+        contentContainerStyle={{ flexGrow: 1, padding: theme.space.xxl, gap: theme.space.lg }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Resultados</Text>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Resultados</Text>
         <CardSkeleton count={3} />
       </ScrollView>
     );
@@ -221,10 +222,10 @@ export default function ResultsScreen(): JSX.Element {
     return (
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+        contentContainerStyle={{ flexGrow: 1, padding: theme.space.xxl, gap: theme.space.lg }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Resultados</Text>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Resultados</Text>
         <Text>Redirecionando para o login…</Text>
       </ScrollView>
     );
@@ -234,10 +235,10 @@ export default function ResultsScreen(): JSX.Element {
     return (
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+        contentContainerStyle={{ flexGrow: 1, padding: theme.space.xxl, gap: theme.space.lg }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Resultados</Text>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Resultados</Text>
         <ErrorBanner message="Projeto inválido." onBack={handleBack} />
       </ScrollView>
     );
@@ -247,10 +248,10 @@ export default function ResultsScreen(): JSX.Element {
     return (
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+        contentContainerStyle={{ flexGrow: 1, padding: theme.space.xxl, gap: theme.space.lg }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Resultados</Text>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Resultados</Text>
         <ErrorBanner message="Resultados inválidos." onBack={handleBack} />
       </ScrollView>
     );
@@ -260,10 +261,10 @@ export default function ResultsScreen(): JSX.Element {
     return (
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+        contentContainerStyle={{ flexGrow: 1, padding: theme.space.xxl, gap: theme.space.lg }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Resultados</Text>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Resultados</Text>
         <Text>Redirecionando para o login…</Text>
       </ScrollView>
     );
@@ -273,10 +274,10 @@ export default function ResultsScreen(): JSX.Element {
     return (
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+        contentContainerStyle={{ flexGrow: 1, padding: theme.space.xxl, gap: theme.space.lg }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Resultados</Text>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Resultados</Text>
         <CardSkeleton count={3} />
       </ScrollView>
     );
@@ -287,10 +288,10 @@ export default function ResultsScreen(): JSX.Element {
     return (
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+        contentContainerStyle={{ flexGrow: 1, padding: theme.space.xxl, gap: theme.space.lg }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Resultados</Text>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Resultados</Text>
         <ErrorBanner
           message={banner.message}
           requestId={banner.requestId}
@@ -320,24 +321,24 @@ export default function ResultsScreen(): JSX.Element {
           />
         )}
         style={{ flex: 1 }}
-        contentContainerStyle={{ padding: 24, gap: 12, flexGrow: 1 }}
+        contentContainerStyle={{ padding: theme.space.xxl, gap: theme.space.lg, flexGrow: 1 }}
         onEndReached={handleEndReached}
         onEndReachedThreshold={0.5}
         refreshing={list.loading}
         onRefresh={handleRefresh}
         ListHeaderComponent={
-          <View style={{ gap: 12 }}>
-            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-              <Text style={{ fontSize: 24, fontWeight: '600' }}>Resultados</Text>
+          <View style={{ gap: theme.space.lg }}>
+            <View style={{ flexDirection: 'row', gap: theme.space.md, alignItems: 'center' }}>
+              <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Resultados</Text>
               <Button title="Tags" onPress={handleOpenTagsModal} />
             </View>
             <Text>{list.newCount} NOVOS desde a última execução</Text>
             <Text>
               mostrando {visibleItems.length} de {list.runInfo?.totalKnown ?? list.total}
             </Text>
-            <View style={{ gap: 8 }}>
+            <View style={{ gap: theme.space.md }}>
               <Text style={{ fontWeight: '600' }}>Estado</Text>
-              <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+              <View style={{ flexDirection: 'row', gap: theme.space.md, flexWrap: 'wrap' }}>
                 <Button
                   title={decision === 'all' ? '• todos' : 'todos'}
                   onPress={() => list.patchFilters({ decision: 'all' })}
@@ -360,7 +361,7 @@ export default function ResultsScreen(): JSX.Element {
                 />
               </View>
             </View>
-            <View style={{ gap: 8 }}>
+            <View style={{ gap: theme.space.md }}>
               <Text style={{ fontWeight: '600' }}>Tag</Text>
               <View style={{ flexDirection: 'row' }}>
                 <Button
@@ -378,12 +379,12 @@ export default function ResultsScreen(): JSX.Element {
                     onPress={() => list.patchFilters({ tag: tagItem.name })}
                   />
                 )}
-                contentContainerStyle={{ gap: 8 }}
+                contentContainerStyle={{ gap: theme.space.md }}
               />
             </View>
-            <View style={{ gap: 8 }}>
+            <View style={{ gap: theme.space.md }}>
               <Text style={{ fontWeight: '600' }}>Fonte</Text>
-              <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+              <View style={{ flexDirection: 'row', gap: theme.space.md, flexWrap: 'wrap' }}>
                 <Button
                   title={source === 'all' ? '• todas' : 'todas'}
                   onPress={() => list.patchFilters({ source: 'all' })}
@@ -398,24 +399,24 @@ export default function ResultsScreen(): JSX.Element {
                 />
               </View>
             </View>
-            <View style={{ gap: 8 }}>
+            <View style={{ gap: theme.space.md }}>
               <Text style={{ fontWeight: '600' }}>Ano</Text>
               <TextInput
                 value={yearInput}
                 onChangeText={handleYearChange}
                 placeholder="todos"
                 keyboardType="numeric"
-                style={{ borderWidth: 1, padding: 8 }}
+                style={{ borderWidth: theme.border.thin, padding: theme.space.md }}
               />
             </View>
           </View>
         }
         ListFooterComponent={
-          <View style={{ gap: 8, paddingVertical: 12 }}>
+          <View style={{ gap: theme.space.md, paddingVertical: theme.space.lg }}>
             {list.loadingMore ? <Text>carregando…</Text> : null}
             {list.loadMoreError !== null ? <Text>{list.loadMoreError.message}</Text> : null}
             {list.fetchMoreError !== null && !list.fetchMoreLoading ? (
-              <View style={{ gap: 8 }}>
+              <View style={{ gap: theme.space.md }}>
                 <Text>{list.fetchMoreError.message}</Text>
                 <Button title="tentar de novo" onPress={handleFetchMore} />
               </View>

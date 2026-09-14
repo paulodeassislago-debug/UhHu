@@ -22,6 +22,7 @@ import { nativeLogin } from '../src/auth/pat';
 import { isSafeNext, useAuth } from '../src/auth/session';
 import { ErrorBanner } from '../src/ui/ErrorBanner';
 import { CardSkeleton } from '../src/ui/Skeleton';
+import { theme } from '../src/ui/theme';
 
 function toSingleParam(value: string | string[] | undefined): string | undefined {
   if (typeof value === 'string') {
@@ -94,10 +95,10 @@ export default function LoginScreen(): JSX.Element {
   return (
     <ScrollView
       style={{ flex: 1 }}
-      contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+      contentContainerStyle={{ flexGrow: 1, padding: theme.space.xxl, gap: theme.space.lg }}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={{ fontSize: 24, fontWeight: '600' }}>Entrar</Text>
+      <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Entrar</Text>
       {showExpired ? <Text>Sua sessão expirou. Entre novamente.</Text> : null}
       {showRegistered ? <Text>Conta criada, entre com suas credenciais.</Text> : null}
       <Text>Email</Text>
@@ -108,7 +109,7 @@ export default function LoginScreen(): JSX.Element {
         autoCapitalize="none"
         keyboardType="email-address"
         editable={!busy}
-        style={{ borderWidth: 1, padding: 8 }}
+        style={{ borderWidth: theme.border.thin, padding: theme.space.md }}
       />
       <Text>Senha</Text>
       <TextInput
@@ -117,7 +118,7 @@ export default function LoginScreen(): JSX.Element {
         placeholder="••••••••••••"
         secureTextEntry
         editable={!busy}
-        style={{ borderWidth: 1, padding: 8 }}
+        style={{ borderWidth: theme.border.thin, padding: theme.space.md }}
       />
       <Button
         title={busy ? 'Entrando…' : 'Entrar'}

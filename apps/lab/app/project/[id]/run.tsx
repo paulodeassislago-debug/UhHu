@@ -46,6 +46,7 @@ import { ErrorBanner } from '../../../src/ui/ErrorBanner';
 import { PartialBanner } from '../../../src/ui/PartialBanner';
 import { CardSkeleton } from '../../../src/ui/Skeleton';
 import { newIdempotencyKey } from '../../../src/utils/uuid';
+import { theme } from '../../../src/ui/theme';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -210,10 +211,10 @@ export default function RunScreen(): JSX.Element {
     return (
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+        contentContainerStyle={{ flexGrow: 1, padding: theme.space.xxl, gap: theme.space.lg }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Execução</Text>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Execução</Text>
         <CardSkeleton count={2} />
       </ScrollView>
     );
@@ -223,10 +224,10 @@ export default function RunScreen(): JSX.Element {
     return (
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+        contentContainerStyle={{ flexGrow: 1, padding: theme.space.xxl, gap: theme.space.lg }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Execução</Text>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Execução</Text>
         <Text>Redirecionando para o login…</Text>
       </ScrollView>
     );
@@ -236,10 +237,10 @@ export default function RunScreen(): JSX.Element {
     return (
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+        contentContainerStyle={{ flexGrow: 1, padding: theme.space.xxl, gap: theme.space.lg }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Execução</Text>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Execução</Text>
         <ErrorBanner message="Projeto inválido." onBack={handleBack} />
       </ScrollView>
     );
@@ -249,10 +250,10 @@ export default function RunScreen(): JSX.Element {
     return (
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+        contentContainerStyle={{ flexGrow: 1, padding: theme.space.xxl, gap: theme.space.lg }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Execução</Text>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Execução</Text>
         <ErrorBanner message="Execução inválida." onBack={handleBack} />
       </ScrollView>
     );
@@ -263,10 +264,10 @@ export default function RunScreen(): JSX.Element {
     return (
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+        contentContainerStyle={{ flexGrow: 1, padding: theme.space.xxl, gap: theme.space.lg }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Execução</Text>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Execução</Text>
         <Text>Redirecionando para o login…</Text>
       </ScrollView>
     );
@@ -279,10 +280,12 @@ export default function RunScreen(): JSX.Element {
       return (
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+          contentContainerStyle={{ flexGrow: 1, padding: theme.space.xxl, gap: theme.space.lg }}
           keyboardShouldPersistTaps="handled"
         >
-          <Text style={{ fontSize: 24, fontWeight: '600' }}>Execução #{runId.slice(0, 8)}</Text>
+          <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>
+            Execução #{runId.slice(0, 8)}
+          </Text>
           <CardSkeleton count={2} />
         </ScrollView>
       );
@@ -291,10 +294,12 @@ export default function RunScreen(): JSX.Element {
       return (
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+          contentContainerStyle={{ flexGrow: 1, padding: theme.space.xxl, gap: theme.space.lg }}
           keyboardShouldPersistTaps="handled"
         >
-          <Text style={{ fontSize: 24, fontWeight: '600' }}>Execução #{runId.slice(0, 8)}</Text>
+          <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>
+            Execução #{runId.slice(0, 8)}
+          </Text>
           <ErrorBanner
             message="Acompanhamento excedido — reabra a tela."
             onRetry={retry}
@@ -306,10 +311,12 @@ export default function RunScreen(): JSX.Element {
     return (
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+        contentContainerStyle={{ flexGrow: 1, padding: theme.space.xxl, gap: theme.space.lg }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Execução #{runId.slice(0, 8)}</Text>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>
+          Execução #{runId.slice(0, 8)}
+        </Text>
         <ErrorBanner
           message={error?.message ?? 'Erro interno. Tente novamente.'}
           requestId={error !== null && error.requestId !== '' ? error.requestId : null}
@@ -368,10 +375,10 @@ export default function RunScreen(): JSX.Element {
   return (
     <ScrollView
       style={{ flex: 1 }}
-      contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+      contentContainerStyle={{ flexGrow: 1, padding: theme.space.xxl, gap: theme.space.lg }}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={{ fontSize: 24, fontWeight: '600' }}>
+      <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>
         Execução #{runId.slice(0, 8)} — &quot;{effectiveRun.termSnapshot}&quot;
       </Text>
       <Text>
@@ -379,13 +386,17 @@ export default function RunScreen(): JSX.Element {
         {formatExecutedAt(effectiveRun.executedAt)} · {total} resultados · {duration}
       </Text>
       {showsBdtd ? (
-        <View style={{ borderWidth: 1, padding: 12, gap: 4 }}>
+        <View
+          style={{ borderWidth: theme.border.thin, padding: theme.space.lg, gap: theme.space.xs }}
+        >
           <Text style={{ fontWeight: '600' }}>BDTD</Text>
           <Text>BDTD: {sourceProgressLine('bdtd', effectiveRun)}</Text>
         </View>
       ) : null}
       {showsCapes ? (
-        <View style={{ borderWidth: 1, padding: 12, gap: 4 }}>
+        <View
+          style={{ borderWidth: theme.border.thin, padding: theme.space.lg, gap: theme.space.xs }}
+        >
           <Text style={{ fontWeight: '600' }}>CAPES</Text>
           <Text>CAPES: {sourceProgressLine('capes', effectiveRun)}</Text>
           {capes2026Hint ? <Text>(a fonte tem poucos dados de 2026)</Text> : null}
@@ -422,7 +433,7 @@ export default function RunScreen(): JSX.Element {
         />
       ) : null}
       {effectiveRun.status === 'cancelled' ? (
-        <View style={{ gap: 8 }}>
+        <View style={{ gap: theme.space.md }}>
           <Text>Execução cancelada</Text>
           {searchId.length > 0 ? (
             <Button
@@ -435,7 +446,7 @@ export default function RunScreen(): JSX.Element {
       ) : null}
       {(terminal && effectiveRun.status === 'succeeded') ||
       (terminal && effectiveRun.status === 'partial') ? (
-        <View style={{ gap: 4 }}>
+        <View style={{ gap: theme.space.xs }}>
           <Text>{effectiveRun.metrics.newCount} NOVOS desde a última execução</Text>
           <Button title="Ver resultados" onPress={handleOpenResults} />
         </View>

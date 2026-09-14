@@ -8,6 +8,7 @@
 
 import type { JSX } from 'react';
 import { View } from 'react-native';
+import { theme } from './theme';
 
 export interface CardSkeletonProps {
   count?: number;
@@ -15,10 +16,13 @@ export interface CardSkeletonProps {
 
 function SkeletonCard(): JSX.Element {
   return (
-    <View testID="skeleton-card" style={{ borderWidth: 1, padding: 12, gap: 8 }}>
-      <View style={{ height: 16, backgroundColor: '#e5e7eb' }} />
-      <View style={{ height: 12, backgroundColor: '#f3f4f6' }} />
-      <View style={{ height: 12, width: '60%', backgroundColor: '#f3f4f6' }} />
+    <View
+      testID="skeleton-card"
+      style={{ borderWidth: theme.border.thin, padding: theme.space.lg, gap: theme.space.md }}
+    >
+      <View style={{ height: 16, backgroundColor: theme.colors.skeletonStrong }} />
+      <View style={{ height: 12, backgroundColor: theme.colors.skeletonWeak }} />
+      <View style={{ height: 12, width: '60%', backgroundColor: theme.colors.skeletonWeak }} />
     </View>
   );
 }
@@ -29,5 +33,5 @@ export function CardSkeleton({ count = 2 }: CardSkeletonProps): JSX.Element {
   for (let i = 0; i < safeCount; i += 1) {
     cards.push(<SkeletonCard key={`skeleton-${i}`} />);
   }
-  return <View style={{ gap: 12 }}>{cards}</View>;
+  return <View style={{ gap: theme.space.lg }}>{cards}</View>;
 }

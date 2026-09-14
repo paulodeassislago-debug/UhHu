@@ -39,6 +39,7 @@ import { useAuth } from '../../src/auth/session';
 import { ErrorBanner } from '../../src/ui/ErrorBanner';
 import { CardSkeleton } from '../../src/ui/Skeleton';
 import { formatCorpusCount } from '../../src/projects/counts';
+import { theme } from '../../src/ui/theme';
 
 type LoadState = 'loading' | 'ready' | 'error';
 type DetailTab = 'strategies' | 'compare' | 'corpus' | 'none';
@@ -293,10 +294,10 @@ export default function ProjectDetailScreen({
     return (
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+        contentContainerStyle={{ flexGrow: 1, padding: theme.space.xxl, gap: theme.space.lg }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Projeto</Text>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Projeto</Text>
         <CardSkeleton count={2} />
       </ScrollView>
     );
@@ -306,10 +307,10 @@ export default function ProjectDetailScreen({
     return (
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+        contentContainerStyle={{ flexGrow: 1, padding: theme.space.xxl, gap: theme.space.lg }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Projeto</Text>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Projeto</Text>
         <Text>Redirecionando para o login…</Text>
         <Link href="/login">Ir para login</Link>
       </ScrollView>
@@ -320,10 +321,10 @@ export default function ProjectDetailScreen({
     return (
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+        contentContainerStyle={{ flexGrow: 1, padding: theme.space.xxl, gap: theme.space.lg }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Projeto</Text>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Projeto</Text>
         <ErrorBanner
           message={errorMessage ?? 'Erro interno. Tente novamente.'}
           requestId={errorRequestId}
@@ -339,11 +340,11 @@ export default function ProjectDetailScreen({
   return (
     <ScrollView
       style={{ flex: 1 }}
-      contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+      contentContainerStyle={{ flexGrow: 1, padding: theme.space.xxl, gap: theme.space.lg }}
       keyboardShouldPersistTaps="handled"
     >
       {editingTitle ? (
-        <View style={{ gap: 8 }}>
+        <View style={{ gap: theme.space.md }}>
           <TextInput
             value={titleDraft}
             onChangeText={setTitleDraft}
@@ -351,11 +352,13 @@ export default function ProjectDetailScreen({
             maxLength={200}
             editable={!titleSaving}
           />
-          {titleError !== null ? <Text style={{ color: '#dc2626' }}>{titleError}</Text> : null}
-          {titleRequestId !== null ? (
-            <Text style={{ fontSize: 12 }}>(req {titleRequestId})</Text>
+          {titleError !== null ? (
+            <Text style={{ color: theme.colors.danger }}>{titleError}</Text>
           ) : null}
-          <View style={{ flexDirection: 'row', gap: 8 }}>
+          {titleRequestId !== null ? (
+            <Text style={{ fontSize: theme.type.caption }}>(req {titleRequestId})</Text>
+          ) : null}
+          <View style={{ flexDirection: 'row', gap: theme.space.md }}>
             <Button
               title={titleSaving ? 'Salvando…' : 'Salvar'}
               onPress={() => void handleSaveTitle()}
@@ -365,8 +368,10 @@ export default function ProjectDetailScreen({
           </View>
         </View>
       ) : (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Text style={{ fontSize: 24, fontWeight: '600' }}>{project?.title ?? 'Projeto'}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space.md }}>
+          <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>
+            {project?.title ?? 'Projeto'}
+          </Text>
           <Pressable
             onPress={handleStartTitleEdit}
             accessibilityRole="button"
@@ -378,7 +383,7 @@ export default function ProjectDetailScreen({
         </View>
       )}
       {editing ? (
-        <View style={{ gap: 8 }}>
+        <View style={{ gap: theme.space.md }}>
           <TextInput
             value={draft}
             onChangeText={setDraft}
@@ -387,11 +392,13 @@ export default function ProjectDetailScreen({
             maxLength={2000}
             editable={!saving}
           />
-          {saveError !== null ? <Text style={{ color: '#dc2626' }}>{saveError}</Text> : null}
-          {saveRequestId !== null ? (
-            <Text style={{ fontSize: 12 }}>(req {saveRequestId})</Text>
+          {saveError !== null ? (
+            <Text style={{ color: theme.colors.danger }}>{saveError}</Text>
           ) : null}
-          <View style={{ flexDirection: 'row', gap: 8 }}>
+          {saveRequestId !== null ? (
+            <Text style={{ fontSize: theme.type.caption }}>(req {saveRequestId})</Text>
+          ) : null}
+          <View style={{ flexDirection: 'row', gap: theme.space.md }}>
             <Button
               title={saving ? 'Salvando…' : 'Salvar'}
               onPress={() => void handleSaveQuestion()}
@@ -401,8 +408,8 @@ export default function ProjectDetailScreen({
           </View>
         </View>
       ) : (
-        <View style={{ gap: 8 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <View style={{ gap: theme.space.md }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space.md }}>
             <Text>Pergunta: {project?.researchQuestion ?? '—'}</Text>
             <Pressable
               onPress={handleStartEdit}
@@ -416,7 +423,9 @@ export default function ProjectDetailScreen({
         </View>
       )}
       {project !== null ? <Text>Status: {project.status}</Text> : null}
-      {statusError !== null ? <Text style={{ color: '#dc2626' }}>{statusError}</Text> : null}
+      {statusError !== null ? (
+        <Text style={{ color: theme.colors.danger }}>{statusError}</Text>
+      ) : null}
       {project !== null && project.status === 'active' ? (
         <Button
           title="Arquivar"
@@ -431,7 +440,7 @@ export default function ProjectDetailScreen({
           disabled={statusPending}
         />
       ) : null}
-      <View style={{ flexDirection: 'row', gap: 8 }}>
+      <View style={{ flexDirection: 'row', gap: theme.space.md }}>
         <Link
           href={{
             pathname: '/project/[id]/strategies',

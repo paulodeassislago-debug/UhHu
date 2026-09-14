@@ -21,6 +21,7 @@ import { DedupGroupSection } from './DedupGroupSection';
 import { TagInput } from './TagInput';
 import { docTypeLabel, formatProvenance } from './triage';
 import type { TriagedItem } from './triage';
+import { theme } from '../ui/theme';
 
 export interface ResultCardProps {
   item: TriagedItem;
@@ -64,7 +65,7 @@ export function ResultCard({
   }
 
   return (
-    <View style={{ borderWidth: 1, padding: 12, gap: 4 }}>
+    <View style={{ borderWidth: theme.border.thin, padding: theme.space.lg, gap: theme.space.xs }}>
       <Text numberOfLines={2} style={{ fontWeight: '600' }}>
         {result.title}
       </Text>

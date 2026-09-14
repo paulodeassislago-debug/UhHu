@@ -34,6 +34,7 @@ import { labApi } from '../api/lab';
 import { formatRunWhen, summarizeRun } from './runHistory';
 import type { RunSummary } from './runHistory';
 import { formatDurationMs, runStatusLabel } from './useRunPolling';
+import { theme } from '../ui/theme';
 
 export interface RunHistoryProps {
   searchId: string;
@@ -129,14 +130,14 @@ export function RunHistory({ searchId, projectId, getToken }: RunHistoryProps): 
       : `Histórico (${items.length}${hasMore ? '+' : ''})`;
 
   return (
-    <View style={{ gap: 4 }}>
+    <View style={{ gap: theme.space.xs }}>
       <Button
         title={`${headerTitle} ${expanded ? '▾' : '▸'}`}
         onPress={() => setExpanded((prev: boolean): boolean => !prev)}
       />
       {loadState === 'loading' && items.length === 0 ? <Text>carregando histórico…</Text> : null}
       {loadState === 'error' ? (
-        <View style={{ gap: 4 }}>
+        <View style={{ gap: theme.space.xs }}>
           <Text>{errorMessage ?? 'Erro interno. Tente novamente.'}</Text>
           <Button
             title="tentar de novo"
@@ -146,7 +147,7 @@ export function RunHistory({ searchId, projectId, getToken }: RunHistoryProps): 
       ) : null}
       {loadState === 'ready' && items.length === 0 ? <Text>Nenhuma execução ainda</Text> : null}
       {expanded && loadState === 'ready' && items.length > 0 ? (
-        <View style={{ gap: 8 }}>
+        <View style={{ gap: theme.space.md }}>
           {items.map((run: SearchRunDTO): JSX.Element => {
             const summary: RunSummary = summarizeRun(run);
             const duration: string = formatDurationMs(
@@ -161,7 +162,7 @@ export function RunHistory({ searchId, projectId, getToken }: RunHistoryProps): 
               run.error !== null && run.error.message.length > 0 ? ` · ${run.error.message}` : '';
             return (
               <Pressable key={run.id} onPress={() => handleOpenRun(run.id)}>
-                <View style={{ gap: 2, paddingVertical: 4 }}>
+                <View style={{ gap: theme.space.xxs, paddingVertical: theme.space.xs }}>
                   <Text>
                     {formatRunWhen(run.executedAt)} · {runStatusLabel(run.status)} · {summary.total}{' '}
                     resultados
@@ -180,7 +181,7 @@ export function RunHistory({ searchId, projectId, getToken }: RunHistoryProps): 
             );
           })}
           {hasMore ? (
-            <View style={{ gap: 2 }}>
+            <View style={{ gap: theme.space.xxs }}>
               <Button
                 title={loadingMore ? 'carregando…' : 'Ver mais'}
                 onPress={() => void handleLoadMore()}

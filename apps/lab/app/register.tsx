@@ -16,6 +16,7 @@ import { ZodError } from 'zod';
 import { registerSchema } from '@uhhu/contracts';
 import { ApiError } from '../src/api/client';
 import { authApi } from '../src/api/auth';
+import { theme } from '../src/ui/theme';
 
 function toSingleParam(value: string | string[] | undefined): string | undefined {
   if (typeof value === 'string') {
@@ -85,17 +86,17 @@ export default function RegisterScreen(): JSX.Element {
   return (
     <ScrollView
       style={{ flex: 1 }}
-      contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+      contentContainerStyle={{ flexGrow: 1, padding: theme.space.xxl, gap: theme.space.lg }}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={{ fontSize: 24, fontWeight: '600' }}>Registrar com convite</Text>
+      <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Registrar com convite</Text>
       <Text>Nome</Text>
       <TextInput
         value={name}
         onChangeText={setName}
         placeholder="Seu nome"
         editable={!busy}
-        style={{ borderWidth: 1, padding: 8 }}
+        style={{ borderWidth: theme.border.thin, padding: theme.space.md }}
       />
       <Text>Email</Text>
       <TextInput
@@ -105,7 +106,7 @@ export default function RegisterScreen(): JSX.Element {
         autoCapitalize="none"
         keyboardType="email-address"
         editable={!busy}
-        style={{ borderWidth: 1, padding: 8 }}
+        style={{ borderWidth: theme.border.thin, padding: theme.space.md }}
       />
       <Text>Senha (mínimo 12 caracteres)</Text>
       <TextInput
@@ -114,7 +115,7 @@ export default function RegisterScreen(): JSX.Element {
         placeholder="••••••••••••"
         secureTextEntry
         editable={!busy}
-        style={{ borderWidth: 1, padding: 8 }}
+        style={{ borderWidth: theme.border.thin, padding: theme.space.md }}
       />
       <Text>Token do convite</Text>
       <TextInput
@@ -123,7 +124,7 @@ export default function RegisterScreen(): JSX.Element {
         placeholder="token do convite"
         autoCapitalize="none"
         editable={!busy}
-        style={{ borderWidth: 1, padding: 8 }}
+        style={{ borderWidth: theme.border.thin, padding: theme.space.md }}
       />
       <Button
         title={busy ? 'Registrando…' : 'Criar conta'}
@@ -132,7 +133,7 @@ export default function RegisterScreen(): JSX.Element {
       />
       {errorMessage !== null ? <Text>{errorMessage}</Text> : null}
       {errorRequestId !== null ? (
-        <Text style={{ fontSize: 12 }}>(req {errorRequestId})</Text>
+        <Text style={{ fontSize: theme.type.caption }}>(req {errorRequestId})</Text>
       ) : null}
       <Link href="/login">Voltar ao login</Link>
     </ScrollView>

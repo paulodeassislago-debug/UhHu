@@ -10,6 +10,7 @@
 
 import type { JSX } from 'react';
 import { Button, Text, View } from 'react-native';
+import { theme } from './theme';
 
 export interface ErrorBannerProps {
   message: string;
@@ -28,17 +29,17 @@ export function ErrorBanner({
     <View
       testID="error-banner"
       style={{
-        borderWidth: 1,
-        borderColor: '#fca5a5',
-        backgroundColor: '#fef2f2',
-        padding: 12,
-        gap: 8,
+        borderWidth: theme.border.thin,
+        borderColor: theme.colors.dangerBorder,
+        backgroundColor: theme.colors.dangerSurface,
+        padding: theme.space.lg,
+        gap: theme.space.md,
       }}
     >
       <Text style={{ fontWeight: '600' }}>Algo falhou</Text>
       <Text>{message}</Text>
       {typeof requestId === 'string' && requestId.length > 0 ? (
-        <Text style={{ fontSize: 12 }}>(req {requestId})</Text>
+        <Text style={{ fontSize: theme.type.caption }}>(req {requestId})</Text>
       ) : null}
       {onRetry !== undefined ? <Button title="Repetir" onPress={onRetry} /> : null}
       {onBack !== undefined ? <Button title="Voltar" onPress={onBack} /> : null}

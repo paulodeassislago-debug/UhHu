@@ -39,6 +39,7 @@ import type {
 import { ErrorBanner } from '../../../src/ui/ErrorBanner';
 import { CardSkeleton } from '../../../src/ui/Skeleton';
 import { newIdempotencyKey } from '../../../src/utils/uuid';
+import { theme } from '../../../src/ui/theme';
 
 type ScreenState = 'loading' | 'ready' | 'error';
 
@@ -240,10 +241,10 @@ export default function SearchFormScreen(): JSX.Element {
     return (
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+        contentContainerStyle={{ flexGrow: 1, padding: theme.space.xxl, gap: theme.space.lg }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>
           {editing ? 'Editar estratégia' : 'Nova estratégia de busca'}
         </Text>
         <CardSkeleton count={2} />
@@ -255,10 +256,10 @@ export default function SearchFormScreen(): JSX.Element {
     return (
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+        contentContainerStyle={{ flexGrow: 1, padding: theme.space.xxl, gap: theme.space.lg }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Buscar</Text>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Buscar</Text>
         <Text>Redirecionando para o login…</Text>
       </ScrollView>
     );
@@ -268,10 +269,10 @@ export default function SearchFormScreen(): JSX.Element {
     return (
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+        contentContainerStyle={{ flexGrow: 1, padding: theme.space.xxl, gap: theme.space.lg }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>
           {editing ? 'Editar estratégia' : 'Nova estratégia de busca'}
         </Text>
         <ErrorBanner
@@ -286,10 +287,10 @@ export default function SearchFormScreen(): JSX.Element {
   return (
     <ScrollView
       style={{ flex: 1 }}
-      contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 12 }}
+      contentContainerStyle={{ flexGrow: 1, padding: theme.space.xxl, gap: theme.space.lg }}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={{ fontSize: 24, fontWeight: '600' }}>
+      <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>
         {editing ? 'Editar estratégia' : 'Nova estratégia de busca'}
       </Text>
       {banner !== null ? (
@@ -304,7 +305,7 @@ export default function SearchFormScreen(): JSX.Element {
         onSaveAndRun={(payload: SearchFormPayload): void => void handleSaveAndRun(payload)}
         saving={saving}
       />
-      <View style={{ flexDirection: 'row', gap: 8 }}>
+      <View style={{ flexDirection: 'row', gap: theme.space.md }}>
         <Text>Projeto: {projectId}</Text>
       </View>
     </ScrollView>

@@ -26,6 +26,7 @@ import type { SearchDTO } from '@uhhu/contracts';
 import { ApiError } from '../api/client';
 import type { TokenProvider } from '../api/client';
 import { labApi } from '../api/lab';
+import { theme } from '../ui/theme';
 
 export interface DeleteSearchDialogProps {
   search: SearchDTO;
@@ -136,15 +137,21 @@ export function DeleteSearchDialog({
         style={{
           flex: 1,
           justifyContent: 'center',
-          padding: 24,
+          padding: theme.space.xxl,
           backgroundColor: 'rgba(0,0,0,0.4)',
         }}
       >
-        <View style={{ backgroundColor: '#ffffff', padding: 16, gap: 12 }}>
-          <Text style={{ fontSize: 20, fontWeight: '600' }}>Excluir estratégia?</Text>
+        <View
+          style={{
+            backgroundColor: theme.colors.surface,
+            padding: theme.space.xl,
+            gap: theme.space.lg,
+          }}
+        >
+          <Text style={{ fontSize: theme.type.title, fontWeight: '600' }}>Excluir estratégia?</Text>
           <Text numberOfLines={2}>{search.term}</Text>
           {countsReady ? (
-            <View style={{ gap: 2 }}>
+            <View style={{ gap: theme.space.xxs }}>
               <Text>{runsLine}</Text>
               <Text>{resultsLine}</Text>
               <Text>• decisões de elegibilidade e tags associadas serão perdidas</Text>
@@ -154,10 +161,10 @@ export function DeleteSearchDialog({
           )}
           <Text>Esta ação não pode ser desfeita (hard-delete).</Text>
           {errorMessage !== null ? (
-            <View style={{ gap: 2 }}>
-              <Text style={{ color: '#dc2626' }}>{errorMessage}</Text>
+            <View style={{ gap: theme.space.xxs }}>
+              <Text style={{ color: theme.colors.danger }}>{errorMessage}</Text>
               {errorRequestId !== null ? (
-                <Text style={{ fontSize: 12 }}>(req {errorRequestId})</Text>
+                <Text style={{ fontSize: theme.type.caption }}>(req {errorRequestId})</Text>
               ) : null}
             </View>
           ) : null}
@@ -166,7 +173,7 @@ export function DeleteSearchDialog({
             title={deleting ? 'Excluindo…' : 'Excluir'}
             onPress={() => void handleDelete()}
             disabled={deleting}
-            color="#dc2626"
+            color={theme.colors.danger}
           />
         </View>
       </View>

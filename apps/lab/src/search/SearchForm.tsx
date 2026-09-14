@@ -30,6 +30,7 @@ import { createSearchSchema } from '@uhhu/contracts';
 import type { DocType, ExecutableSource, SearchFilters } from '@uhhu/contracts';
 import { buildSearchTerm, splitSearchTerm } from './searchTerm';
 import type { TermOperator, TermRow } from './searchTerm';
+import { theme } from '../ui/theme';
 
 export interface SearchFormInitial {
   term: string;
@@ -234,16 +235,16 @@ export function SearchForm({
   }
 
   return (
-    <View style={{ gap: 12 }}>
-      <Text style={{ fontSize: 18, fontWeight: '600' }}>Termos/descritores</Text>
+    <View style={{ gap: theme.space.lg }}>
+      <Text style={{ fontSize: theme.type.subtitle, fontWeight: '600' }}>Termos/descritores</Text>
       <FlatList
         data={rows}
         keyExtractor={(_row: TermRow, index: number): string => `row-${index}`}
         scrollEnabled={false}
         renderItem={({ item: row, index }: ListRenderItemInfo<TermRow>): JSX.Element => (
-          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+          <View style={{ flexDirection: 'row', gap: theme.space.md, alignItems: 'center' }}>
             {index === 0 ? null : (
-              <View style={{ flexDirection: 'row', gap: 4 }}>
+              <View style={{ flexDirection: 'row', gap: theme.space.xs }}>
                 {OPERATORS.map((op: TermOperator): JSX.Element => (
                   <Button
                     key={op}
@@ -273,8 +274,8 @@ export function SearchForm({
       />
       <Button title="+ Adicionar linha" onPress={handleAddRow} disabled={saving} />
 
-      <Text style={{ fontSize: 18, fontWeight: '600' }}>Filtros</Text>
-      <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+      <Text style={{ fontSize: theme.type.subtitle, fontWeight: '600' }}>Filtros</Text>
+      <View style={{ flexDirection: 'row', gap: theme.space.md, alignItems: 'center' }}>
         <Text>Ano:</Text>
         <TextInput
           value={yearFrom}
@@ -294,7 +295,7 @@ export function SearchForm({
           editable={!saving}
         />
       </View>
-      <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+      <View style={{ flexDirection: 'row', gap: theme.space.md, alignItems: 'center' }}>
         <Text>Tipo:</Text>
         <Button
           title={tese ? '[x] tese' : '[ ] tese'}
@@ -334,8 +335,8 @@ export function SearchForm({
         editable={!saving}
       />
 
-      <Text style={{ fontSize: 18, fontWeight: '600' }}>Fontes</Text>
-      <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+      <Text style={{ fontSize: theme.type.subtitle, fontWeight: '600' }}>Fontes</Text>
+      <View style={{ flexDirection: 'row', gap: theme.space.md, alignItems: 'center' }}>
         <Button
           title={bdtd ? '(x) BDTD' : '( ) BDTD'}
           onPress={() => setBdtd((prev: boolean): boolean => !prev)}
@@ -349,9 +350,9 @@ export function SearchForm({
       </View>
       <Text>BDTD: {sourcesHealth.bdtd}</Text>
       <Text>CAPES: {sourcesHealth.capes}</Text>
-      <Text style={{ fontSize: 12 }}>filtro garantido pelo Core (pós-filtro)</Text>
+      <Text style={{ fontSize: theme.type.caption }}>filtro garantido pelo Core (pós-filtro)</Text>
 
-      {formError !== null ? <Text style={{ color: '#dc2626' }}>{formError}</Text> : null}
+      {formError !== null ? <Text style={{ color: theme.colors.danger }}>{formError}</Text> : null}
       <Button
         title={saving ? 'Salvando…' : 'Salvar estratégia'}
         onPress={handleSave}

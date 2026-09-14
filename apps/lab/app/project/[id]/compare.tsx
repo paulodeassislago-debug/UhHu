@@ -32,6 +32,7 @@ import type { YearRow } from '../../../src/compare/compareHelpers';
 import { Empty } from '../../../src/ui/Empty';
 import { ErrorBanner } from '../../../src/ui/ErrorBanner';
 import { CardSkeleton } from '../../../src/ui/Skeleton';
+import { theme } from '../../../src/ui/theme';
 
 type ListState = 'loading' | 'ready' | 'error';
 type CompareState = 'idle' | 'loading' | 'ready' | 'error';
@@ -72,8 +73,18 @@ function CompareColumn({
       testID={`compare-column-${searchId}`}
       style={
         isReference
-          ? { minWidth: 150, borderWidth: 2, padding: 8, gap: 4 }
-          : { minWidth: 150, borderWidth: 1, padding: 8, gap: 4 }
+          ? {
+              minWidth: 150,
+              borderWidth: theme.border.thick,
+              padding: theme.space.md,
+              gap: theme.space.xs,
+            }
+          : {
+              minWidth: 150,
+              borderWidth: theme.border.thin,
+              padding: theme.space.md,
+              gap: theme.space.xs,
+            }
       }
     >
       <Text style={isReference ? { fontWeight: '700' } : { fontWeight: '600' }}>
@@ -134,9 +145,9 @@ function CompareResult({ compare, termsById, referenceSearchId }: CompareResultP
   const col2: string | null = compare.searches[2] ?? null;
   const col3: string | null = compare.searches[3] ?? null;
   return (
-    <View style={{ gap: 8 }}>
+    <View style={{ gap: theme.space.md }}>
       <ScrollView horizontal>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
+        <View style={{ flexDirection: 'row', gap: theme.space.md }}>
           {col0 !== null ? (
             <CompareColumn
               {...columnProps(compare, termsById, baseId, winner, col0, referenceSearchId)}
@@ -164,14 +175,14 @@ function CompareResult({ compare, termsById, referenceSearchId }: CompareResultP
         data={yearRows}
         keyExtractor={(row: YearRow): string => row.bucket}
         renderItem={({ item: row }: ListRenderItemInfo<YearRow>): JSX.Element => (
-          <View style={{ borderWidth: 1, padding: 8 }}>
+          <View style={{ borderWidth: theme.border.thin, padding: theme.space.md }}>
             <Text>
               {row.bucket}: {row.count}
             </Text>
           </View>
         )}
         horizontal
-        contentContainerStyle={{ gap: 8 }}
+        contentContainerStyle={{ gap: theme.space.md }}
       />
     </View>
   );
@@ -393,8 +404,8 @@ export default function CompareScreen(): JSX.Element {
 
   if (authLoading || (user !== null && listState === 'loading')) {
     return (
-      <View style={{ flex: 1, padding: 24, gap: 12 }}>
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Comparação</Text>
+      <View style={{ flex: 1, padding: theme.space.xxl, gap: theme.space.lg }}>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Comparação</Text>
         <CardSkeleton count={2} />
       </View>
     );
@@ -402,8 +413,8 @@ export default function CompareScreen(): JSX.Element {
 
   if (user === null) {
     return (
-      <View style={{ flex: 1, padding: 24, gap: 12 }}>
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Comparação</Text>
+      <View style={{ flex: 1, padding: theme.space.xxl, gap: theme.space.lg }}>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Comparação</Text>
         <Text>Redirecionando para o login…</Text>
       </View>
     );
@@ -411,8 +422,8 @@ export default function CompareScreen(): JSX.Element {
 
   if (listState === 'error') {
     return (
-      <View style={{ flex: 1, padding: 24, gap: 12 }}>
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Comparação</Text>
+      <View style={{ flex: 1, padding: theme.space.xxl, gap: theme.space.lg }}>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Comparação</Text>
         <ErrorBanner
           message={listError ?? 'Erro interno. Tente novamente.'}
           requestId={listRequestId}
@@ -436,7 +447,9 @@ export default function CompareScreen(): JSX.Element {
           statusText = `Selecionada (ordem ${position + 1})`;
         }
         return (
-          <View style={{ borderWidth: 1, padding: 12, gap: 6 }}>
+          <View
+            style={{ borderWidth: theme.border.thin, padding: theme.space.lg, gap: theme.space.sm }}
+          >
             <Text style={{ fontWeight: '600' }}>{search.term}</Text>
             <Text>{statusText}</Text>
             <Button
@@ -447,10 +460,10 @@ export default function CompareScreen(): JSX.Element {
         );
       }}
       style={{ flex: 1 }}
-      contentContainerStyle={{ padding: 24, gap: 12, flexGrow: 1 }}
+      contentContainerStyle={{ padding: theme.space.xxl, gap: theme.space.lg, flexGrow: 1 }}
       ListHeaderComponent={
-        <View style={{ gap: 12 }}>
-          <Text style={{ fontSize: 24, fontWeight: '600' }}>Comparação</Text>
+        <View style={{ gap: theme.space.lg }}>
+          <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Comparação</Text>
           <Text>{orderedIds.length} selecionadas (2 a 4)</Text>
           <Button
             title="Comparar"

@@ -10,6 +10,7 @@
 
 import type { JSX, ReactNode } from 'react';
 import { Text, View } from 'react-native';
+import { theme } from './theme';
 
 export type PartialStatus = 'ok' | 'partial' | 'failed';
 
@@ -34,11 +35,11 @@ export function PartialBanner({
     <View
       testID="partial-banner"
       style={{
-        borderWidth: 1,
-        borderColor: failed ? '#fca5a5' : '#fcd34a',
-        backgroundColor: failed ? '#fef2f2' : '#fffbeb',
-        padding: 12,
-        gap: 8,
+        borderWidth: theme.border.thin,
+        borderColor: failed ? theme.colors.dangerBorder : theme.colors.warningBorder,
+        backgroundColor: failed ? theme.colors.dangerSurface : theme.colors.warningSurface,
+        padding: theme.space.lg,
+        gap: theme.space.md,
       }}
     >
       <Text style={{ fontWeight: '600' }}>

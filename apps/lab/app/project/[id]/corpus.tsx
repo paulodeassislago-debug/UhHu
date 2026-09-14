@@ -37,6 +37,7 @@ import { formatCorpusCount } from '../../../src/projects/counts';
 import { Empty } from '../../../src/ui/Empty';
 import { ErrorBanner } from '../../../src/ui/ErrorBanner';
 import { CardSkeleton } from '../../../src/ui/Skeleton';
+import { theme } from '../../../src/ui/theme';
 
 type LoadState = 'loading' | 'ready' | 'error';
 
@@ -321,8 +322,8 @@ export default function CorpusScreen(): JSX.Element {
 
   if (authLoading || (user !== null && state === 'loading')) {
     return (
-      <View style={{ flex: 1, padding: 24, gap: 12 }}>
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>
+      <View style={{ flex: 1, padding: theme.space.xxl, gap: theme.space.lg }}>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>
           Corpus: {formatCorpusCount(items.length, page.hasMore)}
         </Text>
         <CardSkeleton count={3} />
@@ -332,8 +333,8 @@ export default function CorpusScreen(): JSX.Element {
 
   if (user === null) {
     return (
-      <View style={{ flex: 1, padding: 24, gap: 12 }}>
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Corpus</Text>
+      <View style={{ flex: 1, padding: theme.space.xxl, gap: theme.space.lg }}>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Corpus</Text>
         <Text>Redirecionando para o login…</Text>
       </View>
     );
@@ -341,8 +342,8 @@ export default function CorpusScreen(): JSX.Element {
 
   if (state === 'error') {
     return (
-      <View style={{ flex: 1, padding: 24, gap: 12 }}>
-        <Text style={{ fontSize: 24, fontWeight: '600' }}>Corpus</Text>
+      <View style={{ flex: 1, padding: theme.space.xxl, gap: theme.space.lg }}>
+        <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>Corpus</Text>
         <ErrorBanner
           message={errorMessage ?? 'Erro interno. Tente novamente.'}
           requestId={errorRequestId}
@@ -359,8 +360,10 @@ export default function CorpusScreen(): JSX.Element {
       renderItem={({ item: entry }: ListRenderItemInfo<CorpusEntryDTO>): JSX.Element => {
         const isSelected: boolean = selected.has(entry.groupId);
         return (
-          <View style={{ borderWidth: 1, padding: 12, gap: 6 }}>
-            <Text style={{ fontSize: 16, fontWeight: '600' }}>
+          <View
+            style={{ borderWidth: theme.border.thin, padding: theme.space.lg, gap: theme.space.sm }}
+          >
+            <Text style={{ fontSize: theme.type.body, fontWeight: '600' }}>
               {entry.title} ({formatYear(entry.year)})
             </Text>
             <Text>{formatInstitution(entry.institution)}</Text>
@@ -374,24 +377,24 @@ export default function CorpusScreen(): JSX.Element {
         );
       }}
       style={{ flex: 1 }}
-      contentContainerStyle={{ padding: 24, gap: 12, flexGrow: 1 }}
+      contentContainerStyle={{ padding: theme.space.xxl, gap: theme.space.lg, flexGrow: 1 }}
       ListHeaderComponent={
-        <View style={{ gap: 12 }}>
-          <Text style={{ fontSize: 24, fontWeight: '600' }}>
+        <View style={{ gap: theme.space.lg }}>
+          <Text style={{ fontSize: theme.type.heading, fontWeight: '600' }}>
             Corpus: {formatCorpusCount(items.length, page.hasMore)}
           </Text>
-          <View style={{ gap: 8 }}>
+          <View style={{ gap: theme.space.md }}>
             <Text style={{ fontWeight: '600' }}>Tag</Text>
             <TextInput
               value={tagInput}
               onChangeText={setTagInput}
               placeholder="todas"
-              style={{ borderWidth: 1, padding: 8 }}
+              style={{ borderWidth: theme.border.thin, padding: theme.space.md }}
             />
           </View>
-          <View style={{ gap: 8 }}>
+          <View style={{ gap: theme.space.md }}>
             <Text style={{ fontWeight: '600' }}>Fonte</Text>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
+            <View style={{ flexDirection: 'row', gap: theme.space.md }}>
               <Button
                 title={sourceFilter === 'bdtd' ? '• BDTD' : 'BDTD'}
                 onPress={() => handleToggleSource('bdtd')}
@@ -402,19 +405,19 @@ export default function CorpusScreen(): JSX.Element {
               />
             </View>
           </View>
-          <View style={{ gap: 8 }}>
+          <View style={{ gap: theme.space.md }}>
             <Text style={{ fontWeight: '600' }}>Ano</Text>
             <TextInput
               value={yearInput}
               onChangeText={handleYearChange}
               placeholder="todos"
               keyboardType="numeric"
-              style={{ borderWidth: 1, padding: 8 }}
+              style={{ borderWidth: theme.border.thin, padding: theme.space.md }}
             />
           </View>
-          <View style={{ gap: 8 }}>
+          <View style={{ gap: theme.space.md }}>
             <Text style={{ fontWeight: '600' }}>Exportar</Text>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
+            <View style={{ flexDirection: 'row', gap: theme.space.md }}>
               <Button title={format === 'csv' ? '• CSV' : 'CSV'} onPress={() => setFormat('csv')} />
               <Button
                 title={format === 'bibtex' ? '• BibTeX' : 'BibTeX'}
