@@ -10,10 +10,13 @@
 //   param — nunca perdido; `next` carrega /project/<id> completo).
 // - `next` restrito a rotas internas `/...` via isSafeNext (rejeita `http`,
 //   `//`, `\` — T-06-03-05); fallback /projects.
+// W1: `AppShell` (sidebar + header) montado em volta do `Stack` — layout, não
+// roteador; rotas e guards intactos, telas não redesenhadas.
 import { Stack, usePathname, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
 import type { JSX, ReactNode } from 'react';
 import { AuthProvider, isSafeNext, useAuth } from '../src/auth/session';
+import { AppShell } from '../src/ui/AppShell';
 
 function nextForPathname(pathname: string): string {
   // Preserva o projeto atual (/project/<id>...) completo; demais rotas caem
@@ -56,20 +59,22 @@ export default function RootLayout(): JSX.Element {
   return (
     <AuthProvider>
       <AuthGate>
-        <Stack>
-          <Stack.Screen name="index" options={{ title: 'UhHu Lab' }} />
-          <Stack.Screen name="login" options={{ title: 'Entrar' }} />
-          <Stack.Screen name="register" options={{ title: 'Convite' }} />
-          <Stack.Screen name="projects" options={{ title: 'Projetos' }} />
-          <Stack.Screen name="project/[id]" options={{ title: 'Projeto' }} />
-          <Stack.Screen name="project/[id]/strategies" options={{ title: 'Estratégias' }} />
-          <Stack.Screen name="project/[id]/search-form" options={{ title: 'Buscar' }} />
-          <Stack.Screen name="project/[id]/run" options={{ title: 'Execução' }} />
-          <Stack.Screen name="project/[id]/results" options={{ title: 'Resultados' }} />
-          <Stack.Screen name="project/[id]/result" options={{ title: 'Ficha' }} />
-          <Stack.Screen name="project/[id]/corpus" options={{ title: 'Corpus' }} />
-          <Stack.Screen name="project/[id]/compare" options={{ title: 'Comparação' }} />
-        </Stack>
+        <AppShell>
+          <Stack>
+            <Stack.Screen name="index" options={{ title: 'UhHu Lab' }} />
+            <Stack.Screen name="login" options={{ title: 'Entrar' }} />
+            <Stack.Screen name="register" options={{ title: 'Convite' }} />
+            <Stack.Screen name="projects" options={{ title: 'Projetos' }} />
+            <Stack.Screen name="project/[id]" options={{ title: 'Projeto' }} />
+            <Stack.Screen name="project/[id]/strategies" options={{ title: 'Buscas' }} />
+            <Stack.Screen name="project/[id]/search-form" options={{ title: 'Buscar' }} />
+            <Stack.Screen name="project/[id]/run" options={{ title: 'Execução' }} />
+            <Stack.Screen name="project/[id]/results" options={{ title: 'Resultados' }} />
+            <Stack.Screen name="project/[id]/result" options={{ title: 'Ficha' }} />
+            <Stack.Screen name="project/[id]/corpus" options={{ title: 'Corpus' }} />
+            <Stack.Screen name="project/[id]/compare" options={{ title: 'Comparação' }} />
+          </Stack>
+        </AppShell>
       </AuthGate>
     </AuthProvider>
   );

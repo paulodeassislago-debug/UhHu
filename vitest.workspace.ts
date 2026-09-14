@@ -1,7 +1,9 @@
-// Vitest workspace — D-14: suite minima smoke + integracao PG.
+// Vitest workspace — D-14: suite minima smoke + integracao PG + lab.
 //
-// Dois projetos: `smoke` (sem banco, sempre verde) e `integration` (exige
-// APP/MIGRATION_DATABASE_URL; pula com graca quando o PG esta inalcançavel).
+// Três projetos: `smoke` (sem banco, sempre verde), `integration` (exige
+// APP/MIGRATION_DATABASE_URL; pula com graca quando o PG esta inalcançavel)
+// e `lab` (unit do app Lab, node, sem banco — inclui a W1 e o tripwire do
+// UI-0; antes rodava só à mão via `pnpm --filter @uhhu/lab test`).
 // `pnpm test` roda tudo; `pnpm test:integration` roda so a integracao (CI com
 // service postgres:16-alpine).
 //
@@ -38,6 +40,14 @@ function fallbackEnv(): Record<string, string> {
 const fallback = fallbackEnv();
 
 export default defineWorkspace([
+  {
+    test: {
+      name: 'lab',
+      include: ['apps/lab/src/**/__tests__/**/*.test.ts'],
+      testTimeout: 5000,
+      env: fallback,
+    },
+  },
   {
     test: {
       name: 'smoke',
